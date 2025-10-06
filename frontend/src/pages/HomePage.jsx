@@ -12,6 +12,7 @@ import LogoSubLearn from '../components/LogoSubLearn'
 const HomePage = () => {
   const [movieBuffer, setMovieBuffer] = useState([]);
   const [totalMovies, setTotalMovies] = useState(0);
+  const [mostMovies, setMostMovies] = useState([]);
 
   useEffect(() => {
     fetchMovies();
@@ -20,9 +21,12 @@ const HomePage = () => {
   const fetchMovies = async () => {
     try {
       const res = await axios.get('http://localhost:5001/api/movies');
+      const mostMovies = res.data.slice(0, 10);
       setMovieBuffer(res.data);
       setTotalMovies(res.data.length);
-      // console.log(res.data);
+      setMostMovies(mostMovies);
+      console.log(res.data);
+      console.log(mostMovies);
     
     } catch (error) {
       console.error('Lỗi xảy ra khi truy xuất movies:', error);
@@ -50,7 +54,7 @@ const HomePage = () => {
       {/* Board Movis */}
       <div>
         {/* Hero */}
-        <HeroCarousel />
+        <HeroCarousel mostMovies={mostMovies}/>
 
         {/* Movie Board */}
         <div className='mt-2 px-4 bg-[#1D2732] rounded-b-2xl p-4'>
@@ -86,12 +90,13 @@ const HomePage = () => {
             ) : (
               movieBuffer.map((movie) => (
                 <div
-                  key={movie._id || movie.id}
+                  key={movie._id}
                   className="group relative overflow-hidden rounded-lg shadow-md bg-[#2E4863] cursor-pointer"
                 >
                   <img
-                    src={movie.thumbnail_url || '/assets/default-movie.png'}
-                    alt={movie.title}
+                    // eslint-disable-next-line no-constant-binary-expression
+                    src={ `https://img.ophim.live/uploads/movies/${movie.thumb_url}` || '/assets/default-movie.png'}
+                    alt={movie.slug}
                     className="w-full h-40 object-cover transition-transform duration-300 group-hover:scale-105"
                   />
 
@@ -105,10 +110,6 @@ const HomePage = () => {
 
                   <div className="p-3">
                     <h2 className="text-white text-base font-semibold mb-1 text-center">{movie.title}</h2>
-                    <div className="flex justify-between items-center w-full px-2">
-                      <p className="text-gray-300 text-xs text-center">{movie.difficulty}</p>
-                      <p className="text-gray-300 text-xs text-center">{movie.genre}</p>
-                    </div>
                   </div>
                 </div>
               )))

@@ -12,7 +12,7 @@ function App() {
       <Toaster richColors />
       <BrowserRouter>
         <Routes>
-          <Route path="/" element={<MoviePlayerPage />} />
+          <Route path="/" element={<HomePage />} />
           <Route path="/movie" element={<MoviePlayerPage />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
