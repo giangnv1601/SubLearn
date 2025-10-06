@@ -1,11 +1,21 @@
 import { useState, useRef, useEffect } from 'react'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
-const HeroCarousel = () => {
 
-  const slides = [
-    { id:1, title:'Catman 2: The Villain Returns', subtitle:'The story continues...', img:'/assets/hero-cat.jpg' },
-    { id:2, title:'Dog Days', subtitle:'A light comedy', img:'/assets/hero-dog.jpg' }
-  ]
+const HeroCarousel = ({mostMovies}) => {
+
+  const slides = mostMovies && mostMovies.length > 0
+  ? mostMovies.map(movie => ({
+      id: movie._id,
+      title: movie.title,
+      description: movie.description || '',
+      img: `https://img.ophim.live/uploads/movies/${movie.poster_url}`,
+    }))
+  : [
+      { id: 1, title: 'Catman 2: The Villain Returns', description: 'The story continues...', img: '/assets/hero-cat.jpg' },
+      { id: 2, title: 'Dog Days', description: 'A light comedy', img: '/assets/hero-dog.jpg' }
+    ];
+
+  console.log('Slides for HeroCarousel:', slides);
 
   const [index, setIndex] = useState(0)
   const timer = useRef(null)
@@ -19,12 +29,12 @@ const HeroCarousel = () => {
     <div className="relative h-[400px] overflow-hidden shadow-xl bg-[#020202]"> 
       {slides.map((s, i) => (
               <div key={s.id} className={`absolute inset-0 transition-opacity duration-700 ${i === index ? 'opacity-100 z-10' : 'opacity-0 z-0'}`}>
-                {/* <div className="absolute inset-0 bg-cover bg-center" style={{ backgroundImage: `url(${s.img})`, filter: 'brightness(.48) contrast(.96)' }} />
-                <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/30 to-transparent" /> */}
+                <div className="absolute inset-0 bg-cover bg-center" style={{ backgroundImage: `url(${s.img})`, filter: 'brightness(.48) contrast(.96)' }} />
+                <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/30 to-transparent" />
                 <div className="relative z-20 h-full flex items-center">
                   <div className="ml-10 max-w-[720px] px-6 md:px-12">
                     <p className="text-3xl md:text-5xl font-extrabold text-white mb-3">{s.title}</p>
-                    <p className="text-gray-300 max-w-lg mb-6">{s.subtitle}</p>
+                    <p className="text-gray-300 max-w-lg mb-6">{s.description}</p>
                     <div className="flex gap-3">
                       <button className="px-4 py-2 bg-[#E4D161] text-black rounded-full">Watch now</button>
                       <button className="px-4 py-2 border border-white/20 text-white rounded-full">More info</button>

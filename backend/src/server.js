@@ -3,6 +3,7 @@ import moviesRoutes from './routes/moviesRoutes.js';
 import { connectDB } from './config/db.js';
 import dotenv from 'dotenv';
 import cors from 'cors';
+import { importMoviesOnStartup } from './services/movieService.js';
 
 dotenv.config();
 
@@ -21,6 +22,7 @@ app.use('/api/movies', moviesRoutes);
 connectDB().then(() => {
   app.listen(PORT, () => {
     console.log(`Server is running on port ${PORT}`);
+    importMoviesOnStartup();
   });
 });
 
