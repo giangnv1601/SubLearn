@@ -42,7 +42,7 @@ const MoviePlayerPage = () => {
           {/* Player + controls */}
           <section className="lg:col-span-2 space-y-4">
             <div>
-              <ReactPlayer src='https://vip.opstream17.com/20250516/18283_1168edfa/index.m3u8' 
+              <ReactPlayer src='https://vip.opstream90.com/20251003/13697_e5a5d1fa/index.m3u8' 
                 width="100%" height="480px"
                 controls
               />
