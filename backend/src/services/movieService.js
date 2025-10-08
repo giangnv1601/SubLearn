@@ -2,12 +2,13 @@ import axios from 'axios';
 import Movie from '../models/Movie.js';
 
 const BASE_URL = 'https://ophim1.com/v1/api/danh-sach';
+const APP_DOMAIN_CDN = "https://img.ophim.live/uploads/movies/"
 
 // Hàm gọi API lấy danh sách phim lẻ (au-my)
-const getAllMovies = async (page) => {
+const getAllMovies = async (limit) => {
   try {
     const { data } = await axios.get(
-      `${BASE_URL}/phim-le?country=au-my&page=${page}`
+      `${BASE_URL}/phim-le|phim-thuyet-minh?country=au-my&category=hanh-dong,vo-thuat,vien-tuong,phieu-luu,khoa-hoc&limit=${limit}`
     );
 
     // Lấy danh sách phim từ response
@@ -48,15 +49,15 @@ const getMovieDetails = async (slug) => {
       slug: slug,
       originalTitle: item.origin_name,
       description: item.content,
-      thumb_url: item.thumb_url,
-      poster_url: item.poster_url,
+      thumb_url: `${APP_DOMAIN_CDN}${item.thumb_url}`,
+      poster_url: `${APP_DOMAIN_CDN}${item.poster_url}`,
       time: item.time,
       year: item.year,
       genre: item.category?.map(c => c.name).join(', ') ?? '',
       link_m3u8: item?.episodes?.[0]?.server_data?.[0]?.link_m3u8 ?? ''
     };
 
-    console.log('Chi tiết phim:', movie);
+    // console.log('Chi tiết phim:', movie);
     return movie;
   } catch (error) {
     console.error(`Lỗi khi lấy chi tiết phim với slug "${slug}":`, error);
@@ -67,7 +68,7 @@ const getMovieDetails = async (slug) => {
 const importMoviesOnStartup = async () => {
   try {
     console.log('🚀 Bắt đầu nhập phim từ API ngoài...');
-    const slugs = await getAllMovies(2); // bạn có thể loop nhiều page nếu muốn
+    const slugs = await getAllMovies(100);
 
     let added = 0;
     for (const slug of slugs) {
@@ -86,7 +87,5 @@ const importMoviesOnStartup = async () => {
     console.error('Lỗi khi import phim khi khởi động:', error);
   }
 };
-
-// importMoviesOnStartup();
 
 export { importMoviesOnStartup };
