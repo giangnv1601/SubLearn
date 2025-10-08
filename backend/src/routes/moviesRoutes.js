@@ -4,9 +4,12 @@ import {
   createMovie, 
   updateMovie,
   deleteMovie,
+  getMovieById
  } from '../controllers/moviesControllers.js';
 
 const router = express.Router();
+
+router.get('/:id', getMovieById);
 
 router.get('/', getAllMovies);
 

@@ -12,8 +12,8 @@ const getAllMovies = async (req, res) => {
 
 const createMovie = async (req, res) => {
   try {
-    const { title, thumbnail_url, video_url, genre } = req.body;
-    const movie = new Movie({ title, thumbnail_url, video_url, genre });
+    const { title, slug, originalTitle, description, thumb_url,  thumbnail_url, poster_url, time, year, genre, link_m3u8 } = req.body;
+    const movie = new Movie({ title, slug, originalTitle, description, thumb_url,  thumbnail_url, poster_url, time, year, genre, link_m3u8 });
     const newMovie = await movie.save();
     res.status(201).json(newMovie);
   } catch (error) {
@@ -24,10 +24,10 @@ const createMovie = async (req, res) => {
 
 const updateMovie = async (req, res) => {
   try {
-    const { title, thumbnail_url, video_url, genre } = req.body;
+    const { title, slug, originalTitle, description, thumb_url,  thumbnail_url, poster_url, time, year, genre, link_m3u8 } = req.body;
     const updatedMovie = await Movie.findByIdAndUpdate(
       req.params.id, 
-      { title, thumbnail_url, video_url, genre }, 
+      { title, slug, originalTitle, description, thumb_url,  thumbnail_url, poster_url, time, year, genre, link_m3u8 }, 
       { new: true }
     );
     if (!updatedMovie) {
@@ -53,4 +53,17 @@ const deleteMovie = async (req, res) => {
   }
 };
 
-export { getAllMovies, createMovie, updateMovie, deleteMovie };
+const getMovieById = async (req, res) => {
+  try {
+    const movie = await Movie.findById(req.params.id);
+    if (!movie) {
+      return res.status(404).json({ message: 'Movie not found' });
+    }
+    res.status(200).json(movie);
+  } catch (error) {
+    console.error('Error fetching movie by ID:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
+export { getAllMovies, createMovie, updateMovie, deleteMovie, getMovieById };

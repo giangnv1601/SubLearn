@@ -8,7 +8,7 @@ const HeroCarousel = ({mostMovies}) => {
       id: movie._id,
       title: movie.title,
       description: movie.description || '',
-      img: `https://img.ophim.live/uploads/movies/${movie.poster_url}`,
+      img: movie.poster_url || '/assets/default-movie.png',
     }))
   : [
       { id: 1, title: 'Catman 2: The Villain Returns', description: 'The story continues...', img: '/assets/hero-cat.jpg' },

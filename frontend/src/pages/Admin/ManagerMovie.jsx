@@ -1,25 +1,20 @@
-import React, { useEffect, useState } from 'react'
-import { Link } from 'react-router'
-import { Plus, Edit2, Trash2, Image, ChevronLeft, ChevronRight } from 'lucide-react'
-import Profiles from '../components/Profile'
-import ListItems from '../components/ListItems'
-import SearchBar from '../components/SearchBar'
-import LogoSubLearn from '../components/LogoSubLearn'
 import axios from 'axios'
+import { useEffect, useState } from 'react'
+import { Plus, Edit2, Trash2, Image, ChevronLeft, ChevronRight } from 'lucide-react'
 import { toast } from 'sonner'
+import MovieModal from '../../components/MovieModal'
+import TaskBarAdmin from '../../layouts/AdminLayout/TaskBarAdmin'
 
-const sampleMovies = [
-  { id: 1, title: 'Inception', genre: 'Sci‑Fi', year: 2010, difficulty: 'Hard', thumbnail: 'https://img.youtube.com/vi/wq_qCVZC5go/maxresdefault.jpg' },
-  { id: 2, title: 'Dog Days', genre: 'Comedy', year: 2018, difficulty: 'Easy', thumbnail: '/assets/thumb-2.jpg' },
-  { id: 3, title: 'The Twins', genre: 'Drama', year: 2022, difficulty: 'Medium', thumbnail: '/assets/thumb-3.jpg' }
-]
 
 const ManagerMovie = () => {
-  const [movieBuffer, setMovieBuffer] = useState([...sampleMovies])
+  const [movieBuffer, setMovieBuffer] = useState([])
   const [q, setQ] = useState('')
   const [genre, setGenre] = useState('')
   const [page, setPage] = useState(1)
-  const perPage = 8
+  const perPage = 10
+
+  const [showModal, setShowModal] = useState(false)
+  const [editMovie, setEditMovie] = useState(null)
 
   useEffect(() => {
     fetchMovies();
@@ -29,8 +24,6 @@ const ManagerMovie = () => {
     try {
       const res = await axios.get('http://localhost:5001/api/movies');
       setMovieBuffer(res.data);
-      // setTotalMovies(res.data.length);
-      // console.log(res.data);
     
     } catch (error) {
       console.error('Lỗi xảy ra khi truy xuất movies:', error);
@@ -38,9 +31,63 @@ const ManagerMovie = () => {
     }
   }
 
+  const handleCreateMovie = async (payload) => {
+    await axios.post('http://localhost:5001/api/movies', payload)
+    await fetchMovies()
+  }
+
+  const handleUpdateMovie = async (payload) => {
+    const id = payload._id || payload.id
+    if (!id) {
+      toast.error('Missing movie id for update')
+      return
+    }
+    try {
+      const body = { ...payload }
+      delete body._id
+      await axios.put(`http://localhost:5001/api/movies/${id}`, body)
+      toast.success('Cập nhật movie thành công')
+      await fetchMovies()
+    } catch (err) {
+      console.error('Lỗi khi cập nhật movie', err)
+      toast.error(err?.response?.data?.message || 'Lỗi khi cập nhật movie')
+      throw err
+    }
+  }
+
+  // Xóa movie theo id
+  const handleDeleteMovie = async (id) => {
+    if (!id) return
+    try {
+      await axios.delete(`http://localhost:5001/api/movies/${id}`)
+      toast.success('Xóa movie thành công')
+      await fetchMovies()
+    } catch (err) {
+      console.error('Lỗi khi xóa movie', err)
+      const msg = err?.response?.data?.message || err?.message || 'Lỗi khi xóa movie'
+      toast.error(msg)
+    }
+  }
+
+  // Open edit modal and set the movie to be edited
+  const openEdit = (movie) => {
+    setEditMovie(movie)
+    setShowModal(true)
+  }
+
   const filtered = movieBuffer.filter(m => {
-    const matchQ = q.trim() === '' || m.title.toLowerCase().includes(q.toLowerCase())
-    const matchGenre = !genre || m.genre === genre
+    const title = (m.title || '').toLowerCase()
+    const genres = (m.genre || '').toLowerCase()
+    const qTrim = q.trim().toLowerCase()
+    const genreTrim = genre.trim().toLowerCase()
+
+    const matchQ = qTrim === '' || title.includes(qTrim)
+
+    // Nếu user không chọn genre -> match all
+    // Nếu chọn, kiểm tra xem chuỗi genre của phim có chứa string đã chọn (case-insensitive)
+    // (thích hợp khi một phim có nhiều thể loại, ví dụ "Action, Drama")
+    const matchGenre = genreTrim === '' || genres.includes(genreTrim)
+
     return matchQ && matchGenre
   })
 
@@ -49,22 +96,14 @@ const ManagerMovie = () => {
 
   return (
     <div className="min-h-screen bg-[#2E4863] text-white">
-      {/* NavBar */}
-      <div className='flex justify-between items-center p-4 bg-[#1D2732] text-white rounded-2px rounded-t-2xl' >
-        <LogoSubLearn />
-        <ListItems />
-        <div className="hidden md:block"><SearchBar /></div>
-        <Profiles />
-      </div>
+      {/* Task Bar */}
+      <TaskBarAdmin />
 
       {/* Board Manage Movie */}
-      <main className="max-w-[1200px] mx-auto px-4 py-6">
+      <div className="max-w-[1200px] mx-auto px-4 py-6">
+        {/* Header Board */}
         <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 mb-4">
-          <div>
-            <h1 className="text-2xl font-semibold text-[#E4D161]">Manage Movies</h1>
-            <p className="text-sm text-gray-300 mt-1">Create, edit or remove movies from the catalogue</p>
-          </div>
-
+          <h1 className="text-2xl font-semibold text-[#E4D161]">Manage Movies</h1>
           <div className="flex items-center gap-3 w-full md:w-auto">
             <div className="relative w-full md:w-72">
               <input
@@ -81,18 +120,20 @@ const ManagerMovie = () => {
               className="bg-gray-700 text-white px-3 py-2 rounded-md focus:outline-none"
             >
               <option value="">All genres</option>
-              <option>Action</option>
-              <option>Drama</option>
-              <option>Comedy</option>
-              <option>Sci‑Fi</option>
+              <option>Hành Động</option>
+              <option>Phiêu Lưu</option>
+              <option>Viễn Tưởng</option>
+              <option>Khoa Học</option>
+              <option>Võ Thuật</option>
             </select>
 
-            <Link to="/manage/add" className="inline-flex items-center gap-2 px-4 py-2 bg-[#E4D161] text-black rounded-md font-semibold shadow hover:opacity-95">
+            <button onClick={() => setShowModal(true)} className="inline-flex items-center gap-2 px-4 py-2 bg-[#E4D161] text-black rounded-md font-semibold shadow hover:opacity-95">
               <Plus className="w-4 h-4" /> Add movie
-            </Link>
+            </button>
           </div>
         </div>
 
+        {/* Table Movie */}
         <div className="bg-gray-900/40 rounded-lg p-4">
           <div className="overflow-x-auto">
             <table className="min-w-full table-auto border-collapse">
@@ -116,12 +157,12 @@ const ManagerMovie = () => {
                     </td>
                   </tr>
                 ) : paged.map((m, idx) => (
-                  <tr key={m.id} className="hover:bg-gray-800">
+                  <tr key={m._id || m.id} className="hover:bg-gray-800">
                     <td className="px-4 py-3 text-sm text-gray-200">{(page - 1) * perPage + idx + 1}</td>
                     <td className="px-4 py-3">
                       <div className="h-14 w-24 bg-gray-800 rounded overflow-hidden flex items-center justify-center">
-                        {m.thumbnail_url ? (
-                          <img src={m.thumbnail_url} alt={m.title} className="h-full w-full object-cover" />
+                        {m.thumb_url ? (
+                          <img src={m.thumb_url} alt={m.title} className="h-full w-full object-cover" />
                         ) : (
                           <Image className="w-6 h-6 text-gray-400" />
                         )}
@@ -129,14 +170,17 @@ const ManagerMovie = () => {
                     </td>
                     <td className="px-4 py-3 text-gray-100 font-medium">{m.title}</td>
                     <td className="px-4 py-3 hidden lg:table-cell text-gray-200">{m.genre}</td>
-                    <td className="px-4 py-3 hidden sm:table-cell text-gray-200">{m.release_year}</td>
+                    <td className="px-4 py-3 hidden sm:table-cell text-gray-200">{m.year}</td>
                     <td className="px-4 py-3 text-gray-200">{m.difficulty}</td>
                     <td className="px-4 py-3 text-right">
                       <div className="inline-flex items-center gap-2">
-                        <button className="px-3 py-1 text-sm rounded-md bg-blue-600 hover:bg-blue-700 text-white inline-flex items-center gap-2">
+                        <button onClick={() => openEdit(m)} className="px-3 py-1 text-sm rounded-md bg-blue-600 hover:bg-blue-700 text-white inline-flex items-center gap-2">
                           <Edit2 className="w-4 h-4" />
                         </button>
-                        <button className="px-3 py-1 text-sm rounded-md bg-red-600 hover:bg-red-700 text-white inline-flex items-center gap-2">
+                        <button
+                          onClick={() => handleDeleteMovie(m._id || m.id)}
+                          className="px-3 py-1 text-sm rounded-md bg-red-600 hover:bg-red-700 text-white inline-flex items-center gap-2"
+                        >
                           <Trash2 className="w-4 h-4" />
                         </button>
                       </div>
@@ -168,7 +212,17 @@ const ManagerMovie = () => {
             </div>
           </div>
         </div>
-      </main>
+      </div>
+
+      {/* Movie Modal component */}
+      <MovieModal
+        isOpen={showModal}
+        onClose={() => { setShowModal(false); setEditMovie(null) }}
+        onCreate={handleCreateMovie}
+        onUpdate={handleUpdateMovie}
+        onDelete={async (id) => { await handleDeleteMovie(id); setEditMovie(null) }}
+        initialData={editMovie}
+      />
     </div>
   )
 }
