@@ -20,7 +20,7 @@ app.use('/api/movies', moviesRoutes);
 
 connectDB().then(() => {
   app.listen(PORT, () => {
-    console.log(`Server is running on port ${PORT}`);
+    console.log(`Server is running on port ${PORT}`); 
   });
 });
 

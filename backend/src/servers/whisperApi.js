@@ -3,8 +3,7 @@ import fs from "fs";
 import OpenAI from "openai";
 
 const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
-
-async function createSubtitle() {
+const createSubtitle = async () => {
   const resp = await client.audio.transcriptions.create({
     file: fs.createReadStream("./src/eng.mp3"), // hoặc sample.mp4
     model: "whisper-1",
