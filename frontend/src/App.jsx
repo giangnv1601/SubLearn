@@ -1,9 +1,11 @@
 import { Toaster } from "sonner"
 import {  BrowserRouter ,Routes, Route } from "react-router"
+
 import NotFound from "./pages/NotFound"
-import HomePage from "./pages/Admin/HomePage"
-import MoviePlayerPage from "./pages/Admin/MoviePlayerPage"
-import ManagerMovie from "./pages/Admin/ManagerMovie"
+import HomePage from "./pages/Shared/HomePage"
+import MoviePlayerPage from "./pages/Shared/MoviePlayerPage"
+import ManagerMovie from "./pages/Admin/ManagerMoviePage"
+import ManagerExercisesPage from "./pages/Admin/ManagerExercisesPage"
 
 function App() {
 
@@ -12,9 +14,16 @@ function App() {
       <Toaster richColors />
       <BrowserRouter>
         <Routes>
+          {/* Common */}
           <Route path="/" element={<HomePage />} />
           <Route path="/movie/:id" element={<MoviePlayerPage />} />
           <Route path="movie" element={<ManagerMovie />} />
+
+          {/* Only User */}
+
+          {/* Only admin */}
+          <Route path="/admin/exercise" element={<ManagerExercisesPage />} />
+
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>

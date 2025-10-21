@@ -1,9 +1,9 @@
-import Home from '../../components/NavBar/MenuItems/Home'
-import Movies from '../../components/NavBar/MenuItems/Movies'
-import Quizzes from '../../components/NavBar/MenuItems/Quizzes'
-import LogoSubLearn from '../../components/NavBar/LogoSubLearn'
-import SearchBar from '../../components/NavBar/SearchBar'
-import Profiles from '../../components/NavBar/Profile'
+import LogoSubLearn from './MenuItems/LogoSubLearn'
+import SearchBar from './MenuItems/SearchBar'
+import Profiles from './MenuItems/Profile'
+import ManageMovies from './MenuItems/ManageMovies'
+import ManageExercises from './MenuItems/ManageExercises'
+import Home from './MenuItems/Home'
 
 const TaskBarAdmin = () => {
   return (
@@ -14,8 +14,8 @@ const TaskBarAdmin = () => {
       {/* Menu Items Admin */}
       <div className="hidden md:flex items-center space-x-2">
         <Home />
-        <Movies />
-        <Quizzes />
+        <ManageMovies/>
+        <ManageExercises/>
       </div>
 
       {/* Search Bar */}

@@ -2,7 +2,7 @@ import axios from 'axios'
 import ReactPlayer from 'react-player'
 import { useEffect, useState } from 'react'
 import { useParams } from 'react-router'
-import TaskBarAdmin from '../../layouts/AdminLayout/TaskBarAdmin'
+import TaskBarUser from '../../components/TaskBars/TaskBarUser'
 
  
 const MoviePlayerPage = () => {
@@ -37,7 +37,7 @@ const MoviePlayerPage = () => {
   return (
     <div className='min-h-screen bg-[#2E4863]'>
       {/* NavBar */}
-      <TaskBarAdmin />
+      <TaskBarUser />
 
       {/* Content */}
       <div className="max-w-[1200px] mx-auto px-4 py-6">
