@@ -6,6 +6,7 @@ import HomePage from "./pages/Shared/HomePage"
 import MoviePlayerPage from "./pages/Shared/MoviePlayerPage"
 import ManagerMovie from "./pages/Admin/ManagerMoviePage"
 import ManagerExercisesPage from "./pages/Admin/ManagerExercisesPage"
+import UploadSubtitleForm from "./pages/test"
 
 function App() {
 
@@ -25,6 +26,8 @@ function App() {
           <Route path="/admin/exercise" element={<ManagerExercisesPage />} />
 
           <Route path="*" element={<NotFound />} />
+
+          <Route path="/test" element={<UploadSubtitleForm />} />
         </Routes>
       </BrowserRouter>
     </>

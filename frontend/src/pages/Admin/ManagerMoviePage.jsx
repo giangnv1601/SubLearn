@@ -5,6 +5,8 @@ import { toast } from 'sonner'
 import MovieModal from '../../components/MovieModal'
 import TaskBarAdmin from '../../components/TaskBars/TaskBarAdmin'
 
+import UploadSubtitleModal from '../../components/Subtitles/UploadSubtitleModal'
+import { FilePlus2 } from 'lucide-react'
 
 const ManagerMovie = () => {
   const [movieBuffer, setMovieBuffer] = useState([])
@@ -15,6 +17,9 @@ const ManagerMovie = () => {
 
   const [showModal, setShowModal] = useState(false)
   const [editMovie, setEditMovie] = useState(null)
+
+  const [showSubModal, setShowSubModal] = useState(false)
+  const [subMovie, setSubMovie] = useState(null)
 
   useEffect(() => {
     fetchMovies();
@@ -29,6 +34,15 @@ const ManagerMovie = () => {
       console.error('Lỗi xảy ra khi truy xuất movies:', error);
       toast.error('Lỗi xảy ra khi truy xuất movies');
     }
+  }
+
+  const openUploadSubtitle = (movie) => {
+    setSubMovie(movie)
+    setShowSubModal(true)
+  }
+  // callback sau khi upload thành công để refresh
+  const handleUploaded = async () => {
+    await fetchMovies()
   }
 
   // Tạo movie mới
@@ -146,7 +160,7 @@ const ManagerMovie = () => {
                   <th className="px-4 py-3">Title</th>
                   <th className="px-4 py-3 hidden lg:table-cell">Genre</th>
                   <th className="px-4 py-3 w-20 hidden sm:table-cell">Year</th>
-                  <th className="px-4 py-3">Difficulty</th>
+                  <th className="px-4 py-3">Subtitle</th>
                   <th className="px-4 py-3 w-36 text-center">Actions</th>
                 </tr>
               </thead>
@@ -173,7 +187,16 @@ const ManagerMovie = () => {
                     <td className="px-4 py-3 text-gray-100 font-medium">{m.title}</td>
                     <td className="px-4 py-3 hidden lg:table-cell text-gray-200">{m.genre}</td>
                     <td className="px-4 py-3 hidden sm:table-cell text-gray-200">{m.year}</td>
-                    <td className="px-4 py-3 text-gray-200">{m.difficulty}</td>
+                    <td className="px-4 py-3">
+                      <button
+                        onClick={() => openUploadSubtitle(m)}
+                        className="px-3 py-1.5 text-sm rounded-md bg-emerald-500 hover:bg-emerald-600 text-white inline-flex items-center gap-2"
+                        title="Upload subtitle (.srt)"
+                      >
+                        <FilePlus2 className="w-4 h-4" />
+                        Upload .srt
+                      </button>
+                    </td>
                     <td className="px-4 py-3 text-right">
                       <div className="inline-flex items-center gap-2">
                         <button onClick={() => openEdit(m)} className="px-3 py-1 text-sm rounded-md bg-blue-600 hover:bg-blue-700 text-white inline-flex items-center gap-2">
@@ -224,6 +247,13 @@ const ManagerMovie = () => {
         onUpdate={handleUpdateMovie}
         onDelete={async (id) => { await handleDeleteMovie(id); setEditMovie(null) }}
         initialData={editMovie}
+      />
+      {/* Upload Subtitle Modal */}
+      <UploadSubtitleModal
+        isOpen={showSubModal}
+        onClose={() => { setShowSubModal(false); setSubMovie(null) }}
+        movie={subMovie}
+        onUploaded={handleUploaded}
       />
     </div>
   )
