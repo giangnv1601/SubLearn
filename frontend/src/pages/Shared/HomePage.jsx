@@ -1,5 +1,5 @@
-import TaskBarAdmin from '../../layouts/AdminLayout/TaskBarAdmin'
-import BoardMHome from '../../components/BoardHome'
+import TaskBarAdmin from '../../components/TaskBars/TaskBarAdmin'
+import BoardMHome from '../../components/BoardHome/BoardHome'
 
 const HomePage = () => {
   

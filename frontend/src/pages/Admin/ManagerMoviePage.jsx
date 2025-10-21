@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react'
 import { Plus, Edit2, Trash2, Image, ChevronLeft, ChevronRight } from 'lucide-react'
 import { toast } from 'sonner'
 import MovieModal from '../../components/MovieModal'
-import TaskBarAdmin from '../../layouts/AdminLayout/TaskBarAdmin'
+import TaskBarAdmin from '../../components/TaskBars/TaskBarAdmin'
 
 
 const ManagerMovie = () => {
@@ -31,11 +31,13 @@ const ManagerMovie = () => {
     }
   }
 
+  // Tạo movie mới
   const handleCreateMovie = async (payload) => {
     await axios.post('http://localhost:5001/api/movies', payload)
     await fetchMovies()
   }
 
+  // Cập nhật movie
   const handleUpdateMovie = async (payload) => {
     const id = payload._id || payload.id
     if (!id) {
@@ -46,7 +48,7 @@ const ManagerMovie = () => {
       const body = { ...payload }
       delete body._id
       await axios.put(`http://localhost:5001/api/movies/${id}`, body)
-      toast.success('Cập nhật movie thành công')
+      // toast.success('Cập nhật movie thành công')
       await fetchMovies()
     } catch (err) {
       console.error('Lỗi khi cập nhật movie', err)

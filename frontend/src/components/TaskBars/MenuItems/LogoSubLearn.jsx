@@ -5,7 +5,7 @@ const LogoSubLearn = () => {
     <div className="flex items-center">
       <Link to="/" className='flex items-center gap-2'>
         <img src="/sublearn.png" alt="SubLearn logo" className="h-13 w-auto object-contain"/>
-        <h1 className="text-[#E4D161] text-lg md:text-xl font-semibold tracking-wider">Sub Learn</h1>
+        <h1 className="text-[#E4D161] text-lg md:text-xl font-semibold tracking-wider">SubLearn</h1>
       </Link>
     </div>
   )

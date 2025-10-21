@@ -1,9 +1,9 @@
-import Home from '../../components/NavBar/MenuItems/Home'
-import MyList from '../../components/NavBar/MenuItems/MyList'
-import Quizzes from '../../components/NavBar/MenuItems/Quizzes'
-import LogoSubLearn from '../../components/NavBar/LogoSubLearn'
-import SearchBar from '../../components/NavBar/SearchBar'
-import Profiles from '../../components/NavBar/Profile'
+import Home from './MenuItems/Home'
+import MyList from './MenuItems/MyList'
+import LogoSubLearn from './MenuItems/LogoSubLearn'
+import SearchBar from './MenuItems/SearchBar'
+import Profiles from './MenuItems/Profile'
+import Exercises from './MenuItems/Exercises'
 
 const TaskBarUser = () => {
   return (
@@ -15,7 +15,7 @@ const TaskBarUser = () => {
       <div className="hidden md:flex items-center space-x-2">
         <Home />
         <MyList />  
-        <Quizzes />
+        <Exercises />
       </div>
 
       {/* Search Bar */}

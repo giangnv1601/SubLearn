@@ -1,8 +1,8 @@
 import axios from 'axios'
 import { toast } from 'sonner'
 import { useEffect, useState } from 'react'
-import HeroCarousel from './BoardHome/HeroCarousel'
-import BoardMovie from './BoardHome/BoardMovie'
+import HeroCarousel from './HeroCarousel/HeroCarousel'
+import BoardMovie from './BoardMovie/BoardMovie'
 
 const BoardMHome = () => {
   const [movieBuffer, setMovieBuffer] = useState([]);
