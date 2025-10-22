@@ -75,7 +75,6 @@ export default function UploadSubtitleModal({ isOpen, onClose, movie, onUploaded
         <form onSubmit={submit} className="p-5 space-y-5">
           <div className="text-sm text-gray-300">
             <div><span className="text-gray-400">Movie:</span> <span className="text-white font-medium">{movie?.title}</span></div>
-            <div className="text-gray-400">ID: <span className="text-gray-300">{movie?._id}</span></div>
           </div>
 
           <div>
@@ -85,8 +84,8 @@ export default function UploadSubtitleModal({ isOpen, onClose, movie, onUploaded
               onChange={(e) => setLanguage(e.target.value)}
               className="w-full rounded-lg bg-gray-800 text-white border border-gray-700 focus:outline-none focus:ring-2 focus:ring-[#E4D161] px-3 py-2"
             >
-              <option value="en">Tiếng Anh (en)</option>
-              <option value="vi">Tiếng Việt (vi)</option>
+              <option value="en">Tiếng Anh</option>
+              <option value="vi">Tiếng Việt</option>
             </select>
           </div>
 
