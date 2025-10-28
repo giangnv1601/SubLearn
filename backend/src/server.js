@@ -6,6 +6,7 @@ import cors from 'cors'
 import moviesRoutes from './routes/moviesRoutes.js'
 import subtitleRoutes from './routes/subtitlesRoutes.js'
 import exercisesRoutes from './routes/exercisesRoutes.js'
+import userRoutes from './routes/userRoute.js'
 
 import { importMoviesOnStartup } from './services/movieService.js'
 
@@ -24,6 +25,7 @@ app.use(cors());
 app.use('/api/movies', moviesRoutes);
 app.use('/api/subtitles', subtitleRoutes)
 app.use('/api/exercises', exercisesRoutes)
+app.use('/api/user', userRoutes);
 
 connectDB().then(() => {
   app.listen(PORT, () => {
