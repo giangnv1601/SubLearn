@@ -7,6 +7,8 @@ import MoviePlayerPage from "./pages/Shared/MoviePlayerPage"
 import ManagerMovie from "./pages/Admin/ManagerMoviePage"
 import ManagerExercisesPage from "./pages/Admin/ManagerExercisesPage"
 import UploadSubtitleForm from "./pages/test"
+import RegisterPage from "./pages/Auth/RegisterPage"
+import LoginPage from "./pages/Auth/LoginPage"
 
 function App() {
 
@@ -15,6 +17,10 @@ function App() {
       <Toaster richColors />
       <BrowserRouter>
         <Routes>
+
+          <Route path="/register" element={<RegisterPage />} />
+          <Route path="/login" element={<LoginPage />} />
+
           {/* Common */}
           <Route path="/" element={<HomePage />} />
           <Route path="/movie/:id" element={<MoviePlayerPage />} />
