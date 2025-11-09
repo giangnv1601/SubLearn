@@ -1,5 +1,5 @@
 import axios from 'axios';
-import Movie from '../models/Movie.js';
+import Movie from '../models/movieModel.js';
 
 const BASE_URL = 'https://ophim1.com/v1/api/danh-sach';
 const APP_DOMAIN_CDN = "https://img.ophim.live/uploads/movies/"

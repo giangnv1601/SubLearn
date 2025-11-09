@@ -1,7 +1,16 @@
-import { Link } from 'react-router'
+import { Link, useNavigate } from 'react-router'
 import { User, Settings, LogOut } from 'lucide-react'
 
 const Profiles = () => {
+  const navigate = useNavigate()
+
+  const handleLogout = async () => {
+    localStorage.removeItem('accessToken');
+    localStorage.removeItem('refreshToken');
+    localStorage.removeItem('userInfo');
+  
+    navigate('/login')
+  }
   return (
     <div className="relative group">
       <button
@@ -18,7 +27,7 @@ const Profiles = () => {
         <Link to="/settings" className="flex items-center gap-2 px-4 py-2 hover:bg-gray-100">
           <Settings className="w-4 h-4" /> <span>Settings</span>
         </Link>
-        <button className="w-full text-left flex items-center gap-2 px-4 py-2 hover:bg-gray-100">
+        <button onClick={handleLogout} className="w-full text-left flex items-center gap-2 px-4 py-2 hover:bg-gray-100">
           <LogOut className="w-4 h-4" /> <span>Logout</span>
         </button>
       </div>

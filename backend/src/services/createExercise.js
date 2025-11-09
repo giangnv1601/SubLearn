@@ -1,7 +1,5 @@
-// lib/createQuiz.openai.js
 import OpenAI from 'openai';
 
-// YÊU CẦU: OPENAI_API_KEY tồn tại ở môi trường server
 const apiKey = "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";
 if (!apiKey) {
   throw new Error('OPENAI_API_KEY is missing. Add it to your server .env');
@@ -9,7 +7,7 @@ if (!apiKey) {
 
 const openai = new OpenAI({ apiKey });
 
-// ---- Quiz types ----
+// Quiz types
 export const QUIZ_TYPES = {
   READING: 'reading',
   DIALOGUE_REORDERING: 'dialogue_reordering',
@@ -17,7 +15,7 @@ export const QUIZ_TYPES = {
   EQUIVALENT: 'equivalent'
 };
 
-// ---- Prompt builder (giữ nguyên nội dung & output JSON-only) ----
+// Prompt templates
 const getPrompt = (quizType, subtitle) => {
   const prompts = {
     [QUIZ_TYPES.READING]: `
@@ -173,7 +171,6 @@ CHỈ TRẢ VỀ MẢNG JSON.
 };
 
 // ---- Main creator ----
-// Bạn có thể đổi model: 'gpt-4o-mini' (nhanh/rẻ) hoặc model mới hơn mà bạn có quyền truy cập.
 const DEFAULT_MODEL = 'gpt-4o-mini';
 
 export default async function createQuiz(subtitle, quizType = QUIZ_TYPES.READING, {

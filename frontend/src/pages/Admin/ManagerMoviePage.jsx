@@ -1,12 +1,11 @@
-import axios from 'axios'
 import { useEffect, useState } from 'react'
 import { Plus, Edit2, Trash2, Image, ChevronLeft, ChevronRight } from 'lucide-react'
 import { toast } from 'sonner'
 import MovieModal from '../../components/MovieModal'
-import TaskBarAdmin from '../../components/TaskBars/TaskBarAdmin'
 
 import UploadSubtitleModal from '../../components/Subtitles/UploadSubtitleModal'
 import { FilePlus2 } from 'lucide-react'
+import { fetchMoviesApi, createMovieApi, updateMovieApi, deleteMovieApi } from '../../api'
 
 const ManagerMovie = () => {
   const [movieBuffer, setMovieBuffer] = useState([])
@@ -26,14 +25,8 @@ const ManagerMovie = () => {
   }, [])
 
   const fetchMovies = async () => {
-    try {
-      const res = await axios.get('http://localhost:5001/api/movies');
-      setMovieBuffer(res.data);
-    
-    } catch (error) {
-      console.error('Lỗi xảy ra khi truy xuất movies:', error);
-      toast.error('Lỗi xảy ra khi truy xuất movies');
-    }
+    const data = await fetchMoviesApi();
+    setMovieBuffer(data);
   }
 
   const openUploadSubtitle = (movie) => {
@@ -47,7 +40,7 @@ const ManagerMovie = () => {
 
   // Tạo movie mới
   const handleCreateMovie = async (payload) => {
-    await axios.post('http://localhost:5001/api/movies', payload)
+    await createMovieApi(payload)
     await fetchMovies()
   }
 
@@ -58,31 +51,18 @@ const ManagerMovie = () => {
       toast.error('Missing movie id for update')
       return
     }
-    try {
-      const body = { ...payload }
-      delete body._id
-      await axios.put(`http://localhost:5001/api/movies/${id}`, body)
-      // toast.success('Cập nhật movie thành công')
-      await fetchMovies()
-    } catch (err) {
-      console.error('Lỗi khi cập nhật movie', err)
-      toast.error(err?.response?.data?.message || 'Lỗi khi cập nhật movie')
-      throw err
-    }
+    const body = { ...payload }
+    delete body._id
+    await updateMovieApi(id, body)
+    await fetchMovies()
   }
 
   // Xóa movie theo id
   const handleDeleteMovie = async (id) => {
     if (!id) return
-    try {
-      await axios.delete(`http://localhost:5001/api/movies/${id}`)
-      toast.success('Xóa movie thành công')
-      await fetchMovies()
-    } catch (err) {
-      console.error('Lỗi khi xóa movie', err)
-      const msg = err?.response?.data?.message || err?.message || 'Lỗi khi xóa movie'
-      toast.error(msg)
-    }
+    await deleteMovieApi(id)
+    toast.success('Movie deleted successfully')
+    await fetchMovies()
   }
 
   // Open edit modal and set the movie to be edited
@@ -112,9 +92,6 @@ const ManagerMovie = () => {
 
   return (
     <div className="min-h-screen bg-[#2E4863] text-white">
-      {/* Task Bar */}
-      <TaskBarAdmin />
-
       {/* Board Manage Movie */}
       <div className="max-w-[1200px] mx-auto px-4 py-6">
         {/* Header Board */}
@@ -243,9 +220,9 @@ const ManagerMovie = () => {
       <MovieModal
         isOpen={showModal}
         onClose={() => { setShowModal(false); setEditMovie(null) }}
-        onCreate={handleCreateMovie}
-        onUpdate={handleUpdateMovie}
-        onDelete={async (id) => { await handleDeleteMovie(id); setEditMovie(null) }}
+        handleCreateMovie={handleCreateMovie}
+        handleUpdateMovie={handleUpdateMovie}
+        handleDeleteMovie={async (id) => { await handleDeleteMovie(id); setEditMovie(null) }}
         initialData={editMovie}
       />
       {/* Upload Subtitle Modal */}
