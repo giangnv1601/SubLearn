@@ -1,14 +1,12 @@
 import { useState } from 'react'
-import { Link, useNavigate, useLocation } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { Eye, EyeOff, Mail, Lock, LogIn } from 'lucide-react'
-import axios from 'axios'
-import { toast } from 'sonner'
 import { useForm } from 'react-hook-form'
+import { loginUserApi } from '../../api'
+import { toast } from 'sonner'
 
 function LoginPage() {
   const navigate = useNavigate()
-  const location = useLocation()
-  const from = location.state?.from?.pathname || '/'
 
   const [showPassword, setShowPassword] = useState(false)
 
@@ -17,39 +15,31 @@ function LoginPage() {
     handleSubmit,
     setError,
     formState: { errors, isSubmitting },
-    reset
   } = useForm({
-    mode: 'onTouched',
+    mode: 'onSubmit',
     defaultValues: { email: '', password: '' }
   })
 
-  const onSubmit = async (values) => {
+  const submitLogIn = async (data) => {
     try {
-      const res = await axios.post('http://localhost:5001/api/auth/login', {
-        email: values.email,
-        password: values.password
-      })
+      const res = await loginUserApi(data)
 
-      const data = res?.data || {}
-      if (data.accessToken) {
-        localStorage.setItem('accessToken', data.accessToken)
-        if (data.refreshToken) localStorage.setItem('refreshToken', data.refreshToken)
-        toast.success('Login successful!')
-        reset()
-        navigate(from, { replace: true })
-      } else {
-        const msg = data.message || 'Login failed'
-        toast.error(msg)
+      const userInfo = { 
+        id: res.id, 
+        email: res.email, 
+        role: res.role 
       }
-    } catch (err) {
-      const msg = err?.response?.data?.message || 'An unexpected error occurred'
-      const field = err?.response?.data?.field // ví dụ: 'email' | 'password'
-      if (field && ['email', 'password'].includes(field)) {
-        setError(field, { type: 'server', message: msg })
-      } else {
-        toast.error(msg)
-      }
-      // console.error('Login error:', err)
+
+      localStorage.setItem('accessToken', res.accessToken)
+      localStorage.setItem('refreshToken', res.refreshToken)
+      localStorage.setItem('userInfo', JSON.stringify(userInfo))
+
+      toast.success('Login successful!')
+      navigate('/')
+    } catch (error) {
+      const msg = error?.response?.data?.message
+      setError('email', { type: 'server', message: msg })
+      setError('password', { type: 'server', message: msg })
     }
   }
 
@@ -67,7 +57,7 @@ function LoginPage() {
 
         {/* Login Form */}
         <div className="bg-[#1B2A36] rounded-lg shadow-xl p-8">
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-6" noValidate>
+          <form onSubmit={handleSubmit(submitLogIn)} className="space-y-6" noValidate>
             {/* Email */}
             <div>
               <label htmlFor="email" className="block text-sm font-medium text-gray-300 mb-2">

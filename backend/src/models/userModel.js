@@ -25,7 +25,7 @@ const UserSchema = new mongoose.Schema(
 
     avatar: {
       type: String,
-      default: '/images/default-avatar.png' // hoặc URL ảnh mặc định hệ thống
+      default: '/images/default-avatar.png'
     },
 
     role: {

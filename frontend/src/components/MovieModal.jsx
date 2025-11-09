@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react'
 import { X } from 'lucide-react'
 import { toast } from 'sonner'
 import axios from 'axios'
+import { createMovieApi, updateMovieApi, deleteMovieApi } from '../api'
 
 const emptyForm = {
   title: '',
@@ -17,7 +18,7 @@ const emptyForm = {
   link_audio: ''
 }
 
-export default function MovieModal({ isOpen, onClose, onCreate, onUpdate, onDelete, initialData = null }) {
+export default function MovieModal({ isOpen, onClose, handleCreateMovie, handleUpdateMovie, handleDeleteMovie, initialData = null }) {
   const [form, setForm] = useState(emptyForm)
   const [saving, setSaving] = useState(false)
   const [deleting, setDeleting] = useState(false)
@@ -47,9 +48,9 @@ export default function MovieModal({ isOpen, onClose, onCreate, onUpdate, onDele
     setForm(prev => ({ ...prev, [name]: value }))
   }
 
-  const postMovie = (payload) => axios.post('http://localhost:5001/api/movies', payload)
-  const putMovie = (id, payload) => axios.put(`http://localhost:5001/api/movies/${id}`, payload)
-  const deleteMovie = (id) => axios.delete(`http://localhost:5001/api/movies/${id}`)
+  const postMovie = (payload) => createMovieApi(payload)
+  const putMovie = (id, payload) => updateMovieApi(id, payload)
+  const deleteMovie = (id) => deleteMovieApi(id)
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -63,20 +64,20 @@ export default function MovieModal({ isOpen, onClose, onCreate, onUpdate, onDele
 
       if (initialData) {
         // edit mode
-        if (typeof onUpdate === 'function') {
-          await onUpdate({ ...payload, _id: initialData._id || initialData.id })
+        if (typeof handleUpdateMovie === 'function') {
+          await handleUpdateMovie({ ...payload, _id: initialData._id || initialData.id })
         } else {
           await putMovie(initialData._id || initialData.id, payload)
         }
-        toast.success('Cập nhật movie thành công')
+        toast.success('Updated movie successfully')
       } else {
         // create mode
-        if (typeof onCreate === 'function') {
-          await onCreate(payload)
+        if (typeof handleCreateMovie === 'function') {
+          await handleCreateMovie(payload)
         } else {
           await postMovie(payload)
         }
-        toast.success('Thêm movie thành công')
+        toast.success('Added movie successfully')
       }
 
       setForm(emptyForm)
@@ -92,22 +93,15 @@ export default function MovieModal({ isOpen, onClose, onCreate, onUpdate, onDele
 
   const handleDelete = async () => {
     if (!initialData) return
-    if (!confirm('Bạn có chắc muốn xóa phim này không?')) return
     setDeleting(true)
-    try {
-      if (typeof onDelete === 'function') {
-        await onDelete(initialData._id || initialData.id)
-      } else {
-        await deleteMovie(initialData._id || initialData.id)
-      }
-      toast.success('Xóa movie thành công')
-      onClose()
-    } catch (err) {
-      console.error('Delete movie error', err)
-      toast.error(err?.response?.data?.message || err?.message || 'Lỗi khi xóa movie')
-    } finally {
-      setDeleting(false)
+
+    if (typeof handleDeleteMovie === 'function') {
+      await handleDeleteMovie(initialData._id || initialData.id)
+    } else {
+      await deleteMovie(initialData._id || initialData.id)
     }
+    toast.success('Deleted movie successfully')
+    onClose()
   }
 
   const titleText = initialData ? 'Edit Movie' : 'Add Movie'

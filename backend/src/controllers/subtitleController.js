@@ -1,6 +1,6 @@
 import mongoose from "mongoose"
-import Subtitle from "../models/Subtitle.js";
-import Movie from "../models/Movie.js";
+import Subtitle from "../models/subtitleModel.js";
+import Movie from "../models/movieModel.js";
 
 export const uploadSubtitle = async (req, res) => {
   try {
@@ -24,18 +24,15 @@ export const uploadSubtitle = async (req, res) => {
 
     const srtContent = req.file.buffer.toString("utf-8").trim();
 
-    // ⬇️ upsert: có thì update, chưa có thì tạo
     const updated = await Subtitle.findOneAndUpdate(
       { movieId, language: lang },
       { $set: { srtContent } },
       { new: true, upsert: true, setDefaultsOnInsert: true }
     );
 
-    // 200 là ổn: hành vi "ghi đè" / "tạo mới" đều trả object cuối cùng
     return res.status(200).json({ ok: true, data: updated });
   } catch (error) {
     console.error("Error uploading subtitle:", error);
-    // Nếu unique index đã bật và có race condition -> 11000 vẫn có thể xảy ra
     if (error?.code === 11000) {
       return res.status(409).json({ message: "Duplicate subtitle for movie & language" });
     }
@@ -46,18 +43,17 @@ export const uploadSubtitle = async (req, res) => {
 export const getSubtitlesByMovie = async (req, res) => {
   try {
     const { movieId } = req.params
-    const withContent = req.query.withContent === '1' // mặc định không trả srtContent
+    const withContent = req.query.withContent === '1'
 
     if (!mongoose.isValidObjectId(movieId)) {
       return res.status(400).json({ ok: false, message: "Invalid movieId" })
     }
 
-    // projection: ẩn srtContent nếu không yêu cầu
     const projection = withContent ? undefined : { srtContent: 0 }
 
     const items = await Subtitle
       .find({ movieId }, projection)
-      .sort({ language: 1 })       // 'en' trước 'vi' (tuỳ nhu cầu)
+      .sort({ language: 1 })
       .lean()
 
     // map nhanh theo language

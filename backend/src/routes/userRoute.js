@@ -1,9 +1,10 @@
 import express from 'express'
-import { register } from '../controllers/userController.js'
-import { registerValidation } from '../validations/userValidation.js'
+import { register, login, refreshToken } from '../controllers/userController.js'
 
 const router = express.Router()
 
-router.post('/register', registerValidation, register)
+router.post('/register', register)
+router.post('/login', login)
+router.put('/refresh-token', refreshToken)
 
 export default router

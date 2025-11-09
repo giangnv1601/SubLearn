@@ -1,5 +1,4 @@
-import axios from 'axios'
-import { toast } from 'sonner'
+import { fetchMoviesApi } from '../../api'
 import { useEffect, useState } from 'react'
 import HeroCarousel from './HeroCarousel/HeroCarousel'
 import BoardMovie from './BoardMovie/BoardMovie'
@@ -14,19 +13,11 @@ const BoardMHome = () => {
   }, []);
 
   const fetchMovies = async () => {
-    try {
-      const res = await axios.get('http://localhost:5001/api/movies');
-      const mostMovies = res.data.slice(0, 10);
-      setMovieBuffer(res.data);
-      setTotalMovies(res.data.length);
-      setMostMovies(mostMovies);
-      console.log(res.data);
-      console.log(mostMovies);
-    
-    } catch (error) {
-      console.error('Lỗi xảy ra khi truy xuất movies:', error);
-      toast.error('Lỗi xảy ra khi truy xuất movies');
-    }
+    const data = await fetchMoviesApi();
+    const mostMovies = data.slice(0, 10);
+    setMovieBuffer(data);
+    setTotalMovies(data.length);
+    setMostMovies(mostMovies);
   }
 
   return (

@@ -23,8 +23,6 @@ const subtitleSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-// Mỗi movieId + language là duy nhất
 subtitleSchema.index({ movieId: 1, language: 1 }, { unique: true });
 
-const Subtitle = mongoose.model("Subtitle", subtitleSchema);
-export default Subtitle;
+export default mongoose.model("Subtitle", subtitleSchema);

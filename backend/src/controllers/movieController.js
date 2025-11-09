@@ -1,4 +1,4 @@
-import Movie from "../models/Movie.js";
+import Movie from "../models/movieModel.js";
 
 const getAllMovies = async (req, res) => {
   try {
@@ -61,7 +61,7 @@ const getMovieById = async (req, res) => {
     }
     res.status(200).json(movie);
   } catch (error) {
-    console.error('Error fetching movie by ID:', error);
+    console.error(error);
     res.status(500).json({ message: 'Server error' });
   }
 };

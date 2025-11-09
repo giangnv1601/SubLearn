@@ -1,9 +1,9 @@
 import Home from './MenuItems/Home'
-import MyList from './MenuItems/MyList'
 import LogoSubLearn from './MenuItems/LogoSubLearn'
 import SearchBar from './MenuItems/SearchBar'
 import Profiles from './MenuItems/Profile'
 import Exercises from './MenuItems/Exercises'
+import Results from './MenuItems/Results'
 
 const TaskBarUser = () => {
   return (
@@ -14,8 +14,8 @@ const TaskBarUser = () => {
       {/* Menu Items User */}
       <div className="hidden md:flex items-center space-x-2">
         <Home />
-        <MyList />  
         <Exercises />
+        <Results /> 
       </div>
 
       {/* Search Bar */}

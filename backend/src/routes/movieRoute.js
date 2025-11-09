@@ -5,13 +5,14 @@ import {
   updateMovie,
   deleteMovie,
   getMovieById
- } from '../controllers/moviesControllers.js';
+ } from '../controllers/movieController.js';
+import { isAuthorized } from '../middlewares/authMiddleware.js';
 
 const router = express.Router();
 
-router.get('/:id', getMovieById);
+router.get('/:id', isAuthorized ,getMovieById);
 
-router.get('/', getAllMovies);
+router.get('/', isAuthorized , getAllMovies);
 
 router.post('/', createMovie);
 
