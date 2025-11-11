@@ -1,11 +1,11 @@
 import { useEffect, useState } from 'react'
 import { Plus, Edit2, Trash2, Image, ChevronLeft, ChevronRight } from 'lucide-react'
 import { toast } from 'sonner'
-import MovieModal from '../../components/MovieModal'
+import MovieModal from './MovieModal/MovieModal.jsx'
 
-import UploadSubtitleModal from '../../components/Subtitles/UploadSubtitleModal'
+import UploadSubtitleModal from './UploadSubtitleModal/UploadSubtitleModal.jsx'
 import { FilePlus2 } from 'lucide-react'
-import { fetchMoviesApi, createMovieApi, updateMovieApi, deleteMovieApi } from '../../api'
+import { fetchMoviesApi, createMovieApi, updateMovieApi, deleteMovieApi } from '@/api'
 
 const ManagerMovie = () => {
   const [movieBuffer, setMovieBuffer] = useState([])
@@ -191,7 +191,8 @@ const ManagerMovie = () => {
               </tbody>
             </table>
           </div>
-
+          
+          {/* Pagination */}
           <div className="mt-4 flex items-center justify-between text-sm text-gray-400">
             <div>Showing <strong className="text-gray-200">{filtered.length}</strong> result(s)</div>
             <div className="flex items-center gap-2">

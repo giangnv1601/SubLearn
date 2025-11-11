@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from 'react'
 import { X } from 'lucide-react'
 import { toast } from 'sonner'
-import axios from 'axios'
-import { createMovieApi, updateMovieApi, deleteMovieApi } from '../api'
+
+import { createMovieApi, updateMovieApi, deleteMovieApi } from '@/api'
 
 const emptyForm = {
   title: '',
