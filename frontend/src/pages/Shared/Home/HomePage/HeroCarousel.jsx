@@ -1,15 +1,16 @@
 import { useState, useRef, useEffect } from 'react'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
+import { useNavigate } from 'react-router-dom'
 
 const HeroCarousel = ({ mostMovies }) => {
-  // ✅ Dữ liệu slides
+  const navigate = useNavigate()
   const slides =
     mostMovies && mostMovies.length > 0
       ? mostMovies.map((movie) => ({
           id: movie._id,
           title: movie.title,
           description: movie.description || '',
-          img: movie.poster_url || '/assets/default-movie.png',
+          img: movie.poster_url || '',
         }))
       : [
           { id: 1, title: 'Catman 2: The Villain Returns', description: 'The story continues...', img: '/assets/hero-cat.jpg' },
@@ -25,7 +26,7 @@ const HeroCarousel = ({ mostMovies }) => {
       setIndex((i) => (i + 1) % slides.length)
     }, 4500)
   }
-
+  
   useEffect(() => {
     startTimer()
     return () => clearInterval(timer.current)
@@ -62,8 +63,12 @@ const HeroCarousel = ({ mostMovies }) => {
               <p className="text-3xl md:text-5xl font-extrabold text-white mb-3">{s.title}</p>
               <p className="text-gray-300 max-w-lg mb-6">{s.description}</p>
               <div className="flex gap-3">
-                <button className="px-4 py-2 bg-[#E4D161] text-black rounded-full">Watch now</button>
-                <button className="px-4 py-2 border border-white/20 text-white rounded-full">More info</button>
+                <button
+                  onClick={() => navigate(`/movie/${s.id}`)}
+                  className="px-4 py-2 bg-[#E4D161] hover:bg-[#5c5310] text-black rounded-full"
+                >
+                  Watch now
+                </button>
               </div>
             </div>
           </div>

@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react"
 import { Link } from "react-router-dom"
 import { Edit3, KeyRound } from "lucide-react"
-import { fetchProfileByIdApi } from "../../api"
+import { fetchProfileByIdApi } from "@/api"
 
 const ROLE_LABEL = { admin: "Quản trị", client: "Người dùng" }
 

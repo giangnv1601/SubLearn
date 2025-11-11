@@ -1,6 +1,6 @@
 import { useState } from "react"
 import { useNavigate } from "react-router-dom"
-import { changePasswordApi } from "../../api"
+import { changePasswordApi } from "../../../api"
 import { toast } from "sonner"
 
 const ChangePasswordPage = () => {
