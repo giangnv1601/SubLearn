@@ -2,8 +2,6 @@ import { useEffect, useMemo, useState } from 'react'
 import { useParams, useNavigate } from 'react-router'
 import { fetchMoviesApi, fetchQuizzes, updateQuizApi, createQuizApi, deleteQuizApi } from '../../api'
 
-const API = import.meta.env.VITE_API_URL || 'http://localhost:5001'
-
 const toLabel = (i) => ['A', 'B', 'C', 'D'][i] ?? 'A'
 const toIndex = (ans) => {
   if (Number.isInteger(ans)) return ans
@@ -146,7 +144,7 @@ export default function QuizEditorPage() {
   const { movieId, type } = useParams()
   const navigate = useNavigate()
   const [title, setTitle] = useState('')
-  const [result, setResult] = useState(null) // array of quizzes
+  const [result, setResult] = useState(null)
   const [loading, setLoading] = useState(false)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')

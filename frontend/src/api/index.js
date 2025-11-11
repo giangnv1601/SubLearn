@@ -18,6 +18,22 @@ export const refreshTokenApi = async (refreshToken) => {
   return res.data;
 }
 
+/** API Account */
+export const fetchProfileByIdApi = async (userId) => {
+  const res = await authorizedAxiosInstance.get(`${API_ROOT}/api/users/${userId}`);
+  return res.data;
+}
+
+export const changePasswordApi = async (userId, data) => {
+  const res = await authorizedAxiosInstance.put(`${API_ROOT}/api/users/change-password/${userId}`, data);
+  return res.data;
+}
+
+export const updateProfileApi = async (userId, data) => {
+  const res = await authorizedAxiosInstance.put(`${API_ROOT}/api/users/update-profile/${userId}`, data);
+  return res.data;
+}
+
 /** API Movies */
 export const fetchMoviesApi = async () => {
   const res = await authorizedAxiosInstance.get(`${API_ROOT}/api/movies`);

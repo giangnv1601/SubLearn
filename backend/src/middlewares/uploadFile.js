@@ -1,7 +1,8 @@
 import multer from "multer";
 
-const storage = multer.memoryStorage(); // lưu file trong RAM (chúng ta sẽ parse rồi lưu DB)
+const storage = multer.memoryStorage();
 
+// Xử lý upload file .srt
 const upload = multer({
   storage,
   fileFilter: (req, file, cb) => {

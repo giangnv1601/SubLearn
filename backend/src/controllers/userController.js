@@ -1,6 +1,7 @@
 import bcrypt from 'bcrypt'
 import User from '../models/userModel.js'
 import { JwtService } from '../services/JwtService.js'
+import { CloudinaryService } from '../services/CloudinaryService.js'
 import { env } from '../config/environment.js'
 
 // Đăng ký
@@ -106,5 +107,86 @@ export const refreshToken = async (req, res) => {
   } catch (error) {
     console.error(error)
     return res.status(500).json({ message: 'Refresh token API failed' })
+  }
+}
+
+// Lấy thông tin người dùng
+export const getProfile = async (req, res) => {
+  try {
+    const userId = req.params.id
+    const user = await User.findById(userId).select('-password')
+
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' })
+    }
+
+    res.status(200).json(user)
+  } catch (error) {
+    console.error('Get profile error:', error)
+    res.status(500).json({ message: 'Internal server error' })
+  }
+}
+
+// Đổi mật khẩu
+export const changePassword = async (req, res) => {
+  try {
+    const userId = req.params.id
+    const { currentPassword, newPassword } = req.body
+    const user = await User.findById(userId)
+
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' })
+    }
+    const isMatch = await bcrypt.compare(currentPassword, user.password)
+    if (!isMatch) {
+      return res.status(401).json({ message: 'Current password is incorrect' })
+    }
+    const hashedNewPassword = await bcrypt.hash(newPassword, 10)
+    user.password = hashedNewPassword
+    await user.save()
+    res.status(200).json({ message: 'Password changed successfully' })
+  } catch (error) {
+    console.error('Change password error:', error)
+    res.status(500).json({ message: 'Internal server error' })
+  }
+}
+
+export const updateProfile = async (req, res) => {
+  try {
+    const userId = req.params.id
+    const { fullname } = req.body
+    const userAvatarFile = req.file
+
+    const user = await User.findById(userId)
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' })
+    }
+
+    // Nếu có upload file avatar
+    if (userAvatarFile) {
+      // Upload lên Cloudinary, folder "user/avatars"
+      const uploadResult = await CloudinaryService.streamUpload(userAvatarFile.buffer, 'user')
+
+      // Lưu lại URL
+      user.avatar = uploadResult.secure_url
+    }
+
+    // Nếu có đổi fullname
+    if (fullname) {
+      user.fullname = fullname
+    }
+
+    await user.save()
+
+    res.status(200).json({
+      message: 'Profile updated successfully',
+      data: {
+        fullname: user.fullname,
+        avatar: user.avatar
+      }
+    })
+  } catch (error) {
+    console.error('Update profile error:', error)
+    res.status(500).json({ message: 'Internal server error' })
   }
 }

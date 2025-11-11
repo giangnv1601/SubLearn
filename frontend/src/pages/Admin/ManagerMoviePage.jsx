@@ -81,7 +81,6 @@ const ManagerMovie = () => {
 
     // Nếu user không chọn genre -> match all
     // Nếu chọn, kiểm tra xem chuỗi genre của phim có chứa string đã chọn (case-insensitive)
-    // (thích hợp khi một phim có nhiều thể loại, ví dụ "Action, Drama")
     const matchGenre = genreTrim === '' || genres.includes(genreTrim)
 
     return matchQ && matchGenre
