@@ -13,6 +13,9 @@ import AuthLayout from "./components/TaskBars/AuthLayout"
 import ExercisesPage from "./pages/User/ExercisesPage"
 import ExamPage from "./pages/User/ExamPage"
 import ResultsPage from "./pages/User/ResultsPage"
+import ProfilePage from "./pages/Shared/ProfilePage"
+import EditProfilePage from "./pages/Shared/EditProfilePage"
+import ChangePasswoedPage from "./pages/Shared/ChangePasswoedPage"
 
 const ProtectedRoute = () => {
   const user = JSON.parse(localStorage.getItem('userInfo'))
@@ -40,6 +43,11 @@ function App() {
         <Route element={<AuthLayout />}>
           <Route path="/" element={<HomePage />} />
           <Route path="/movie/:id" element={<MoviePlayerPage />} />
+
+          {/* Account */}
+          <Route path="/profile" element={<ProfilePage />} />
+          <Route path="/profile/edit/:id" element={<EditProfilePage />} />
+          <Route path="/profile/change-password/:id" element={<ChangePasswoedPage />} />
           
           <Route path="/client/exercises" element={<ExercisesPage />} />
           <Route path="/client/exam" element={<ExamPage />} />

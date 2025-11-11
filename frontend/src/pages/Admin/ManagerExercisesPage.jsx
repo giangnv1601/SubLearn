@@ -17,7 +17,6 @@ const ManagerExercisesPage = () => {
       setError('')
       try {
         const res = await fetchQuizzesSummary()
-        // normalise backend shape: res may be array or { data: [...] }
         const items = Array.isArray(res) ? res : (res?.data || [])
         if (!mounted) return
         const mapped = items.map((it) => ({
