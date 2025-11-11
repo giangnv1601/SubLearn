@@ -2,8 +2,7 @@ import axios from 'axios'
 import Hls from 'hls.js'
 import { useEffect, useRef, useState } from 'react'
 import { useParams } from 'react-router'
-import TaskBarUser from '../../components/TaskBars/TaskBarUser'
-import { fetchMovieByIdApi } from '../../api'
+import { fetchMovieByIdApi } from '@/api'
 
 /* ===== SUBTITLE HELPERS ===== */
 function srtToCues(srtText = '') {

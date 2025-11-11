@@ -1,8 +1,8 @@
 import { Routes, Route, Navigate, Outlet } from "react-router"
 
 import NotFound from "./pages/NotFound"
-import HomePage from "./pages/Shared/HomePage"
-import MoviePlayerPage from "./pages/Shared/MoviePlayerPage"
+import HomePage from "./pages/Shared/Home/HomePage"
+import MoviePlayerPage from "./pages/Shared/Home/MoviePlayerPage"
 import ManagerMovie from "./pages/Admin/ManagerMoviePage"
 import ManagerExercisesPage from "./pages/Admin/ManagerExercisesPage"
 import QuizEditorPage from "./pages/Admin/QuizEditorPage"
@@ -13,9 +13,9 @@ import AuthLayout from "./components/TaskBars/AuthLayout"
 import ExercisesPage from "./pages/User/ExercisesPage"
 import ExamPage from "./pages/User/ExamPage"
 import ResultsPage from "./pages/User/ResultsPage"
-import ProfilePage from "./pages/Shared/ProfilePage"
-import EditProfilePage from "./pages/Shared/EditProfilePage"
-import ChangePasswoedPage from "./pages/Shared/ChangePasswoedPage"
+import ProfilePage from "./pages/Shared/Profile/ProfilePage"
+import EditProfilePage from "./pages/Shared/Profile/EditProfilePage"
+import ChangePasswoedPage from "./pages/Shared/Profile/ChangePasswoedPage"
 
 const ProtectedRoute = () => {
   const user = JSON.parse(localStorage.getItem('userInfo'))

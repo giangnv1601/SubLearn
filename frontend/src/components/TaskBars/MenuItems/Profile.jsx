@@ -37,6 +37,7 @@ const Profiles = () => {
       {/* Name*/}
       <div className="min-w-0">
         <p className="text-sm font-medium text-white truncate">{profile?.fullname}</p>
+        {/* <p className="text-xs text-gray-300 truncate">{profile?.role}</p> */}
       </div>
 
       {/* Avatar */}

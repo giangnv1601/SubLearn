@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react"
 import { Camera } from "lucide-react"
 import { useNavigate, useParams } from "react-router-dom"
 import { toast } from "sonner"
-import { fetchProfileByIdApi, updateProfileApi } from "../../api"
+import { fetchProfileByIdApi, updateProfileApi } from "@/api"
 
 export default function EditProfilePage() {
   const { id: routeId } = useParams()

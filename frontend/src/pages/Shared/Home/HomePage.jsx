@@ -1,11 +1,10 @@
-import { fetchMoviesApi } from '../../api'
 import { useEffect, useState } from 'react'
-import HeroCarousel from './HeroCarousel/HeroCarousel'
-import BoardMovie from './BoardMovie/BoardMovie'
+import HeroCarousel from './HomePage/HeroCarousel'
+import BoardMovie from './HomePage/BoardMovie'
+import { fetchMoviesApi } from '@/api'
 
-const BoardMHome = () => {
+const HomePage = () => {
   const [movieBuffer, setMovieBuffer] = useState([]);
-  const [totalMovies, setTotalMovies] = useState(0);
   const [mostMovies, setMostMovies] = useState([]);
 
   useEffect(() => {
@@ -16,19 +15,18 @@ const BoardMHome = () => {
     const data = await fetchMoviesApi();
     const mostMovies = data.slice(0, 10);
     setMovieBuffer(data);
-    setTotalMovies(data.length);
     setMostMovies(mostMovies);
   }
-
   return (
-    <div>
+    <div >
       {/* Hero */}
       <HeroCarousel mostMovies={mostMovies}/>
 
       {/* Movie Board */}
-      <BoardMovie movieBuffer={movieBuffer} totalMovies={totalMovies} />
+      <BoardMovie movieBuffer={movieBuffer}/>
     </div>
+    
   )
 }
 
-export default BoardMHome
+export default HomePage
