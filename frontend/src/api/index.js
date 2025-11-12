@@ -68,6 +68,11 @@ export const fetchSubtitlesByMovie = async (movieId, withContent = 0) => {
   return res.data;
 }
 
+export const uploadSubtitleApi = async (formData) => {
+  const res = await authorizedAxiosInstance.post(`${API_ROOT}/api/subtitles`, formData);
+  return res.data;
+}
+
 /** Exercises / AI creation */
 export const createExercisesFromAI = async (payload) => {
   const res = await authorizedAxiosInstance.post(`${API_ROOT}/api/exercises/create`, payload);

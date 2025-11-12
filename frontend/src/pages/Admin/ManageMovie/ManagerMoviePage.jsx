@@ -1,11 +1,10 @@
 import { useEffect, useState } from 'react'
 import { Plus, Edit2, Trash2, Image, ChevronLeft, ChevronRight } from 'lucide-react'
 import { toast } from 'sonner'
-import MovieModal from './MovieModal/MovieModal.jsx'
-
+import MovieModalNew from './MovieModal/MovieModalNew'
 import UploadSubtitleModal from './UploadSubtitleModal/UploadSubtitleModal.jsx'
 import { FilePlus2 } from 'lucide-react'
-import { fetchMoviesApi, createMovieApi, updateMovieApi, deleteMovieApi } from '@/api'
+import { fetchMoviesApi, deleteMovieApi } from '@/api'
 
 const ManagerMovie = () => {
   const [movieBuffer, setMovieBuffer] = useState([])
@@ -33,29 +32,6 @@ const ManagerMovie = () => {
     setSubMovie(movie)
     setShowSubModal(true)
   }
-  // callback sau khi upload thành công để refresh
-  const handleUploaded = async () => {
-    await fetchMovies()
-  }
-
-  // Tạo movie mới
-  const handleCreateMovie = async (payload) => {
-    await createMovieApi(payload)
-    await fetchMovies()
-  }
-
-  // Cập nhật movie
-  const handleUpdateMovie = async (payload) => {
-    const id = payload._id || payload.id
-    if (!id) {
-      toast.error('Missing movie id for update')
-      return
-    }
-    const body = { ...payload }
-    delete body._id
-    await updateMovieApi(id, body)
-    await fetchMovies()
-  }
 
   // Xóa movie theo id
   const handleDeleteMovie = async (id) => {
@@ -65,7 +41,7 @@ const ManagerMovie = () => {
     await fetchMovies()
   }
 
-  // Open edit modal and set the movie to be edited
+  // Mở modal sửa movie
   const openEdit = (movie) => {
     setEditMovie(movie)
     setShowModal(true)
@@ -78,9 +54,6 @@ const ManagerMovie = () => {
     const genreTrim = genre.trim().toLowerCase()
 
     const matchQ = qTrim === '' || title.includes(qTrim)
-
-    // Nếu user không chọn genre -> match all
-    // Nếu chọn, kiểm tra xem chuỗi genre của phim có chứa string đã chọn (case-insensitive)
     const matchGenre = genreTrim === '' || genres.includes(genreTrim)
 
     return matchQ && matchGenre
@@ -119,7 +92,13 @@ const ManagerMovie = () => {
               <option>Võ Thuật</option>
             </select>
 
-            <button onClick={() => setShowModal(true)} className="inline-flex items-center gap-2 px-4 py-2 bg-[#E4D161] text-black rounded-md font-semibold shadow hover:opacity-95">
+            <button
+              onClick={() => {
+                setEditMovie(null)
+                setShowModal(true)
+              }}
+              className="inline-flex items-center gap-2 px-4 py-2 bg-[#E4D161] text-black rounded-md font-semibold shadow hover:opacity-95"
+            >
               <Plus className="w-4 h-4" /> Add movie
             </button>
           </div>
@@ -162,7 +141,7 @@ const ManagerMovie = () => {
                     </td>
                     <td className="px-4 py-3 text-gray-100 font-medium">{m.title}</td>
                     <td className="px-4 py-3 hidden lg:table-cell text-gray-200">{m.genre}</td>
-                    <td className="px-4 py-3 hidden sm:table-cell text-gray-200">{m.year}</td>
+                    <td className="px-4 py-3 hidden sm:table-cell text-gray-200">{m.year_released}</td>
                     <td className="px-4 py-3">
                       <button
                         onClick={() => openUploadSubtitle(m)}
@@ -217,20 +196,25 @@ const ManagerMovie = () => {
       </div>
 
       {/* Movie Modal component */}
-      <MovieModal
-        isOpen={showModal}
-        onClose={() => { setShowModal(false); setEditMovie(null) }}
-        handleCreateMovie={handleCreateMovie}
-        handleUpdateMovie={handleUpdateMovie}
-        handleDeleteMovie={async (id) => { await handleDeleteMovie(id); setEditMovie(null) }}
-        initialData={editMovie}
+      <MovieModalNew
+        open={showModal}
+        initial={editMovie}
+        onSave={async () => {
+          // refresh list after modal saved (create/update)
+          await fetchMovies()
+          setShowModal(false)
+          setEditMovie(null)
+        }}
+        onClose={() => {
+          setShowModal(false)
+          setEditMovie(null)
+        }}
       />
       {/* Upload Subtitle Modal */}
       <UploadSubtitleModal
         isOpen={showSubModal}
         onClose={() => { setShowSubModal(false); setSubMovie(null) }}
         movie={subMovie}
-        onUploaded={handleUploaded}
       />
     </div>
   )

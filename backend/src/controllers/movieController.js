@@ -12,8 +12,8 @@ const getAllMovies = async (req, res) => {
 
 const createMovie = async (req, res) => {
   try {
-    const { title, slug, originalTitle, description, thumb_url,  thumbnail_url, poster_url, time, year, genre, link_m3u8 } = req.body;
-    const movie = new Movie({ title, slug, originalTitle, description, thumb_url,  thumbnail_url, poster_url, time, year, genre, link_m3u8 });
+    const { title, slug, description, thumb_url,  poster_url, duration, year_released, level, genre, link_m3u8 } = req.body;
+    const movie = new Movie({ title, slug, description, thumb_url,  poster_url, duration, year_released, level, genre, link_m3u8 });
     const newMovie = await movie.save();
     res.status(201).json(newMovie);
   } catch (error) {
@@ -24,10 +24,10 @@ const createMovie = async (req, res) => {
 
 const updateMovie = async (req, res) => {
   try {
-    const { title, slug, originalTitle, description, thumb_url,  thumbnail_url, poster_url, time, year, genre, link_m3u8 } = req.body;
+    const { title, slug, description, thumb_url,  poster_url, duration, year_released, level, genre, link_m3u8 } = req.body;
     const updatedMovie = await Movie.findByIdAndUpdate(
       req.params.id, 
-      { title, slug, originalTitle, description, thumb_url,  thumbnail_url, poster_url, time, year, genre, link_m3u8 }, 
+      { title, slug, description, thumb_url,  poster_url, duration, year_released, level, genre, link_m3u8 }, 
       { new: true }
     );
     if (!updatedMovie) {

@@ -7,7 +7,7 @@ import {
   changePassword,
   updateProfile
 } from '../controllers/userController.js'
-import { isAuthorized } from '../middlewares/authMiddleware.js'
+import { authMiddleware } from '../middlewares/authMiddleware.js'
 import { multerUploadMiddleware } from '../middlewares/multerUploadMiddleware.js'
 
 const router = express.Router()
@@ -16,8 +16,8 @@ router.post('/register', register)
 router.post('/login', login)
 router.put('/refresh-token', refreshToken)
 
-router.get('/:id', isAuthorized, getProfile)
-router.put('/change-password/:id', isAuthorized, changePassword)
-router.put('/update-profile/:id', isAuthorized, multerUploadMiddleware.uploadAvatar , updateProfile)
+router.get('/:id', authMiddleware.isAuthorized, getProfile)
+router.put('/change-password/:id', authMiddleware.isAuthorized, changePassword)
+router.put('/update-profile/:id', authMiddleware.isAuthorized, multerUploadMiddleware.uploadAvatar , updateProfile)
 
 export default router
