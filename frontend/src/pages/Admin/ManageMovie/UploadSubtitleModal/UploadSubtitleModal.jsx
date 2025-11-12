@@ -1,8 +1,10 @@
 import { useState } from 'react'
-import axios from 'axios'
 import { toast } from 'sonner'
 import { X, UploadCloud, FileText } from 'lucide-react'
+import { uploadSubtitleApi } from '@/api'
 
+
+// Hàm định dạng dung lượng file
 function formatBytes(bytes = 0) {
   if (bytes === 0) return '0 B'
   const k = 1024, sizes = ['B', 'KB', 'MB', 'GB']
@@ -10,13 +12,14 @@ function formatBytes(bytes = 0) {
   return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i]
 }
 
-export default function UploadSubtitleModal({ isOpen, onClose, movie, onUploaded }) {
+export default function UploadSubtitleModal({ isOpen, onClose, movie }) {
   const [language, setLanguage] = useState('en')
   const [file, setFile] = useState(null)
   const [submitting, setSubmitting] = useState(false)
 
   if (!isOpen) return null
 
+  // Xử lý khi chọn file
   const onPickFile = (e) => {
     const f = e.target.files?.[0]
     if (!f) return setFile(null)
@@ -41,15 +44,12 @@ export default function UploadSubtitleModal({ isOpen, onClose, movie, onUploaded
     const form = new FormData()
     form.append('movieId', movie._id)
     form.append('language', language)
-    form.append('subtitle', file) // phải trùng upload.single('subtitle')
+    form.append('subtitle', file)
 
     try {
       setSubmitting(true)
-      await axios.post('http://localhost:5001/api/subtitles', form, {
-        headers: { 'Content-Type': 'multipart/form-data' }
-      })
+      await uploadSubtitleApi(form)
       toast.success('Upload subtitle thành công')
-      onUploaded?.()
       onClose()
     } catch (err) {
       const msg = err?.response?.data?.message || err.message

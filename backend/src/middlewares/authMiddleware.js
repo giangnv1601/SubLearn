@@ -2,7 +2,7 @@ import { JwtService } from "../services/JwtService.js"
 import { env } from "../config/environment.js"
 
 // Xác thực người dùng qua JWT
-export const isAuthorized = async (req, res, next) => {
+const isAuthorized = async (req, res, next) => {
   // Lấy accessToken từ header Authorization lưu ở LocalStorage bên FE
   const accessTokenFromHeader = req.headers.authorization
   if (!accessTokenFromHeader) {
@@ -31,5 +31,7 @@ export const isAuthorized = async (req, res, next) => {
     res.status(401).json({ message: 'Unauthorized! (Invalid token)' })
   }
 }
+
+export const authMiddleware = { isAuthorized }
 
 
