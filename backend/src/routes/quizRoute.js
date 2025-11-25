@@ -2,22 +2,28 @@ import express from 'express'
 import {
   createQuiz,
   listQuizzes,
+  getUniqueMovieQuizTypes,
   listQuizSummary,
   deleteQuiz,
-  updateQuiz
+  updateQuiz,
+  generatorQuiz,
+  generatotQuizWithMovie
 } from '../controllers/quizController.js'
+import { authMiddleware } from '../middlewares/authMiddleware.js'
 
 const router = express.Router()
 
-router.post('/', createQuiz)
+router.post('/', authMiddleware.isAuthorized, createQuiz)
+router.get('/unique-movie-type', authMiddleware.isAuthorized, getUniqueMovieQuizTypes)
+router.get('/summary', authMiddleware.isAuthorized, listQuizSummary)
+router.get('/', authMiddleware.isAuthorized, listQuizzes)
+router.delete('/:id', authMiddleware.isAuthorized, deleteQuiz)
+router.put('/:id', authMiddleware.isAuthorized, updateQuiz)
 
-// Lấy số lượng quiz theo movie và type
-router.get('/summary', listQuizSummary)
+// Tạo quiz bằng AI
+router.post('/genQuiz', authMiddleware.isAuthorized, generatorQuiz)
 
-router.get('/', listQuizzes)
-
-router.delete('/:id', deleteQuiz)
-
-router.put('/:id', updateQuiz)
+// Tại bài tập tương tác phim
+router.post('/genExerciseWithMovie', generatotQuizWithMovie)
 
 export default router

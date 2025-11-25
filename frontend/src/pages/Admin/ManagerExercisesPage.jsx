@@ -47,20 +47,32 @@ const ManagerExercisesPage = () => {
     return data.filter((item) => item.title.toLowerCase().includes(query.toLowerCase()))
   }, [data, query])
 
-  const TypeBadge = ({ label, count, color = 'bg-gray-700' }) => (
-    <span className={`inline-flex items-center gap-1 ${color} text-white/90 text-xs px-2 py-1 rounded`}>
-      <span className="w-1.5 h-1.5 rounded-full bg-white/60" />
-      {label}
-      <span className="ml-1 inline-flex items-center justify-center min-w-4 h-4 bg-black/30 rounded px-1">{count}</span>
+  // reuse same labels/colors as ExercisesPage / ResultsPage for visual consistency
+  const QUIZ_TYPE_LABEL = {
+    reading: 'Đọc hiểu',
+    dialogue_reordering: 'Sắp xếp hội thoại',
+    translation: 'Dịch câu',
+    equivalent: 'Câu tương đương'
+  }
+  const QUIZ_TYPE_COLOR = {
+    reading: 'bg-emerald-700',
+    dialogue_reordering: 'bg-indigo-700',
+    translation: 'bg-amber-700',
+    equivalent: 'bg-rose-700'
+  }
+
+  const TypeBadge = ({ label, color = 'bg-gray-700' }) => (
+    <span className={`inline-flex items-center gap-2 px-2.5 py-1 rounded text-xs ${color} text-white/90`}>
+      <span className="w-2 h-2 rounded-full bg-white/60" />
+      <span className="font-medium capitalize">{label}</span>
     </span>
   )
 
-  const exerciseTypes = [
-    { key: 'reading', label: 'reading', color: 'bg-emerald-700' },
-    { key: 'dialogue_reordering', label: 'dialogue_reordering', color: 'bg-indigo-700' },
-    { key: 'translation', label: 'translation', color: 'bg-amber-700' },
-    { key: 'equivalent', label: 'equivalent', color: 'bg-rose-700' },
-  ]
+  const exerciseTypes = Object.keys(QUIZ_TYPE_LABEL).map((k) => ({
+    key: k,
+    label: QUIZ_TYPE_LABEL[k],
+    color: QUIZ_TYPE_COLOR[k] || 'bg-gray-700'
+  }))
 
   const goEdit = (movieId, quizType) => {
     navigate(`/admin/exercise/${movieId}/${quizType}/edit`)
@@ -84,7 +96,7 @@ const ManagerExercisesPage = () => {
               />
             </div>
             <button
-              onClick={() => navigate('/test')}
+              onClick={() => navigate('/admin/exercise/create')}
               className="inline-flex items-center gap-2 px-4 py-2 bg-[#E4D161] text-black rounded-md font-semibold shadow hover:opacity-95 whitespace-nowrap"
             >
               <Plus className="w-4 h-4" /> Create Quiz
@@ -98,38 +110,36 @@ const ManagerExercisesPage = () => {
             <table className="w-full text-left">
               <thead>
                 <tr className="text-sm text-gray-300">
-                  <th className="py-3 px-3 font-semibold">#</th>
-                  <th className="py-3 px-3 font-semibold">Title movie</th>
-                  <th className="py-3 px-3 font-semibold">Exercise Type</th>
+                  <th className="py-3 px-3 font-semibold">Phim</th>
+                  <th className="py-3 px-3 font-semibold">Loại bài tập</th>
                 </tr>
               </thead>
               <tbody>
                 {loading && (
                   <tr>
-                    <td colSpan={5} className="py-6 px-3 text-center text-gray-400">
+                    <td colSpan={2} className="py-6 px-3 text-center text-gray-400">
                       Loading...
                     </td>
                   </tr>
                 )}
                 {!loading && error && (
                   <tr>
-                    <td colSpan={5} className="py-6 px-3 text-center text-red-300">
+                    <td colSpan={2} className="py-6 px-3 text-center text-red-300">
                       {error}
                     </td>
                   </tr>
                 )}
                 {!loading && !error && filtered.length === 0 && (
                   <tr>
-                    <td colSpan={5} className="py-6 px-3 text-center text-gray-400">
+                    <td colSpan={2} className="py-6 px-3 text-center text-gray-400">
                       No data
                     </td>
                   </tr>
                 )}
                 {!loading &&
                   !error &&
-                  filtered.map((row, index) => (
+                  filtered.map((row) => (
                     <tr key={row.id} className="border-t border-white/10 hover:bg-white/5">
-                      <td className="py-3 px-3 align-top">{index + 1}</td>
                       <td className="py-3 px-3 align-top max-w-[280px]">{row.title}</td>
                       <td className="py-3 px-3 align-top">
                         <div className="flex flex-col gap-2">
@@ -137,11 +147,11 @@ const ManagerExercisesPage = () => {
                             .filter(t => (Number(row.quizCounts?.[t.key]) || 0) > 0)
                             .map((type) => (
                               <div key={type.key} className="flex items-center justify-between gap-3">
-                                <TypeBadge label={type.label} count={row.quizCounts[type.key]} color={type.color} />
+                                <TypeBadge label={type.label} color={type.color} />
                                 <div className="flex gap-2">
                                   <button
                                     onClick={() => goEdit(row.id, type.key)}
-                                    className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-blue-700 hover:bg-blue-600 rounded text-xs"
+                                    className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-blue-700 hover:bg-blue-600 rounded text-xs font-medium text-white"
                                   >
                                     <Edit className="w-4 h-4" /> Edit
                                   </button>

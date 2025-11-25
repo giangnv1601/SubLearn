@@ -99,154 +99,158 @@ function MovieModalNew({ open, initial = {}, onSave, onClose }) {
       aria-labelledby="movie-modal-title"
     >
       <div className="absolute inset-0 bg-black/50" onClick={onClose} />
-      <div className="relative w-full max-w-3xl bg-[#0f1720] rounded-xl shadow-lg border border-white/6 overflow-auto">
-        <form onSubmit={handleSubmit(onSubmit)} className="p-6">
-          <header className="flex items-center justify-between mb-4">
-            <h2 id="movie-modal-title" className="text-xl font-semibold text-white">
+
+      <div className="relative w-full max-w-lg sm:max-w-xl bg-[#0f1720] rounded-lg sm:rounded-xl shadow-lg border-2 border-white/20 overflow-hidden">
+        <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col">
+          <header className="flex items-center justify-between p-4 sm:p-5 border-b border-white">
+            <h2 id="movie-modal-title" className="text-lg sm:text-xl font-semibold text-[#E4D161]">
               {initial?._id ? "Edit Movie" : "Add Movie"}
             </h2>
           </header>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {/* Title */}
-            <div>
-              <label className="block text-sm text-gray-200 mb-1">Title</label>
-              <input
-                {...register("title", { required: "Title is required." })}
-                className={`w-full rounded-md bg-[#1b2735] border px-3 py-2.5 text-white placeholder:text-gray-400 ${
-                  errors.title ? "border-red-400" : "border-white/10"
-                }`}
-                placeholder="Movie title"
-              />
-              {errors.title && (
-                <p className="mt-1 text-xs text-red-300">{errors.title.message}</p>
-              )}
-            </div>
+          {/* Body */}
+          <div className="p-3 sm:p-4 overflow-auto max-h-[68vh]">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Title */}
+              <div>
+                <label className="block text-sm text-gray-200 mb-1">Title</label>
+                <input
+                  {...register("title", { required: "Title is required." })}
+                  className={`w-full rounded-md bg-[#1b2735] border px-3 py-2.5 text-white placeholder:text-gray-400 ${
+                    errors.title ? "border-red-400" : "border-white/10"
+                  }`}
+                  placeholder="Movie title"
+                />
+                {errors.title && (
+                  <p className="mt-1 text-xs text-red-300">{errors.title.message}</p>
+                )}
+              </div>
 
-            {/* Slug */}
-            <div>
-              <label className="block text-sm text-gray-200 mb-1">Slug</label>
-              <input
-                {...register("slug", { required: "Slug is required." })}
-                className={`w-full rounded-md bg-[#1b2735] border px-3 py-2.5 text-white placeholder:text-gray-400 ${
-                  errors.slug ? "border-red-400" : "border-white/10"
-                }`}
-                placeholder="movie-slug"
-              />
-              {errors.slug && (
-                <p className="mt-1 text-xs text-red-300">{errors.slug.message}</p>
-              )}
-            </div>
+              {/* Slug */}
+              <div>
+                <label className="block text-sm text-gray-200 mb-1">Slug</label>
+                <input
+                  {...register("slug", { required: "Slug is required." })}
+                  className={`w-full rounded-md bg-[#1b2735] border px-3 py-2.5 text-white placeholder:text-gray-400 ${
+                    errors.slug ? "border-red-400" : "border-white/10"
+                  }`}
+                  placeholder="movie-slug"
+                />
+                {errors.slug && (
+                  <p className="mt-1 text-xs text-red-300">{errors.slug.message}</p>
+                )}
+              </div>
 
-            {/* Description */}
-            <div className="md:col-span-2">
-              <label className="block text-sm text-gray-200 mb-1">Description</label>
-              <textarea
-                {...register("description")}
-                className="w-full rounded-md bg-[#1b2735] border border-white/10 px-3 py-2.5 text-white placeholder:text-gray-400 h-28 resize-y"
-                placeholder="Short description"
-              />
-            </div>
-
-            {/* Thumb URL */}
-            <div>
-              <label className="block text-sm text-gray-200 mb-1">Thumb URL</label>
-              <input
-                {...register("thumb_url")}
-                className="w-full rounded-md bg-[#1b2735] border border-white/10 px-3 py-2.5 text-white placeholder:text-gray-400"
-                placeholder="https://..."
-              />
-            </div>
-
-            {/* Poster URL */}
-            <div>
-              <label className="block text-sm text-gray-200 mb-1">Poster URL</label>
-              <input
-                {...register("poster_url")}
-                className="w-full rounded-md bg-[#1b2735] border border-white/10 px-3 py-2.5 text-white placeholder:text-gray-400"
-                placeholder="https://..."
-              />
-            </div>
-
-            {/* Duration */}
-            <div>
-              <label className="block text-sm text-gray-200 mb-1">Duration</label>
-              <input
-                {...register("duration")}
-                className="w-full rounded-md bg-[#1b2735] border border-white/10 px-3 py-2.5 text-white placeholder:text-gray-400"
-                placeholder="e.g. 1h 45m"
-              />
-            </div>
-
-            {/* Year Released */}
-            <div>
-              <label className="block text-sm text-gray-200 mb-1">Year Released</label>
-              <input
-                type="number"
-                {...register("year_released")}
-                className={`w-full rounded-md bg-[#1b2735] border px-3 py-2.5 text-white placeholder:text-gray-400 ${
-                  errors.year_released ? "border-red-400" : "border-white/10"
-                }`}
-              />
-              {errors.year_released && (
-                <p className="mt-1 text-xs text-red-300">{errors.year_released.message}</p>
-              )}
-            </div>
-
-            {/* Level */}
-            <div>
-              <label className="block text-sm text-gray-200 mb-1">Level</label>
-              <div className="relative">
-                <select
-                  {...register("level")}
-                  className="appearance-none w-full rounded-md bg-[#1b2735] border border-white/10 px-3 py-2.5 text-white pr-8"
-                >
-                  <option value="easy">Easy</option>
-                  <option value="medium">Medium</option>
-                  <option value="hard">Hard</option>
-                </select>
-
-                <ChevronDown
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"
-                  size={18}
-                  strokeWidth={1.5}
+              {/* Description */}
+              <div className="md:col-span-2">
+                <label className="block text-sm text-gray-200 mb-1">Description</label>
+                <textarea
+                  {...register("description")}
+                  className="w-full rounded-md bg-[#1b2735] border border-white/10 px-3 py-2.5 text-white placeholder:text-gray-400 h-28 resize-y"
+                  placeholder="Short description"
                 />
               </div>
-            </div>
 
-            {/* Genre */}
-            <div>
-              <label className="block text-sm text-gray-200 mb-1">Genre</label>
-              <input
-                {...register("genre", { required: "Genre is required." })}
-                className={`w-full rounded-md bg-[#1b2735] border px-3 py-2.5 text-white placeholder:text-gray-400 ${
-                  errors.genre ? "border-red-400" : "border-white/10"
-                }`}
-                placeholder="Action, Comedy, ..."
-              />
-              {errors.genre && (
-                <p className="mt-1 text-xs text-red-300">{errors.genre.message}</p>
-              )}
-            </div>
+              {/* Thumb URL */}
+              <div>
+                <label className="block text-sm text-gray-200 mb-1">Thumb URL</label>
+                <input
+                  {...register("thumb_url")}
+                  className="w-full rounded-md bg-[#1b2735] border border-white/10 px-3 py-2.5 text-white placeholder:text-gray-400"
+                  placeholder="https://..."
+                />
+              </div>
 
-            {/* Link URL */}
-            <div className="md:col-span-2">
-              <label className="block text-sm text-gray-200 mb-1">Link URL</label>
-              <input
-                {...register("link_m3u8", { required: "Link URL is required." })}
-                className={`w-full rounded-md bg-[#1b2735] border px-3 py-2.5 text-white placeholder:text-gray-400 ${
-                  errors.link_m3u8 ? "border-red-400" : "border-white/10"
-                }`}
-                placeholder="https://..."
-              />
-              {errors.link_m3u8 && (
-                <p className="mt-1 text-xs text-red-300">{errors.link_m3u8.message}</p>
-              )}
+              {/* Poster URL */}
+              <div>
+                <label className="block text-sm text-gray-200 mb-1">Poster URL</label>
+                <input
+                  {...register("poster_url")}
+                  className="w-full rounded-md bg-[#1b2735] border border-white/10 px-3 py-2.5 text-white placeholder:text-gray-400"
+                  placeholder="https://..."
+                />
+              </div>
+
+              {/* Duration */}
+              <div>
+                <label className="block text-sm text-gray-200 mb-1">Duration</label>
+                <input
+                  {...register("duration")}
+                  className="w-full rounded-md bg-[#1b2735] border border-white/10 px-3 py-2.5 text-white placeholder:text-gray-400"
+                  placeholder="e.g. 1h 45m"
+                />
+              </div>
+
+              {/* Year Released */}
+              <div>
+                <label className="block text-sm text-gray-200 mb-1">Year Released</label>
+                <input
+                  type="number"
+                  {...register("year_released")}
+                  className={`w-full rounded-md bg-[#1b2735] border px-3 py-2.5 text-white placeholder:text-gray-400 ${
+                    errors.year_released ? "border-red-400" : "border-white/10"
+                  }`}
+                />
+                {errors.year_released && (
+                  <p className="mt-1 text-xs text-red-300">{errors.year_released.message}</p>
+                )}
+              </div>
+
+              {/* Level */}
+              <div>
+                <label className="block text-sm text-gray-200 mb-1">Level</label>
+                <div className="relative">
+                  <select
+                    {...register("level")}
+                    className="appearance-none w-full rounded-md bg-[#1b2735] border border-white/10 px-3 py-2.5 text-white pr-8"
+                  >
+                    <option value="easy">Easy</option>
+                    <option value="medium">Medium</option>
+                    <option value="hard">Hard</option>
+                  </select>
+
+                  <ChevronDown
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"
+                    size={18}
+                    strokeWidth={1.5}
+                  />
+                </div>
+              </div>
+
+              {/* Genre */}
+              <div>
+                <label className="block text-sm text-gray-200 mb-1">Genre</label>
+                <input
+                  {...register("genre", { required: "Genre is required." })}
+                  className={`w-full rounded-md bg-[#1b2735] border px-3 py-2.5 text-white placeholder:text-gray-400 ${
+                    errors.genre ? "border-red-400" : "border-white/10"
+                  }`}
+                  placeholder="Action, Comedy, ..."
+                />
+                {errors.genre && (
+                  <p className="mt-1 text-xs text-red-300">{errors.genre.message}</p>
+                )}
+              </div>
+
+              {/* Link URL */}
+              <div className="md:col-span-2">
+                <label className="block text-sm text-gray-200 mb-1">Link URL</label>
+                <input
+                  {...register("link_m3u8", { required: "Link URL is required." })}
+                  className={`w-full rounded-md bg-[#1b2735] border px-3 py-2.5 text-white placeholder:text-gray-400 ${
+                    errors.link_m3u8 ? "border-red-400" : "border-white/10"
+                  }`}
+                  placeholder="https://..."
+                />
+                {errors.link_m3u8 && (
+                  <p className="mt-1 text-xs text-red-300">{errors.link_m3u8.message}</p>
+                )}
+              </div>
             </div>
           </div>
 
-          {/* Buttons */}
-          <div className="mt-6 flex items-center justify-end gap-3">
+          {/* Footer */}
+          <div className="p-3 sm:p-4 border-t bg-[#0f1720] flex items-center justify-end gap-3">
             <button
               type="button"
               onClick={onClose}
@@ -257,7 +261,7 @@ function MovieModalNew({ open, initial = {}, onSave, onClose }) {
             <button
               type="submit"
               disabled={isSubmitting || !isDirty}
-              className={`px-5 py-2 rounded-md text-black font-semibold shadow-md ${
+              className={`px-4 sm:px-5 py-2 rounded-md text-black font-semibold shadow-md ${
                 isSubmitting || !isDirty
                   ? "bg-gray-600 cursor-not-allowed opacity-60"
                   : "bg-gradient-to-r from-[#F3D96B] to-[#E4D161] hover:scale-[1.02]"

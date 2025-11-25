@@ -14,8 +14,7 @@ const OptionSchema = new Schema(
 const QuestionSchema = new Schema(
   {
     question: { type: String, default: '' },
-    answerLetter: { type: String, enum: ['A', 'B', 'C', 'D'], default: 'A' },
-    answerIndex: { type: Number, min: 0, max: 3, default: 0 },
+    answer: { type: String, enum: ['A', 'B', 'C', 'D'], default: 'A' },
     explanation: { type: String, default: '' },
     quote: { type: String, default: '' },
     options: { type: [OptionSchema], default: [] }

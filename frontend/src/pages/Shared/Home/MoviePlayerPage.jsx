@@ -1,8 +1,7 @@
-import axios from 'axios'
 import Hls from 'hls.js'
 import { useEffect, useRef, useState } from 'react'
-import { useParams } from 'react-router'
-import { fetchMovieByIdApi } from '@/api'
+import { useParams } from 'react-router-dom'
+import { fetchMovieByIdApi, fetchSubtitlesByMovie } from '@/api/index.js'
 
 /* ===== SUBTITLE HELPERS ===== */
 function srtToCues(srtText = '') {
@@ -25,6 +24,7 @@ function srtToCues(srtText = '') {
     const textLines = lines.slice(timeIdx + 1).join('\n')
     cues.push({ start, end, text: textLines })
   }
+  console.log(cues)
   return cues.sort((a, b) => a.start - b.start)
 }
 function pairCues(en = [], vi = []) {
@@ -120,18 +120,18 @@ function InfoPanel({ movie }) {
       <div className="bg-[#1B2A36] p-4 rounded-md text-gray-300">
         <h3 className="text-lg font-semibold text-white mb-2">Thông tin phim</h3>
         <div className="flex flex-wrap items-center gap-2 mb-3">
-          <span className="text-xs px-2 py-1 rounded-full bg-[#14202A] text-[#E4D161]">Năm: {movie?.year ?? 'N/A'}</span>
-          <span className="text-xs px-2 py-1 rounded-full bg-[#14202A] text-gray-200">Thời lượng: {movie?.time ?? 'N/A'}</span>
+          <span className="text-xs px-2 py-1 rounded-full bg-[#14202A] text-[#E4D161]">Năm: {movie?.year_released ?? movie?.year ?? 'N/A'}</span>
+          <span className="text-xs px-2 py-1 rounded-full bg-[#14202A] text-gray-200">Thời lượng: {movie?.duration ?? movie?.time ?? 'N/A'}</span>
           <span className="text-xs px-2 py-1 rounded-full bg-[#14202A] text-gray-200">Thể loại: {movie?.genre ?? 'Unknown'}</span>
         </div>
         <div className="text-sm text-gray-200 leading-relaxed max-h-44 overflow-y-auto">
           {movie?.description ? <p className="whitespace-pre-wrap">{movie.description}</p> : <p className="text-gray-400">Mô tả phim chưa có.</p>}
         </div>
       </div>
-      <div className="bg-[#1B2A36] p-4 rounded-md text-gray-300">
+      {/* <div className="bg-[#1B2A36] p-4 rounded-md text-gray-300">
         <h3 className="text-lg font-semibold text-white mb-2">Phim cùng thể loại</h3>
         <p className="text-sm text-gray-400">TODO: hiển thị danh sách phim tương tự tại đây…</p>
-      </div>
+      </div> */}
     </div>
   )
 }
@@ -156,7 +156,9 @@ export default function MoviePlayerPage() {
     ;(async () => {
       setLoading(true); setError(null)
       try {
-        const data = await fetchMovieByIdApi(id)
+        const resp = await fetchMovieByIdApi(id)
+        // normalize: support resp or resp.data
+        const data = resp?.data ?? resp
         setMovie(data)
       } catch { setError('Không thể tải dữ liệu phim') }
       finally { setLoading(false) }
@@ -169,8 +171,8 @@ export default function MoviePlayerPage() {
     ;(async () => {
       setSubLoading(true)
       try {
-        const res = await axios.get(`http://localhost:5001/api/subtitles/movie/${id}?withContent=1`)
-        const list = res?.data?.data || []
+        const res = await fetchSubtitlesByMovie(id, 1)
+        const list = res?.data ?? res ?? []
         const enCues = srtToCues(list.find(x => x.language === 'en')?.srtContent || '')
         const viCues = srtToCues(list.find(x => x.language === 'vi')?.srtContent || '')
         setSubs(pairCues(enCues, viCues))
@@ -234,7 +236,7 @@ export default function MoviePlayerPage() {
         hls.destroy()
       }
     }
-  }, [movie?.link_m3u8, subs])
+  }, [movie?.link_m3u8, subs.length]) // depend on length to avoid re-runs when array identity changes
 
   // Auto scroll subtitle list
   useEffect(() => {

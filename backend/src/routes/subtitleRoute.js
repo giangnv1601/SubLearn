@@ -6,6 +6,6 @@ import { authMiddleware } from '../middlewares/authMiddleware.js';
 const router = express.Router()
 
 router.post('/', authMiddleware.isAuthorized , multerUploadMiddleware.uploadSubtitle, uploadSubtitle)
-router.get('/movie/:movieId', getSubtitlesByMovie)
+router.get('/:movieId', authMiddleware.isAuthorized, getSubtitlesByMovie)
 
 export default router

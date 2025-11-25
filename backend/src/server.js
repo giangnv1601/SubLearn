@@ -5,9 +5,9 @@ import cors from 'cors'
 
 import movieRoute from './routes/movieRoute.js'
 import subtitleRoute from './routes/subtitleRoute.js'
-import exerciseRoute from './routes/exerciseRoute.js'
 import userRoute from './routes/userRoute.js'
-import quizzesRouter from './routes/quizRoute.js'
+import quizRoute from './routes/quizRoute.js'
+import resultRoute from './routes/resultRoute.js'
 
 import { importMoviesOnStartup } from './services/movieService.js'
 
@@ -25,15 +25,21 @@ app.use(cors());
 // Routes
 app.use('/api/movies', movieRoute)
 app.use('/api/subtitles', subtitleRoute)
-app.use('/api/exercises', exerciseRoute)
 app.use('/api/users', userRoute)
-app.use('/api/quizzes', quizzesRouter)
+app.use('/api/quizzes', quizRoute)
+app.use('/api/results', resultRoute)
 
-connectDB().then(() => {
-  app.listen(PORT, () => {
-    console.log(`Server is running on port ${PORT}`);
-    // importMoviesOnStartup();
+export default app
+
+if (process.env.NODE_ENV !== 'test') {
+  connectDB().then(() => {
+    app.listen(PORT, () => {
+      console.log(`Server is running on port ${PORT}`);
+      // importMoviesOnStartup();
+    });
+  }).catch(err => {
+    console.error('Failed to start server:', err);
+    process.exit(1);
   });
-});
-
+}
 

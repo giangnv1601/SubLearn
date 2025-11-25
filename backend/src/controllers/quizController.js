@@ -1,12 +1,6 @@
 import Quiz from '../models/quizModel.js'
 import Movie from '../models/movieModel.js'
-
-// Helper: chuyển 'A'|'B'|'C'|'D' thành index 0-3
-const letterToIndex = (letter = 'A') => {
-  const map = { A: 0, B: 1, C: 2, D: 3 }
-  const key = String(letter || 'A').trim().toUpperCase()
-  return Number.isInteger(map[key]) ? map[key] : 0
-}
+import { OpenAiGenQuiz } from '../services/OpenAiGenQuizService.js'
 
 export const createQuiz = async (req, res) => {
   try {
@@ -16,8 +10,7 @@ export const createQuiz = async (req, res) => {
     const normalizedQuestions = Array.isArray(questions)
       ? questions.map(q => ({
           question: q?.question || '',
-          answerLetter: q?.answer || 'A',
-          answerIndex: letterToIndex(q?.answer),
+          answer: q?.answer || 'A',
           explanation: q?.explanation || '',
           quote: q?.quote || '',
           options: Array.isArray(q?.options)
@@ -43,7 +36,48 @@ export const createQuiz = async (req, res) => {
   }
 }
 
-// Summary counts per movie and type
+// Lấy phim và bài tập theo loại
+export const getUniqueMovieQuizTypes = async (req, res) => {
+  try {
+    const data = await Quiz.aggregate([
+      {
+        $group: {
+          _id: { movieId: '$movieId', quizType: '$quizType' }, // gom theo cặp movieId + quizType
+          quizCount: { $sum: 1 } // đếm xem có bao nhiêu quiz cho cặp này (nếu bạn muốn xài)
+        }
+      },
+      {
+        $lookup: {
+          from: 'movies',                // tên collection Movie trong Mongo (thường là 'movies')
+          localField: '_id.movieId',
+          foreignField: '_id',
+          as: 'movie'
+        }
+      },
+      { $unwind: '$movie' },
+      {
+        $project: {
+          _id: 0,
+          movieId: '$_id.movieId',
+          quizType: '$_id.quizType',
+          quizCount: 1,
+          movieTitle: '$movie.title'
+        }
+      },
+      { $sort: { movieTitle: 1, quizType: 1 } }
+    ])
+
+    return res.status(200).json({
+      message: 'OK',
+      data
+    })
+  } catch (err) {
+    console.error('getUniqueMovieQuizTypes error:', err)
+    return res.status(500).json({ message: 'Internal server error' })
+  }
+}
+
+// Lấy số Quiz theo movie và quiz_type
 export const listQuizSummary = async (req, res) => {
   try {
     const grouped = await Quiz.aggregate([
@@ -81,15 +115,18 @@ export const listQuizSummary = async (req, res) => {
   }
 }
 
-
+// Lấy Quiz theo movie và quiz_type
 export const listQuizzes = async (req, res) => {
   try {
     const { movie_id, quiz_type } = req.query
-    const filter = {}
-    if (movie_id) filter.movieId = movie_id
-    if (quiz_type) filter.quizType = quiz_type
 
-    const items = await Quiz.find(filter).sort({ createdAt: -1 })
+    if (!movie_id || !quiz_type) {
+      return res.status(400).json({ ok: false, message: 'Thiếu tham số bắt buộc: movie_id và quiz_type' })
+    }
+
+    const filter = { movieId: movie_id, quizType: quiz_type }
+
+    const items = await Quiz.find(filter).sort({ createdAt: -1 }).lean()
     return res.status(200).json({ ok: true, data: items })
   } catch (err) {
     console.error('listQuizzes error:', err)
@@ -97,6 +134,7 @@ export const listQuizzes = async (req, res) => {
   }
 }
 
+// Cập nhập Quiz
 export const updateQuiz = async (req, res) => {
   try {
     const { id } = req.params;
@@ -107,10 +145,7 @@ export const updateQuiz = async (req, res) => {
     if (Array.isArray(questions)) {
       normalizedQuestions = questions.map(q => ({
         question: q?.question || '',
-        answerLetter: q?.answer || q?.answerLetter || 'A',
-        answerIndex: Number.isInteger(q?.answerIndex)
-          ? q.answerIndex
-          : letterToIndex(q?.answer || q?.answerLetter),
+        answer: q?.answer || q?.answerLetter || 'A',
         explanation: q?.explanation || '',
         quote: q?.quote || '',
         options: Array.isArray(q?.options)
@@ -140,6 +175,7 @@ export const updateQuiz = async (req, res) => {
   }
 }
 
+// Xóa Quiz
 export const deleteQuiz = async (req, res) => {
   try {
     const { id } = req.params;
@@ -149,5 +185,41 @@ export const deleteQuiz = async (req, res) => {
   } catch (err) {
     console.error('deleteQuiz error:', err);
     return res.status(500).json({ ok: false, message: err.message || 'Server error' });
+  }
+}
+
+// Tạo quiz bằng AI từ subtitle
+export const generatorQuiz = async (req, res) => {
+  try {
+    const { subtitle , quizType } = req.body || {}
+
+    if (!subtitle || !subtitle.trim()) {
+      return res.status(400).json({ message: 'Subtitle is required' })
+    }
+
+    if (!quizType) {
+      return res.status(400).json({ message: 'Quiz type is required' })
+    }
+
+    const data = await OpenAiGenQuiz.createQuiz(subtitle, quizType)
+    return res.status(200).json(data)
+  } catch (err) {
+    console.error('Create quiz error:', err)
+    return res.status(500).json({ ok: false, message: err.message || 'Server error' })
+  }
+}
+
+// Tại quiz tương tác với phim
+export const generatotQuizWithMovie = async (req, res) => {
+  try {
+    const { subtitleSegment } = req.body
+    if (!subtitleSegment || !subtitleSegment.trim()) {
+      return res.status(400).json({ message: 'Thiếu tham số bắt buộc: subtitleSegment' })
+    }
+    const data = await OpenAiGenQuiz.createExerciseForMovie(subtitleSegment)
+    return res.status(200).json(data)
+  } catch (err) {
+    console.error('generatotQuizWithMovie error:', err)
+    return res.status(500).json({ ok: false, message: err.message || 'Server error' })
   }
 }

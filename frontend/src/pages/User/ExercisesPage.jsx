@@ -3,6 +3,20 @@ import { useNavigate } from "react-router-dom"
 import { Play } from "lucide-react"
 import { fetchQuizzesSummary } from '../../api'
 
+const QUIZ_TYPE_LABEL = {
+  reading: 'Đọc hiểu',
+  dialogue_reordering: 'Sắp xếp hội thoại',
+  translation: 'Dịch câu',
+  equivalent: 'Câu tương đương'
+}
+
+const QUIZ_TYPE_COLOR = {
+  reading: 'bg-emerald-700',
+  dialogue_reordering: 'bg-indigo-700',
+  translation: 'bg-amber-700',
+  equivalent: 'bg-rose-700'
+}
+
 const TypeBadge = ({ label, color = "bg-gray-700"  }) => {
   return (
     <span className={`inline-flex items-center gap-2 px-2.5 py-1 rounded text-xs ${color}`}>
@@ -52,10 +66,12 @@ const ExercisesPage = () => {
   }, [])
 
   const exerciseTypes = [
-    { key: "reading", label: "reading", color: "bg-emerald-700" },
-    { key: "dialogue_reordering", label: "dialogue_reordering", color: "bg-indigo-700" },
-    { key: "translation", label: "translation", color: "bg-amber-700" },
-    { key: "equivalent", label: "equivalent", color: "bg-rose-700" },
+    // build from shared maps so it's consistent with ResultsPage
+    ...Object.keys(QUIZ_TYPE_LABEL).map((k) => ({
+      key: k,
+      label: QUIZ_TYPE_LABEL[k],
+      color: QUIZ_TYPE_COLOR[k] || 'bg-gray-700'
+    }))
   ]
 
   return (
@@ -68,7 +84,7 @@ const ExercisesPage = () => {
 
        {/* Table */}
        <div className="bg-gray-900/40 rounded-lg p-4">
-         {loading && <div className="text-center py-6 text-gray-400">Loading...</div>}
+         {loading && <div className="text-center py-6 text-gray-400">Đang tải...</div>}
          {!loading && error && <div className="text-center py-6 text-red-400">{error}</div>}
 
          {!loading && !error && (
@@ -76,15 +92,13 @@ const ExercisesPage = () => {
              <table className="w-full text-left">
                <thead>
                  <tr className="text-sm text-gray-300">
-                   <th className="py-3 px-3 font-semibold">#</th>
-                   <th className="py-3 px-3 font-semibold">Title movie</th>
-                   <th className="py-3 px-3 font-semibold">Exercise Type</th>
+                   <th className="py-3 px-3 font-semibold">Phim</th>
+                   <th className="py-3 px-3 font-semibold">Loại bài tập</th>
                  </tr>
                </thead>
                <tbody>
                  {rows.map((row, index) => (
                    <tr key={row.id} className="border-t border-white/10 hover:bg-white/5">
-                     <td className="py-3 px-3 align-top">{index + 1}</td>
                      <td className="py-3 px-3 align-top max-w-[280px]">{row.title}</td>
                      <td className="py-3 px-3 align-top">
                        <div className="flex flex-col gap-2">
@@ -110,7 +124,7 @@ const ExercisesPage = () => {
                  ))}
                  {rows.length === 0 && !loading && (
                    <tr>
-                     <td colSpan={3} className="py-6 text-center text-gray-400">Không có phần thi.</td>
+                     <td colSpan={2} className="py-6 text-center text-gray-400">Không có phần thi.</td>
                    </tr>
                  )}
                </tbody>

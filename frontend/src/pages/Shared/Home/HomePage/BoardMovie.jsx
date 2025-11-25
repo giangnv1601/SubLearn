@@ -6,15 +6,38 @@ const PAGE_SIZE = 20
 
 const BoardMovie = ({ movies = [], movieBuffer = [], totalMovies: totalMoviesProp }) => {
   // Back-compat: nếu bạn vẫn truyền movieBuffer, ưu tiên nó; còn không thì dùng movies
-  const source = movieBuffer?.length ? movieBuffer : movies
-  const totalMovies = typeof totalMoviesProp === "number" ? totalMoviesProp : source.length
+  const rawSource = movieBuffer?.length ? movieBuffer : movies
+
+  // Filters
+  const [levelFilter, setLevelFilter] = useState("all")
+  const [genreFilter, setGenreFilter] = useState("all")
 
   const [currentPage, setCurrentPage] = useState(1)
 
-  // Reset về trang 1 khi dữ liệu nguồn thay đổi (lọc/ tìm kiếm)
+  // Reset về trang 1 khi dữ liệu nguồn hoặc filter thay đổi
   useEffect(() => {
     setCurrentPage(1)
-  }, [source])
+  }, [rawSource, levelFilter, genreFilter])
+
+  // Áp filter lên rawSource
+  const source = useMemo(() => {
+    const lf = (levelFilter || "all").toLowerCase()
+    const gf = (genreFilter || "all").toLowerCase()
+    return rawSource.filter((m) => {
+      if (!m) return false
+      if (lf !== "all") {
+        const movieLevel = (m.level || "").toString().toLowerCase()
+        if (movieLevel !== lf) return false
+      }
+      if (gf !== "all") {
+        const movieGenre = (m.genre || "").toString().toLowerCase()
+        if (!movieGenre.includes(gf)) return false
+      }
+      return true
+    })
+  }, [rawSource, levelFilter, genreFilter])
+
+  const totalMovies = typeof totalMoviesProp === "number" ? totalMoviesProp : source.length
 
   const totalPages = Math.max(1, Math.ceil(totalMovies / PAGE_SIZE))
 
@@ -73,19 +96,28 @@ const BoardMovie = ({ movies = [], movieBuffer = [], totalMovies: totalMoviesPro
         </p>
 
         <div className="flex items-center gap-4">
-          <select className="mt-2 p-2 rounded-md bg-gray-700 text-white focus:outline-none focus:ring-2 focus:ring-[#E4D161]">
-            <option value="all">All Levels</option>
+          <select
+            value={levelFilter}
+            onChange={(e) => setLevelFilter(e.target.value)}
+            className="mt-2 p-2 rounded-md bg-gray-700 text-white focus:outline-none focus:ring-2 focus:ring-[#E4D161]"
+          >
+            <option value="all">Tất cả mức độ</option>
             <option value="easy">Easy</option>
             <option value="medium">Medium</option>
             <option value="hard">Hard</option>
           </select>
-          <select className="mt-2 p-2 rounded-md bg-gray-700 text-white focus:outline-none focus:ring-2 focus:ring-[#E4D161]">
-            <option value="all">All Genres</option>
-            <option value="action">Action</option>
-            <option value="comedy">Comedy</option>
-            <option value="drama">Drama</option>
-            <option value="horror">Horror</option>
-            <option value="sci-fi">Sci-Fi</option>
+
+          <select
+            value={genreFilter}
+            onChange={(e) => setGenreFilter(e.target.value)}
+            className="mt-2 p-2 rounded-md bg-gray-700 text-white focus:outline-none focus:ring-2 focus:ring-[#E4D161]"
+          >
+            <option value="all">Tất cả thể loại</option>
+            <option value="hành động">Hành Động</option>
+            <option value="phiêu lưu">Phiêu Lưu</option>
+            <option value="viễn tưởng">Viễn Tưởng</option>
+            <option value="khoa học">Khoa Học</option>
+            <option value="võ thuật">Võ Thuật</option>
           </select>
         </div>
       </div>

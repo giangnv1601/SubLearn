@@ -60,9 +60,16 @@ export const deleteMovieApi = async (movieId) => {
   return res.data;
 }
 
+export const searchMoviesApi = async (query) => {
+  const res = await authorizedAxiosInstance.get(`${API_ROOT}/api/movies/search`, {
+    params: { q: query },
+  });
+  return res.data;
+}
+
 /** Subtitles */
 export const fetchSubtitlesByMovie = async (movieId, withContent = 0) => {
-  const res = await authorizedAxiosInstance.get(`${API_ROOT}/api/subtitles/movie/${movieId}`, {
+  const res = await authorizedAxiosInstance.get(`${API_ROOT}/api/subtitles/${movieId}`, {
     params: { withContent }
   });
   return res.data;
@@ -73,15 +80,16 @@ export const uploadSubtitleApi = async (formData) => {
   return res.data;
 }
 
-/** Exercises / AI creation */
-export const createExercisesFromAI = async (payload) => {
-  const res = await authorizedAxiosInstance.post(`${API_ROOT}/api/exercises/create`, payload);
-  return res.data;
-}
+
 
 /** Quizzes */
 export const createQuizApi = async (payload) => {
   const res = await authorizedAxiosInstance.post(`${API_ROOT}/api/quizzes`, payload);
+  return res.data;
+}
+
+export const getUniqueMovieQuizTypesApi = async () => {
+  const res = await authorizedAxiosInstance.get(`${API_ROOT}/api/quizzes/unique-movie-type`);
   return res.data;
 }
 
@@ -105,8 +113,19 @@ export const deleteQuizApi = async (quizId) => {
   return res.data;
 }
 
-/** Exam results */
-export const submitExamResult = async (payload) => {
-  const res = await authorizedAxiosInstance.post(`${API_ROOT}/api/exam-results`, payload);
+export const gentoratorQuizApi = async (payload) => {
+  const res = await authorizedAxiosInstance.post(`${API_ROOT}/api/quizzes/genQuiz`, payload);
   return res.data;
 }
+
+/** API Result */
+export const submitResultApi = async (payload) => {
+  const res = await authorizedAxiosInstance.post(`${API_ROOT}/api/results`, payload);
+  return res.data;
+}
+
+export const fetchResultsByUserApi = async (userId) => {
+  const res = await authorizedAxiosInstance.get(`${API_ROOT}/api/results/${userId}`);
+  return res.data;
+}
+
