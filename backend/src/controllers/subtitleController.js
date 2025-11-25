@@ -2,6 +2,7 @@ import mongoose from "mongoose"
 import Subtitle from "../models/subtitleModel.js";
 import Movie from "../models/movieModel.js";
 
+// Upload và cập nhập tiêu đề theo movieId
 export const uploadSubtitle = async (req, res) => {
   try {
     const { movieId, language } = req.body || {};
@@ -40,6 +41,7 @@ export const uploadSubtitle = async (req, res) => {
   }
 };
 
+// Lấy phụ đề theo movieId
 export const getSubtitlesByMovie = async (req, res) => {
   try {
     const { movieId } = req.params
@@ -56,15 +58,7 @@ export const getSubtitlesByMovie = async (req, res) => {
       .sort({ language: 1 })
       .lean()
 
-    // map nhanh theo language
-    const byLang = Object.fromEntries(items.map(it => [it.language, it]))
-    const has = { en: !!byLang.en, vi: !!byLang.vi }
-    const latest = {
-      en: byLang.en?.updatedAt || null,
-      vi: byLang.vi?.updatedAt || null
-    }
-
-    return res.status(200).json({ ok: true, data: items, has, latest })
+    return res.status(200).json({ ok: true, data: items })
   } catch (error) {
     console.error("Error fetching subtitles:", error)
     return res.status(500).json({ ok: false, message: "Server error" })

@@ -16,6 +16,7 @@ import ResultsPage from "./pages/User/ResultsPage"
 import ProfilePage from "./pages/Shared/Profile/ProfilePage"
 import EditProfilePage from "./pages/Shared/Profile/EditProfilePage"
 import ChangePasswoedPage from "./pages/Shared/Profile/ChangePasswoedPage"
+import CreateQuizPage from "./pages/Admin/CreateQuizPage/CreateQuizPage"
 
 const ProtectedRoute = () => {
   const user = JSON.parse(localStorage.getItem('userInfo'))
@@ -53,9 +54,11 @@ function App() {
           <Route path="/client/exam" element={<ExamPage />} />
           <Route path="/client/results" element={<ResultsPage />} />
 
+          {/* Admin */}
           <Route path="/admin/movie" element={<ManagerMovie />} />
           <Route path="/admin/exercise" element={<ManagerExercisesPage />} />
           <Route path="/admin/exercise/:movieId/:type/edit" element={<QuizEditorPage />} />
+          <Route path="/admin/exercise/create" element={<CreateQuizPage />} />
 
           <Route path="/test" element={<CreateQuizTester />} />
         </Route>  

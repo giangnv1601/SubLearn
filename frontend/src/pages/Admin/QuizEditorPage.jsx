@@ -204,39 +204,34 @@ export default function QuizEditorPage() {
     setResult(next)
   }
 
-  const addManualQuiz = () => {
-    const draftQuiz = { passage: '', questions: [] }
-    setResult((prev) => (Array.isArray(prev) ? [...prev, draftQuiz] : [draftQuiz]))
-  }
-
   const saveAll = async () => {
-     try {
-       setSaving(true)
-       setError('')
-       const payloads = buildPayloads(movieId, type, result)
-       // Try update first when _id exists; fallback to create
-        await Promise.all(
-          (result || []).map(async (qz, idx) => {
-            const p = payloads[idx]
-            if (qz._id) {
-              try {
-                await updateQuizApi(qz._id, p)
-                return
-              } catch {
-                // fallback to create
-              }
+    try {
+      setSaving(true)
+      setError('')
+      const payloads = buildPayloads(movieId, type, result)
+      // Try update first when _id exists; fallback to create
+      await Promise.all(
+        (result || []).map(async (qz, idx) => {
+          const p = payloads[idx]
+          if (qz._id) {
+            try {
+              await updateQuizApi(qz._id, p)
+              return
+            } catch {
+              // fallback to create
             }
-            await createQuizApi(p)
-          })
-        )
-     } catch (e) {
-       setError(e?.response?.data?.message || e.message)
-       return
-     } finally {
-       setSaving(false)
-     }
-     navigate('/admin/exercise')
-   }
+          }
+          await createQuizApi(p)
+        })
+      )
+    } catch (e) {
+      setError(e?.response?.data?.message || e.message)
+      return
+    } finally {
+      setSaving(false)
+    }
+    navigate('/admin/exercise')
+  }
 
    const deleteQuiz = async (quizIdx, quizId) => {
      if (!window.confirm('Bạn có chắc muốn xóa bài này?')) return
@@ -260,33 +255,34 @@ export default function QuizEditorPage() {
       <div className="max-w-[1200px] mx-auto px-4 py-6">
         <div className="flex items-center justify-between mb-4">
           <h1 className="text-2xl font-semibold text-[#E4D161]">Edit Quiz • <span className="text-white/90">{title}</span> • <span className="text-white/70"><TypeLabel type={type} /></span></h1>
-          <button onClick={() => navigate(-1)} className="px-3 py-1.5 rounded bg-white/10 hover:bg-white/20 text-sm">Back</button>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => navigate(-1)}
+              className="px-4 py-2 rounded-md font-semibold bg-white/10 hover:bg-white/20 text-white"
+            >
+              Back
+            </button>
+            <button
+              onClick={saveAll}
+              disabled={saving}
+              className={`px-4 py-2 rounded-md font-semibold ${
+                saving ? 'bg-gray-600 text-white cursor-not-allowed opacity-60' : 'bg-gradient-to-r from-[#F3D96B] to-[#E4D161] text-black hover:scale-[1.02]'
+              }`}
+            >
+              {saving ? 'Đang lưu…' : 'Lưu'}
+            </button>
+          </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div className="lg:col-span-1">
-            <div className="bg-[#1B2A36] p-4 rounded-md border border-white/10 space-y-4">
-              <div className="space-y-2">
-                <button type="button" onClick={addManualQuiz} className="px-3 py-2 bg-white/10 hover:bg-white/20 rounded-md font-semibold">+ Thêm bài</button>
-              </div>
-
-              <div className="flex items-center gap-3 flex-wrap">
-                <button onClick={saveAll} disabled={saving} className="px-4 py-2 bg-emerald-500 hover:bg-emerald-600 text-black rounded-md font-semibold disabled:opacity-60">
-                  {saving ? 'Đang lưu…' : 'Lưu bài tập'}
-                </button>
-              </div>
-
-              {error && <div className="text-red-300 text-sm">{error}</div>}
-            </div>
-          </div>
-
-          <div className="lg:col-span-2">
+        <div className="flex justify-center">
+          <div className="w-full max-w-[960px]">
             <div className="bg-[#1B2A36] p-4 rounded-md border border-white/10 min-h-[400px]">
-              <h2 className="text-lg font-semibold mb-3">Kết quả</h2>
+              <h2 className="text-lg font-semibold mb-3 text-center">Kết quả</h2>
+              {error && <div className="text-red-300 text-sm mb-3 text-center">{error}</div>}
               {loading ? (
-                <p className="text-gray-400">Loading…</p>
+                <p className="text-gray-400 text-center">Loading…</p>
               ) : !Array.isArray(result) || !result.length ? (
-                <p className="text-gray-400">Chưa có dữ liệu. Hãy thêm bài (thủ công).</p>
+                <p className="text-gray-400 text-center">Chưa có dữ liệu.</p>
               ) : (
                 <div className="space-y-6">
                   {result.map((qz, idx) => (

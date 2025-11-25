@@ -57,4 +57,7 @@ const MovieSchema = new mongoose.Schema(
   }
 )
 
+// Tìm kiếm theo title
+MovieSchema.index({ title: 'text' })
+
 export default mongoose.model('Movie', MovieSchema);

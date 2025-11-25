@@ -1,10 +1,10 @@
 import { useEffect, useState } from 'react'
-import { fetchMoviesApi, fetchSubtitlesByMovie, gentoratorQuizApi, createQuizApi } from '../api';
-import { QUIZ_TYPES } from '../utils/constants';
-import { normalizeAI, buildPayloads } from '../utils/helpers';
-import QuestionCard from '../components/QuestionCard/QuestionCard.jsx';
+import { fetchMoviesApi, fetchSubtitlesByMovie, gentoratorQuizApi, createQuizApi } from '@/api';
+import { QUIZ_TYPES } from '@/utils/constants';
+import { normalizeAI, buildPayloads } from '@/utils/helpers';
+import QuestionCard from '@/components/QuestionCard/QuestionCard';
 
-function CreateQuizTester() {
+const CreateQuizPage = () => {
   const [quizType, setQuizType] = useState('reading');
   const [result, setResult] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -178,7 +178,7 @@ function CreateQuizTester() {
                 <button onClick={gentoratorQuiz} disabled={loading} className="px-4 py-2 bg-[#E4D161] text-black rounded-md font-semibold disabled:opacity-60">{loading ? 'Đang tạo...' : 'Sinh Quiz'}</button>
                 <button onClick={addQuizManually} className="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-md font-semibold">Tạo Quiz</button>
                 {Array.isArray(result) && !!result.length && (
-                  <button onClick={saveAllToDB} disabled={saving} className="px-4 py-2 bg-emerald-500 hover:bg-emerald-600 text-black rounded-md font-semibold disabled:opacity-60">{saving ? 'Đang lưu…' : 'Lưu bài tập'}</button>
+                  <button onClick={saveAllToDB} disabled={saving} className="px-4 py-2 bg-emerald-500 hover:bg-emerald-600 text-black rounded-md font-semibold disabled:opacity-60">{saving ? 'Đang lưu…' : 'Lưu Quiz'}</button>
                 )}
               </div>
               {/* Thông báo lỗi & lưu */}
@@ -245,4 +245,4 @@ function CreateQuizTester() {
   );
 }
 
-export default CreateQuizTester;
+export default CreateQuizPage;

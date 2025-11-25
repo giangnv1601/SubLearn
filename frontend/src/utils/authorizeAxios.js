@@ -27,13 +27,13 @@ authorizedAxiosInstance.interceptors.response.use((response) => {
   }, (error) => {
 
     // Nếu nhận mã 401 từ BE thì logout luôn
-    if(error.response?.status === 401) {
-      localStorage.removeItem('accessToken')
-      localStorage.removeItem('refreshToken')
-      localStorage.removeItem('userInfo')
+    // if(error.response?.status === 401) {
+    //   localStorage.removeItem('accessToken')
+    //   localStorage.removeItem('refreshToken')
+    //   localStorage.removeItem('userInfo')
 
-      window.location.href = '/login'
-    }
+    //   window.location.href = '/login'
+    // }
 
     // Nếu nhận mã 410 từ BE thì goi api refresh token để làm mới token
     const originalRequest = error.config

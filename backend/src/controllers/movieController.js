@@ -66,4 +66,31 @@ const getMovieById = async (req, res) => {
   }
 };
 
-export { getAllMovies, createMovie, updateMovie, deleteMovie, getMovieById };
+const searchMovies = async (req, res) => {
+  try {
+    const q = (req.query.q || '').trim()
+
+    if (!q) {
+      return res.json([])
+    }
+    const movies = await Movie.find(
+      { $text: { $search: q } },
+      {
+        score: { $meta: 'textScore' },
+        title: 1,
+        thumb_url: 1,
+        year_released: 1,
+      }
+    )
+      .sort({ score: { $meta: 'textScore' } })
+      .limit(10)
+      .lean()
+
+    return res.json(movies)
+  } catch (error) {
+    console.error(error)
+    res.status(500).json({ message: 'Server error' })
+  }
+};
+
+export { getAllMovies, createMovie, updateMovie, deleteMovie, getMovieById, searchMovies };
