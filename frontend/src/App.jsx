@@ -5,6 +5,7 @@ import HomePage from "./pages/Shared/Home/HomePage"
 import MoviePlayerPage from "./pages/Shared/Home/MoviePlayerPage"
 import ManagerMovie from "./pages/Admin/ManageMovie/ManagerMoviePage"
 import ManagerExercisesPage from "./pages/Admin/ManagerExercisesPage"
+import ManageUsersPage from "./pages/Admin/ManageUsers/ManageUsersPage/ManageUsersPage"
 import QuizEditorPage from "./pages/Admin/QuizEditorPage"
 import CreateQuizTester from "./pages/Test"
 import RegisterPage from "./pages/Auth/RegisterPage"
@@ -42,20 +43,31 @@ function App() {
       {/* Protected Routes (Accessible only after login) */}
       <Route element={<ProtectedRoute />}>
         <Route element={<AuthLayout />}>
+          {/* ----SHARE---- */}
+          
+          {/* Home */}
           <Route path="/" element={<HomePage />} />
           <Route path="/movie/:id" element={<MoviePlayerPage />} />
-
           {/* Account */}
           <Route path="/profile" element={<ProfilePage />} />
           <Route path="/profile/edit/:id" element={<EditProfilePage />} />
           <Route path="/profile/change-password/:id" element={<ChangePasswoedPage />} />
           
+          {/* ----CLIENT---- */}
+          
+          {/* Exercises */}
           <Route path="/client/exercises" element={<ExercisesPage />} />
           <Route path="/client/exam" element={<ExamPage />} />
+          {/* Results */}
           <Route path="/client/results" element={<ResultsPage />} />
 
-          {/* Admin */}
+          {/* ----ADMIN---- */}
+
+          {/* ManageUsers */}
+          <Route path="/admin/users" element={<ManageUsersPage />} />
+          {/* ManageMovie */}
           <Route path="/admin/movie" element={<ManagerMovie />} />
+          {/* Manage Exercises */}
           <Route path="/admin/exercise" element={<ManagerExercisesPage />} />
           <Route path="/admin/exercise/:movieId/:type/edit" element={<QuizEditorPage />} />
           <Route path="/admin/exercise/create" element={<CreateQuizPage />} />
