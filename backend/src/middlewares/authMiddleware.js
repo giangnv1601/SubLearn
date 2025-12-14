@@ -32,6 +32,23 @@ const isAuthorized = async (req, res, next) => {
   }
 }
 
-export const authMiddleware = { isAuthorized }
+const requireRole = (...roles) => {
+  return (req, res, next) => {
+    if (!req.jwtDecoded) {
+      return res.status(401).json({ message: 'Unauthorized!' })
+    }
+    if (!roles.includes(req.jwtDecoded.role)) {
+      return res.status(403).json({ message: 'Forbidden! (Insufficient permissions)' })
+    }
+    next()
+  }
+}
+
+const isAdmin = requireRole('admin')
+const isClient = requireRole('client')
+const isAdminOrClient = requireRole('admin', 'client')
+
+export const authMiddleware = { isAuthorized, isAdmin, isClient, isAdminOrClient }
+
 
 
