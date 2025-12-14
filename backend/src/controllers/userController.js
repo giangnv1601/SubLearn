@@ -45,7 +45,9 @@ export const login = async (req, res) => {
     if (!user) {
       return res.status(401).json({ message: 'Invalid email or password' })
     }
-
+    if (!user.isActive) {
+      return res.status(403).json({ message: 'Account is deactivated. Please contact admin.' })
+    }
     const isMatch = await bcrypt.compare(password, user.password)
     if (!isMatch) {
       return res.status(401).json({ message: 'Invalid email or password' })
@@ -106,7 +108,7 @@ export const refreshToken = async (req, res) => {
     res.status(200).json({ accessToken })
   } catch (error) {
     console.error(error)
-    return res.status(500).json({ message: 'Refresh token API failed' })
+    return res.status(401).json({ message: 'Refresh token API failed' })
   }
 }
 
@@ -151,6 +153,7 @@ export const changePassword = async (req, res) => {
   }
 }
 
+// Cập nhật thông tin người dùng
 export const updateProfile = async (req, res) => {
   try {
     const userId = req.params.id
@@ -188,5 +191,71 @@ export const updateProfile = async (req, res) => {
   } catch (error) {
     console.error('Update profile error:', error)
     res.status(500).json({ message: 'Internal server error' })
+  }
+}
+
+// Lấy danh sách người dùng (Only Admin)
+export const getAllUsers = async (req, res) => {
+  try {
+    // Lấy tất cả người dùng và password không hash
+    const users = await User.find({ role: 'client' }).select('-password').sort({ createdAt: -1 })
+    res.status(200).json(users)
+  } catch (error) {
+    console.error('Get all users error:', error)
+    res.status(500).json({ message: 'Get users failed' })
+  }
+}
+
+// Xoá người dùng (Only Admin)
+export const deleteUser = async (req, res) => {
+  try {
+    const userId = req.params.id
+    const user = await User.findByIdAndDelete(userId)
+
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' })
+    }
+    res.status(200).json({ message: 'User deleted successfully' })
+  } catch (error) {
+    console.error('Delete user error:', error)
+    res.status(500).json({ message: 'Internal server error' })
+  }
+}
+
+// Cập nhập thông tin người dùng (Only Admin)
+export const updateUser = async (req, res) => {
+  try {
+    const userId = req.params.id
+    let { fullname, isActive } = req.body
+    const avatarFile = req.file
+
+    // FormData gửi string "true"/"false", cần parse
+    if (typeof isActive === 'string') {
+      isActive = isActive === 'true'
+    }
+
+    const user = await User.findById(userId)
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' })
+    }
+    
+    if (avatarFile) {
+      const uploadResult = await CloudinaryService.streamUpload(avatarFile.buffer, 'user')
+      user.avatar = uploadResult.secure_url
+    }
+    if (fullname) {
+      user.fullname = fullname
+    }
+    if (typeof isActive === 'boolean') {
+      user.isActive = isActive
+    }
+    await user.save()
+    // Trả về user đã cập nhật để frontend sync state
+    const updatedUser = user.toObject()
+    delete updatedUser.password
+    res.status(200).json({ message: 'User updated successfully', data: updatedUser })
+  } catch (error) {
+    console.error('Admin update user error:', error)
+    res.status(500).json({ message: 'Update user failed' })
   }
 }

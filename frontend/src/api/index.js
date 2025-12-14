@@ -129,3 +129,25 @@ export const fetchResultsByUserApi = async (userId) => {
   return res.data;
 }
 
+
+/** API Exercise Interactive */
+export const genExerciseWithMovieApi = async (payload) => {
+  const res = await authorizedAxiosInstance.post(`${API_ROOT}/api/quizzes/genExerciseWithMovie`, payload);
+  return res.data;
+}
+
+// API Manage Users (Admin)
+export const fetchAllUsersApi = async () => {
+  const res = await authorizedAxiosInstance.get(`${API_ROOT}/api/users`);
+  return res.data;
+}
+
+export const deleteUserApi = async (userId) => {
+  const res = await authorizedAxiosInstance.delete(`${API_ROOT}/api/users/${userId}`);
+  return res.data;
+}
+
+export const updateUserApi = async (userId, data) => {
+  const res = await authorizedAxiosInstance.put(`${API_ROOT}/api/users/update-user/${userId}`, data);
+  return res.data;
+}
