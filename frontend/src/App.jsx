@@ -1,8 +1,8 @@
 import { Routes, Route, Navigate, Outlet } from "react-router"
 
 import NotFound from "./pages/NotFound"
-import HomePage from "./pages/Shared/Home/HomePage"
-import MoviePlayerPage from "./pages/Shared/Home/MoviePlayerPage"
+import HomePage from "./pages/Shared/Home/HomePage/HomePage"
+import MoviePlayerPage from "./pages/Shared/Home/MoviePlayerPage/MoviePlayerPage"
 import ManagerMovie from "./pages/Admin/ManageMovie/ManagerMoviePage"
 import ManagerExercisesPage from "./pages/Admin/ManagerExercisesPage"
 import ManageUsersPage from "./pages/Admin/ManageUsers/ManageUsersPage/ManageUsersPage"

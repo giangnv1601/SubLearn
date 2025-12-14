@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
-import HeroCarousel from './HomePage/HeroCarousel'
-import BoardMovie from './HomePage/BoardMovie'
+import HeroCarousel from './HeroCarousel/HeroCarousel'
+import BoardMovie from './BoardMovie/BoardMovie'
 import { fetchMoviesApi } from '@/api'
 
 const HomePage = () => {
