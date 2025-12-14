@@ -21,7 +21,6 @@ const TypeBadge = ({ label, color = "bg-gray-700"  }) => {
   return (
     <span className={`inline-flex items-center gap-2 px-2.5 py-1 rounded text-xs ${color}`}>
       <span className="font-medium capitalize">{label}</span>
-      {/* <span className="ml-2 text-xs text-gray-300">({count})</span> */}
     </span>
   )
 }
