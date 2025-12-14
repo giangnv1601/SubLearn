@@ -1,27 +1,49 @@
 import React, { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { User, LogOut } from 'lucide-react'
-import { fetchProfileByIdApi } from '../../../api'
+import { fetchProfileByIdApi } from '@/api'
+import { AUTH_PROFILE_UPDATED } from '@/utils/authEvents'
+import AvatarDefault from '@/assets/user.webp'
 
 const Profiles = () => {
   const navigate = useNavigate()
-  const [profile, setProfile] = useState(null);
+  const [profile, setProfile] = useState(null)
+
+  const fetchProfile = async () => {
+    try {
+      const userInfo = JSON.parse(localStorage.getItem("userInfo"))
+      if (userInfo?.id) {
+        const profileData = await fetchProfileByIdApi(userInfo.id)
+        setProfile(profileData?.data ?? profileData)
+      }
+    } catch (error) {
+      console.error("Failed to fetch profile:", error)
+    }
+  }
 
   useEffect(() => {
-    const fetchProfile = async () => {
-      try {
-        const userInfo = JSON.parse(localStorage.getItem('userInfo'));
-        if (userInfo && userInfo.id) {
-          const profileData = await fetchProfileByIdApi(userInfo.id);
-          setProfile(profileData);
-        }
-      } catch (error) {
-        console.error('Failed to fetch profile:', error);
-      }
-    };
+    fetchProfile()
 
-    fetchProfile();
-  }, []);
+    const onProfileUpdated = (e) => {
+      // Cập nhật trực tiếp từ event detail nếu có
+      if (e.detail) {
+        setProfile(prev => ({
+          ...prev,
+          fullname: e.detail.fullname,
+          avatar: e.detail.avatar
+        }))
+      } else {
+        fetchProfile()
+      }
+    }
+
+    window.addEventListener(AUTH_PROFILE_UPDATED, onProfileUpdated)
+    
+    // Cleanup khi component unmount
+    return () => {
+      window.removeEventListener(AUTH_PROFILE_UPDATED, onProfileUpdated)
+    }
+  }, [])
 
   const handleLogout = async () => {
     localStorage.removeItem('accessToken');
@@ -31,13 +53,11 @@ const Profiles = () => {
     navigate('/login')
   }
 
-
   return (
     <div className="relative group flex items-center gap-3">
       {/* Name*/}
       <div className="min-w-0">
         <p className="text-sm font-medium text-white truncate">{profile?.fullname}</p>
-        {/* <p className="text-xs text-gray-300 truncate">{profile?.role}</p> */}
       </div>
 
       {/* Avatar */}
@@ -46,9 +66,13 @@ const Profiles = () => {
         aria-label="User Profile"
       >
         <img
-          src={profile?.avatar}
+          src={profile?.avatar || AvatarDefault}
           alt="avatar"
           className="w-10 h-10 rounded-full object-cover border-2 border-[#E4D161] shadow-md"
+          onError={(e) => {
+            e.currentTarget.onerror = null
+            e.currentTarget.src = AvatarDefault
+          }}
         />
       </button>
 
