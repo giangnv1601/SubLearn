@@ -4,9 +4,7 @@ import { authMiddleware } from '../middlewares/authMiddleware.js'
 
 const router = express.Router()
 
-router.post('/', authMiddleware.isAuthorized, submitResult)
-
-// Lấy kết quả theo userId
-router.get('/:userId', authMiddleware.isAuthorized, getResults)
+router.post('/', authMiddleware.isAuthorized, authMiddleware.isClient ,submitResult)
+router.get('/:userId', authMiddleware.isAuthorized, authMiddleware.isClient , getResults)
 
 export default router
