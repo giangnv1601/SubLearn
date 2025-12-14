@@ -9,14 +9,11 @@ import userRoute from './routes/userRoute.js'
 import quizRoute from './routes/quizRoute.js'
 import resultRoute from './routes/resultRoute.js'
 
-import { importMoviesOnStartup } from './services/movieService.js'
-
 dotenv.config();
 
 const PORT = process.env.PORT || 5001;
 
 const app = express();
-
 
 // Middleware
 app.use(express.json());
@@ -35,7 +32,6 @@ if (process.env.NODE_ENV !== 'test') {
   connectDB().then(() => {
     app.listen(PORT, () => {
       console.log(`Server is running on port ${PORT}`);
-      // importMoviesOnStartup();
     });
   }).catch(err => {
     console.error('Failed to start server:', err);
