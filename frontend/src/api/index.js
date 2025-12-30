@@ -113,8 +113,8 @@ export const deleteQuizApi = async (quizId) => {
   return res.data;
 }
 
-export const gentoratorQuizApi = async (payload) => {
-  const res = await authorizedAxiosInstance.post(`${API_ROOT}/api/quizzes/genQuiz`, payload);
+export const createQuizByAiApi = async (payload) => {
+  const res = await authorizedAxiosInstance.post(`${API_ROOT}/api/quizzes/createQuizByAi`, payload);
   return res.data;
 }
 
@@ -131,8 +131,8 @@ export const fetchResultsByUserApi = async (userId) => {
 
 
 /** API Exercise Interactive */
-export const genExerciseWithMovieApi = async (payload) => {
-  const res = await authorizedAxiosInstance.post(`${API_ROOT}/api/quizzes/genExerciseWithMovie`, payload);
+export const createInteractiveQuizByAiApi = async (payload) => {
+  const res = await authorizedAxiosInstance.post(`${API_ROOT}/api/quizzes/createInteractiveQuizByAi`, payload);
   return res.data;
 }
 

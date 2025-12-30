@@ -258,7 +258,7 @@ ${subtitleSegment}
 `;
 
 // Hàm tạo quiz bằng OpenAI
-const createQuiz = async (subtitle, quizType = QUIZ_TYPES.READING, {
+const generateQuiz = async (subtitle, quizType = QUIZ_TYPES.READING, {
   model = MODEL,
   temperature = 0.7, // độ sáng tạo
   top_p = 0.95, // lọc theo xác suất
@@ -292,7 +292,7 @@ const createQuiz = async (subtitle, quizType = QUIZ_TYPES.READING, {
 }
 
 // Hàm tạo bài tập tương tác phim
-const createExerciseForMovie = async (subtitleSegment, {
+const generateInteractiveQuiz = async (subtitleSegment, {
   model = MODEL,
   temperature = 0.7,
   top_p = 0.95,
@@ -346,4 +346,4 @@ const createExerciseForMovie = async (subtitleSegment, {
   }
 };
 
-export const OpenAiGenQuiz = { createQuiz, createExerciseForMovie};
+export const OpenaiService = { generateQuiz, generateInteractiveQuiz};

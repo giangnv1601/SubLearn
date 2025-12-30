@@ -1,6 +1,6 @@
 import Quiz from '../models/quizModel.js'
 import Movie from '../models/movieModel.js'
-import { OpenAiGenQuiz } from '../services/OpenAiGenQuizService.js'
+import { OpenaiService } from '../services/OpenaiService.js'
 
 export const createQuiz = async (req, res) => {
   try {
@@ -189,7 +189,7 @@ export const deleteQuiz = async (req, res) => {
 }
 
 // Tạo quiz bằng AI từ subtitle
-export const generatorQuiz = async (req, res) => {
+export const createQuizByAi = async (req, res) => {
   try {
     const { subtitle , quizType } = req.body || {}
 
@@ -201,25 +201,25 @@ export const generatorQuiz = async (req, res) => {
       return res.status(400).json({ message: 'Quiz type is required' })
     }
 
-    const data = await OpenAiGenQuiz.createQuiz(subtitle, quizType)
+    const data = await OpenaiService.generateQuiz(subtitle, quizType)
     return res.status(200).json(data)
   } catch (err) {
-    console.error('Create quiz error:', err)
+    console.error('createQuiz error:', err)
     return res.status(500).json({ ok: false, message: err.message || 'Server error' })
   }
 }
 
 // Tại quiz tương tác với phim
-export const generatotQuizWithMovie = async (req, res) => {
+export const createInteractiveQuizByAi = async (req, res) => {
   try {
     const { subtitleSegment } = req.body
     if (!subtitleSegment || !subtitleSegment.trim()) {
       return res.status(400).json({ message: 'Thiếu tham số bắt buộc: subtitleSegment' })
     }
-    const data = await OpenAiGenQuiz.createExerciseForMovie(subtitleSegment)
+    const data = await OpenaiService.generateInteractiveQuiz(subtitleSegment)
     return res.status(200).json(data)
   } catch (err) {
-    console.error('generatotQuizWithMovie error:', err)
+    console.error('createInteractiveQuiz error:', err)
     return res.status(500).json({ ok: false, message: err.message || 'Server error' })
   }
 }
