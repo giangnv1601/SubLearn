@@ -1,4 +1,4 @@
-import { Plus, Edit, Search } from 'lucide-react'
+import { Plus, Edit, Search, Trash2 } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router'
 import { fetchQuizzesSummary } from '@/api'
@@ -91,7 +91,7 @@ const ManagerExercisePage = () => {
               <input
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
-                placeholder="Search movie title..."
+                placeholder="Tìm kiếm theo tên phim..."
                 className="w-full pl-9 pr-3 py-2 rounded-md bg-gray-900/40 border border-gray-700 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#E4D161] focus:border-transparent"
               />
             </div>
@@ -109,7 +109,7 @@ const ManagerExercisePage = () => {
           <div className="overflow-x-auto">
             <table className="w-full text-left">
               <thead>
-                <tr className="text-sm text-gray-300">
+                <tr className="border-b border-gray-800 text-sm text-gray-300">
                   <th className="py-3 px-3 font-semibold">Phim</th>
                   <th className="py-3 px-3 font-semibold">Loại bài tập</th>
                 </tr>
@@ -118,7 +118,7 @@ const ManagerExercisePage = () => {
                 {loading && (
                   <tr>
                     <td colSpan={2} className="py-6 px-3 text-center text-gray-400">
-                      Loading...
+                      Đang tải...
                     </td>
                   </tr>
                 )}
@@ -132,14 +132,14 @@ const ManagerExercisePage = () => {
                 {!loading && !error && filtered.length === 0 && (
                   <tr>
                     <td colSpan={2} className="py-6 px-3 text-center text-gray-400">
-                      No data
+                      Không có dữ liệu
                     </td>
                   </tr>
                 )}
                 {!loading &&
                   !error &&
                   filtered.map((row) => (
-                    <tr key={row.id} className="border-t border-white/10 hover:bg-white/5">
+                    <tr key={row.id} className="border-b border-gray-800/70 hover:bg-gray-900/60 transition-colors">
                       <td className="py-3 px-3 align-top max-w-[280px]">{row.title}</td>
                       <td className="py-3 px-3 align-top">
                         <div className="flex flex-col gap-2">
@@ -153,7 +153,13 @@ const ManagerExercisePage = () => {
                                     onClick={() => goEdit(row.id, type.key)}
                                     className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-blue-700 hover:bg-blue-600 rounded text-xs font-medium text-white"
                                   >
-                                    <Edit className="w-4 h-4" /> Edit
+                                    <Edit className="w-4 h-4" /> Sửa
+                                  </button>
+                                  <button
+                                    onClick={() => console.log('Delete', row.id, type.key)}
+                                    className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-red-700 hover:bg-red-600 rounded text-xs font-medium text-white"
+                                  >
+                                    <Trash2 className="w-4 h-4" /> Xóa
                                   </button>
                                 </div>
                               </div>
