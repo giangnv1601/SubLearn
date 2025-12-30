@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { Eye, EyeOff, Mail, Lock, User, UserPlus } from 'lucide-react'
 import { toast } from 'sonner'
 import { useForm } from 'react-hook-form'
-import { registerUserApi } from '../../api'
+import { registerUserApi } from '@/api'
 
 function RegisterPage() {
   const navigate = useNavigate()

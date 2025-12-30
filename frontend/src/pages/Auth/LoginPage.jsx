@@ -2,9 +2,9 @@ import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { Eye, EyeOff, Mail, Lock, LogIn } from 'lucide-react'
 import { useForm } from 'react-hook-form'
-import { loginUserApi } from '../../api'
+import { loginUserApi } from '@/api'
 import { toast } from 'sonner'
-import LogoSubLearn from '../../assets/sublearn.png'
+import LogoSubLearn from '@/assets/sublearn.png'
 
 function LoginPage() {
   const navigate = useNavigate()

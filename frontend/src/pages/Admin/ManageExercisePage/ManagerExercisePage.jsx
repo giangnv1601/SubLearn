@@ -1,9 +1,9 @@
 import { Plus, Edit, Search } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router'
-import { fetchQuizzesSummary } from '../../api'
+import { fetchQuizzesSummary } from '@/api'
 
-const ManagerExercisesPage = () => {
+const ManagerExercisePage = () => {
   const [query, setQuery] = useState('')
   const navigate = useNavigate()
   const [data, setData] = useState([])
@@ -171,4 +171,4 @@ const ManagerExercisesPage = () => {
   )
 }
 
-export default ManagerExercisesPage
+export default ManagerExercisePage
