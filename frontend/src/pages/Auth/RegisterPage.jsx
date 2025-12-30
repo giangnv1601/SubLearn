@@ -36,7 +36,7 @@ function RegisterPage() {
         password: values.password
       }
 
-      const data = await registerUserApi(payload)
+      await registerUserApi(payload)
 
       toast.success('Registration successful! Please log in.')
       navigate('/login', { replace: true })

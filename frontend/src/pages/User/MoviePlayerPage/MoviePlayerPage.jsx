@@ -144,7 +144,7 @@ export default function MoviePlayerPage() {
         hls.destroy()
       }
     }
-  }, [movie?.link_m3u8, subs.length])
+  }, [movie?.link_m3u8, subs])
 
   // Auto scroll subtitle list
   useEffect(() => {

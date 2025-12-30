@@ -96,7 +96,7 @@ const ExercisePage = () => {
                  </tr>
                </thead>
                <tbody>
-                 {rows.map((row, index) => (
+                 {rows.map((row) => (
                    <tr key={row.id} className="border-t border-white/10 hover:bg-white/5">
                      <td className="py-3 px-3 align-top max-w-[280px]">{row.title}</td>
                      <td className="py-3 px-3 align-top">

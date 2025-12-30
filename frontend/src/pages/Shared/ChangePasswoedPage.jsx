@@ -50,7 +50,7 @@ const ChangePasswordPage = () => {
         newPassword: form.newPassword,
       }
 
-      const res = await changePasswordApi(userId, payload)
+      await changePasswordApi(userId, payload)
       localStorage.removeItem("accessToken")
       localStorage.removeItem("refreshToken")
       localStorage.removeItem("userInfo")

@@ -30,7 +30,7 @@ const HeroCarousel = ({ mostMovies }) => {
   useEffect(() => {
     startTimer()
     return () => clearInterval(timer.current)
-  }, [slides.length])
+  }, [slides.length, startTimer])
 
   const prev = () => {
     setIndex((i) => (i - 1 + slides.length) % slides.length)

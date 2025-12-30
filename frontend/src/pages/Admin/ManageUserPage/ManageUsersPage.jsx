@@ -39,7 +39,7 @@ const ManageUsersPage = () => {
         const data = await fetchAllUsersApi()
         const list = Array.isArray(data) ? data : data?.data || []
         setUsers(list)
-      } catch (err) {
+      } catch {
         toast.error('Lấy danh sách người dùng thất bại. Vui lòng thử lại.')
       } finally {
         setLoading(false)

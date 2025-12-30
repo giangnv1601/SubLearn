@@ -79,7 +79,7 @@ export default function ResultPage() {
     } finally {
       setLoading(false)
     }
-  }, [])
+  }, [userId])
 
   useEffect(() => {
     load()
