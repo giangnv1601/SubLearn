@@ -33,7 +33,14 @@ const InfoPanel = ({ movie }) => {
               {movie?.title || 'Đang tải...'}
             </h4>
             {movie?.level && (
-              <span className="inline-block mt-2 text-xs font-bold px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
+              <span
+                className={`inline-block mt-2 text-xs font-bold px-2.5 py-1 rounded-full border 
+                  ${movie.level.toLowerCase() === 'easy' ? 'bg-green-600/20 text-green-300 border-green-500/30' :
+                    movie.level.toLowerCase() === 'medium' ? 'bg-yellow-600/20 text-yellow-300 border-yellow-500/30' :
+                    movie.level.toLowerCase() === 'hard' ? 'bg-red-600/20 text-red-300 border-red-500/30' :
+                    'bg-gray-600/20 text-gray-300 border-gray-500/30'}
+                `}
+              >
                 {movie.level}
               </span>
             )}

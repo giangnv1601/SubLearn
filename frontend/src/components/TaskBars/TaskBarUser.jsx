@@ -7,12 +7,12 @@ import Results from './MenuItems/Results'
 
 const TaskBarUser = () => {
   return (
-    <div className='flex justify-between items-center p-4 bg-[#1D2732] text-white rounded-2px rounded-t-2xl'>
+    <div className='flex justify-between items-center px-6 py-4 bg-[#1D2732] text-white rounded-t-2xl shadow-2xl border-b-2 border-[#E4D161]/20'>
       {/* Logo */}
       <LogoSubLearn/>
 
       {/* Menu Items User */}
-      <div className="hidden md:flex items-center space-x-2">
+      <div className="hidden md:flex items-center space-x-6">
         <Home />
         <Exercises />
         <Results /> 
