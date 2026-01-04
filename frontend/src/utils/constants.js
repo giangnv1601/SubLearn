@@ -1,4 +1,4 @@
-export const API_ROOT = "http://localhost:5001";
+export const API_ROOT = import.meta.env.VITE_API_ROOT || 'http://localhost:5001';
 
 export const QUIZ_TYPES = [
   { value: 'reading', label: 'Reading' },
