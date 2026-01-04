@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useEffect, useCallback } from 'react'
 import { ChevronLeft, ChevronRight, Check, X } from 'lucide-react'
-import { useSearchParams, useNavigate, useParams } from 'react-router-dom'
+import { useSearchParams, useNavigate } from 'react-router-dom'
 import { fetchQuizzes, submitResultApi } from '@/api'
 import { toLabel, toIndex } from '@/utils/helpers'
 import { toast } from 'sonner'

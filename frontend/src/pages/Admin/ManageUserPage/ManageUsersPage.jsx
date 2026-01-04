@@ -39,7 +39,7 @@ const ManageUsersPage = () => {
         const data = await fetchAllUsersApi()
         const list = Array.isArray(data) ? data : data?.data || []
         setUsers(list)
-      } catch (err) {
+      } catch {
         toast.error('Lấy danh sách người dùng thất bại. Vui lòng thử lại.')
       } finally {
         setLoading(false)
@@ -151,43 +151,32 @@ const ManageUsersPage = () => {
   return (
     <div className="max-w-[1200px] mx-auto px-4 py-6">
       {/* Header */}
-      <div className="mb-4">
-        {/* Title */}
-        <h1 className="text-2xl font-semibold text-[#E4D161] mb-3">
-          Manage Users
-        </h1>
+      <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 mb-4">
+        <h1 className="text-2xl font-semibold text-[#E4D161]">Manage Users</h1>
         
-        {/* Search and Filter */}
-        <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-3">
-          <p className="text-lg text-gray-400">
-            Tổng số người dùng:{' '}
-            <span className="font-medium text-gray-200">{totalUsers}</span>
-          </p>
-          
-          <div className="flex items-center gap-3 w-full md:w-auto">
-            {/* Search box */}
-            <div className="relative w-full md:w-72">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-              <input
-                type="text"
-                placeholder="Tìm kiếm theo tên hoặc email..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-10 pr-3 py-2 rounded-md bg-gray-700 placeholder-gray-400 text-white focus:outline-none focus:ring-2 focus:ring-[#E4D161]/40"
-              />
-            </div>
-            
-            {/* Status filter */}
-            <select
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
-              className="bg-gray-700 text-white px-4 py-2 rounded-md focus:outline-none focus:ring-2 focus:ring-[#E4D161]/40 cursor-pointer [&>option]:bg-gray-800 [&>option]:text-white"
-            >
-              <option value="all">Trạng thái: Tất cả</option>
-              <option value="active">Đang hoạt động</option>
-              <option value="inactive">Đã khóa</option>
-            </select>
+        <div className="flex items-center gap-3 w-full md:w-auto">
+          {/* Search box */}
+          <div className="relative flex-1 md:w-72">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+            <input
+              type="text"
+              placeholder="Tìm kiếm theo tên hoặc email..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full pl-9 pr-3 py-2 rounded-md bg-gray-900/40 border border-gray-700 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#E4D161] focus:border-transparent"
+            />
           </div>
+          
+          {/* Status filter */}
+          <select
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value)}
+            className="bg-gray-900/40 border border-gray-700 text-white px-4 py-2 rounded-md focus:outline-none focus:ring-2 focus:ring-[#E4D161] focus:border-transparent cursor-pointer [&>option]:bg-gray-800 [&>option]:text-white"
+          >
+            <option value="all">Trạng thái: Tất cả</option>
+            <option value="active">Đang hoạt động</option>
+            <option value="inactive">Đã khóa</option>
+          </select>
         </div>
       </div>
 
@@ -204,13 +193,13 @@ const ManageUsersPage = () => {
           <div className="overflow-x-auto">
             <table className="min-w-full text-sm text-gray-200 table-fixed">
               <thead>
-                <tr className="border-b border-gray-800 text-xs text-gray-300">
-                  <th className="py-3 px-2 text-left w-[220px]">Người dùng</th>
-                  <th className="py-3 px-2 text-left w-[260px]">Email</th>
-                  <th className="py-3 px-2 text-left w-[120px]">Ngày tạo</th>
-                  <th className="py-3 px-2 text-left w-[120px]">Cập nhật</th>
-                  <th className="py-3 px-13 text-left w-[150px]">Trạng thái</th>
-                  <th className="py-3 px-13 text-right w-[160px]">Hành động</th>
+                <tr className="border-b border-gray-800 text-sm text-gray-300">
+                  <th className="py-3 px-2 text-left w-[220px] whitespace-nowrap">Người dùng</th>
+                  <th className="py-3 px-2 text-left w-[260px] whitespace-nowrap">Email</th>
+                  <th className="py-3 px-2 text-left w-[120px] whitespace-nowrap">Ngày tạo</th>
+                  <th className="py-3 px-2 text-left w-[120px] whitespace-nowrap">Cập nhật</th>
+                  <th className="py-3 px-2 text-left w-[150px] whitespace-nowrap">Trạng thái</th>
+                  <th className="py-3 px-2 text-right w-[160px] whitespace-nowrap">Hành động</th>
                 </tr>
               </thead>
               <tbody>
@@ -295,17 +284,15 @@ const ManageUsersPage = () => {
                         <div className="flex items-center justify-end gap-2">
                           <button
                             onClick={() => handleEdit(user)}
-                            className="inline-flex items-center gap-1 px-3 py-1.5 rounded-md border border-yellow-500/70 text-xs font-medium text-yellow-300 hover:bg-yellow-500/10 transition"
+                            className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-blue-700 hover:bg-blue-600 rounded text-xs font-medium text-white"
                           >
-                            <Edit2 className="w-3 h-3" />
-                            <span>Sửa</span>
+                            <Edit2 className="w-4 h-4" /> Sửa
                           </button>
                           <button
                             onClick={() => handleRequestDelete(user)}
-                            className="inline-flex items-center gap-1 px-3 py-1.5 rounded-md border border-red-500/70 text-xs font-medium text-red-300 hover:bg-red-500/10 transition"
+                            className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-red-700 hover:bg-red-600 rounded text-xs font-medium text-white"
                           >
-                            <Trash2 className="w-3 h-3" />
-                            <span>Xóa</span>
+                            <Trash2 className="w-4 h-4" /> Xóa
                           </button>
                         </div>
                       </td>

@@ -2,8 +2,9 @@ import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { Eye, EyeOff, Mail, Lock, LogIn } from 'lucide-react'
 import { useForm } from 'react-hook-form'
-import { loginUserApi } from '../../api'
+import { loginUserApi } from '@/api'
 import { toast } from 'sonner'
+import LogoSubLearn from '@/assets/sublearn.png'
 
 function LoginPage() {
   const navigate = useNavigate()
@@ -35,6 +36,10 @@ function LoginPage() {
       localStorage.setItem('userInfo', JSON.stringify(userInfo))
 
       toast.success('Login successful!')
+      if (userInfo.role === 'admin') {
+        navigate('/admin/users')
+        return
+      }
       navigate('/')
     } catch (error) {
       const msg = error?.response?.data?.message
@@ -49,7 +54,7 @@ function LoginPage() {
         {/* Logo */}
         <div className="text-center mb-8">
           <div className="flex items-center justify-center gap-2 mb-4">
-            <img src="/sublearn.png" alt="SubLearn" className="h-12 w-auto" />
+            <img src={LogoSubLearn} alt="SubLearn" className="h-12 w-auto" />
             <h1 className="text-[#E4D161] text-2xl font-bold">SubLearn</h1>
           </div>
           <h2 className="text-white text-3xl font-semibold">Sign in to your account</h2>

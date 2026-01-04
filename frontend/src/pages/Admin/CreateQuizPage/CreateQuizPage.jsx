@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { fetchMoviesApi, fetchSubtitlesByMovie, gentoratorQuizApi, createQuizApi } from '@/api';
+import { fetchMoviesApi, fetchSubtitlesByMovie, createQuizByAiApi, createQuizApi } from '@/api';
 import { QUIZ_TYPES } from '@/utils/constants';
 import { normalizeAI, buildPayloads } from '@/utils/helpers';
 import QuestionCard from '@/components/QuestionCard/QuestionCard';
@@ -89,7 +89,7 @@ const CreateQuizPage = () => {
     setError(null); 
     setSaveMsg('');
     try {
-      const dataGenQuiz = await gentoratorQuizApi({ subtitle, quizType });
+      const dataGenQuiz = await createQuizByAiApi({ subtitle, quizType });
       const normalized = normalizeAI(dataGenQuiz);
       setResult(prev => (Array.isArray(prev) ? [...prev, ...normalized] : normalized));
     } 

@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useParams, useNavigate } from 'react-router'
-import { fetchMoviesApi, fetchQuizzes, updateQuizApi, createQuizApi, deleteQuizApi } from '../../api'
+import { fetchMoviesApi, fetchQuizzes, updateQuizApi, createQuizApi, deleteQuizApi } from '@/api'
 
 const toLabel = (i) => ['A', 'B', 'C', 'D'][i] ?? 'A'
 const toIndex = (ans) => {

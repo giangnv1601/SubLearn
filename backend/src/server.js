@@ -17,7 +17,23 @@ const app = express();
 
 // Middleware
 app.use(express.json());
-app.use(cors());
+
+// CORS configuration
+const corsOptions = {
+  origin: process.env.CORS_ALLOWED_ORIGINS 
+    ? process.env.CORS_ALLOWED_ORIGINS.split(',') 
+    : ['http://localhost:5173'],
+  credentials: true
+};
+app.use(cors(corsOptions));
+
+// Health check endpoint
+app.get('/api/health', (req, res) => {
+  res.status(200).json({ 
+    status: 'ok', 
+    timestamp: new Date().toISOString()
+  });
+});
 
 // Routes
 app.use('/api/movies', movieRoute)
@@ -26,16 +42,13 @@ app.use('/api/users', userRoute)
 app.use('/api/quizzes', quizRoute)
 app.use('/api/results', resultRoute)
 
-export default app
-
-if (process.env.NODE_ENV !== 'test') {
-  connectDB().then(() => {
-    app.listen(PORT, () => {
-      console.log(`Server is running on port ${PORT}`);
-    });
-  }).catch(err => {
-    console.error('Failed to start server:', err);
-    process.exit(1);
+// Start server
+connectDB().then(() => {
+  app.listen(PORT, () => {
+    console.log(`Server is running on port ${PORT}`);
   });
-}
+}).catch(err => {
+  console.error('Failed to start server:', err);
+  process.exit(1);
+});
 

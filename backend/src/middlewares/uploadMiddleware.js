@@ -34,4 +34,4 @@ const uploadSubtitle = multer({
   fileFilter: customFileSubtitle
 }).single('subtitle')
 
-export const multerUploadMiddleware = { uploadAvatar, uploadSubtitle }
+export const uploadMiddleware = { uploadAvatar, uploadSubtitle }

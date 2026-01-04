@@ -54,7 +54,7 @@ const QuizTypeBadge = ({ type }) => {
   )
 }
 
-export default function ResultsPage() {
+export default function ResultPage() {
   const userInfo = JSON.parse(localStorage.getItem('userInfo') || '{}')
   const userId = userInfo?._id || userInfo?.id || null
 
@@ -79,7 +79,7 @@ export default function ResultsPage() {
     } finally {
       setLoading(false)
     }
-  }, [])
+  }, [userId])
 
   useEffect(() => {
     load()

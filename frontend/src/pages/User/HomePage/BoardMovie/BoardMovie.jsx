@@ -92,7 +92,7 @@ const BoardMovie = ({ movies = [], movieBuffer = [], totalMovies: totalMoviesPro
       {/* Header: tổng số & bộ lọc */}
       <div className="flex justify-between items-center px-2 md:px-4">
         <p className="text-[#E4D161] text-lg md:text-2xl font-semibold tracking-wide">
-          Đang có {totalMovies} movies
+          Danh sách phim ({totalMovies})
         </p>
 
         <div className="flex items-center gap-4">
@@ -131,27 +131,63 @@ const BoardMovie = ({ movies = [], movieBuffer = [], totalMovies: totalMoviesPro
             <Link
               to={`/movie/${movie._id}`}
               key={movie._id}
-              className="group relative overflow-hidden rounded-lg shadow-md bg-[#2E4863] cursor-pointer no-underline"
+              className="group relative overflow-hidden rounded-xl shadow-lg bg-gradient-to-b from-[#2E4863] to-[#1D2732] cursor-pointer no-underline transition-transform duration-300 hover:scale-105 hover:shadow-2xl"
             >
-              <img
-                src={movie.thumb_url || "/assets/default-movie.png"}
-                alt={movie.slug || movie.title}
-                className="w-full h-40 object-cover transition-transform duration-300 group-hover:scale-105"
-                loading="lazy"
-              />
+              {/* Thumbnail */}
+              <div className="relative w-full h-48 overflow-hidden">
+                <img
+                  src={movie.thumb_url || "/assets/default-movie.png"}
+                  alt={movie.slug || movie.title}
+                  className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                  loading="lazy"
+                />
+                
+                {/* Overlay gradient */}
+                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
 
-              {/* Overlay hover */}
-              <div className="absolute inset-0 bg-black/0 transition-colors duration-200 group-hover:bg-black/40" />
-
-              {/* Play icon */}
-              <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                <Play className="w-12 h-12 text-transparent stroke-[#E4D161] stroke-2 bg-black/0 rounded-full p-1 opacity-0 transform scale-90 transition-all duration-200 group-hover:opacity-100 group-hover:scale-100" />
+                {/* Play icon */}
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <div className="w-14 h-14 rounded-full bg-[#E4D161]/90 flex items-center justify-center opacity-0 scale-75 group-hover:opacity-100 group-hover:scale-100 transition-all duration-300 shadow-lg">
+                    <Play className="w-6 h-6 text-black fill-black ml-0.5" />
+                  </div>
+                </div>
               </div>
 
-              <div className="p-3">
-                <h2 className="text-white text-base font-semibold mb-1 text-center line-clamp-2">
+              {/* Content */}
+              <div className="p-4">
+                {/* Title */}
+                <h2 className="text-white text-sm font-bold mb-2 line-clamp-2 min-h-[40px] leading-tight group-hover:text-[#E4D161] transition-colors">
                   {movie.title}
                 </h2>
+                
+                {/* Genres */}
+                {movie.genre && (
+                  <div className="flex flex-wrap gap-1.5 mb-3">
+                    {movie.genre.split(',').slice(0, 3).map((g, idx) => (
+                      <span 
+                        key={idx}
+                        className="px-2 py-0.5 bg-[#E4D161]/10 text-[#E4D161] text-[10px] font-medium rounded border border-[#E4D161]/30"
+                      >
+                        {g.trim()}
+                      </span>
+                    ))}
+                  </div>
+                )}
+                
+                {/* Year and Level */}
+                <div className="flex items-center justify-between gap-2">
+                  <div className="px-2.5 py-1 bg-gray-700/30 rounded text-xs text-gray-300 font-medium">
+                    {movie.year_released || 'N/A'}
+                  </div>
+                  <div className={`px-2.5 py-1 rounded-full text-xs font-semibold ${
+                    movie.level?.toLowerCase() === 'easy' ? 'bg-green-600/20 text-green-300' :
+                    movie.level?.toLowerCase() === 'medium' ? 'bg-yellow-600/20 text-yellow-300' :
+                    movie.level?.toLowerCase() === 'hard' ? 'bg-red-600/20 text-red-300' :
+                    'bg-gray-600/20 text-gray-300'
+                  }`}>
+                    {movie.level || 'N/A'}
+                  </div>
+                </div>
               </div>
             </Link>
           ))

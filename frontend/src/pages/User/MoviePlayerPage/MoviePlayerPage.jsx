@@ -4,7 +4,7 @@ import { useParams } from 'react-router-dom'
 import {
   fetchMovieByIdApi,
   fetchSubtitlesByMovie,
-  genExerciseWithMovieApi,
+  createInteractiveQuizByAiApi,
 } from '@/api/index.js'
 import { srtToCues, pairCues, findActiveIndex, findSegmentBeforeTime } from '@/utils/helpers.js'
 import InfoPanel from './Panels/InfoPanel.jsx'
@@ -144,7 +144,7 @@ export default function MoviePlayerPage() {
         hls.destroy()
       }
     }
-  }, [movie?.link_m3u8, subs.length])
+  }, [movie?.link_m3u8, subs])
 
   // Auto scroll subtitle list
   useEffect(() => {
@@ -232,6 +232,7 @@ export default function MoviePlayerPage() {
     if (!video.paused) video.pause()
     const currentTime = video.currentTime || 0
 
+    // Tìm đoạn phụ đề từ trước thời điểm hiện tại trong vòng 5 phút (300s)
     const startIdxBoundary = findSegmentBeforeTime(subs, currentTime, 300)
     let endIdx = findActiveIndex(subs, currentTime)
     if (endIdx === -1) {
@@ -274,7 +275,7 @@ export default function MoviePlayerPage() {
       setShowResult(false)
       setCheckSummary(null)
 
-      const resp = await genExerciseWithMovieApi({ subtitleSegment })
+      const resp = await createInteractiveQuizByAiApi({ subtitleSegment })
       const data = resp?.data ?? resp
 
       const questions = Array.isArray(data)

@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react"
 import { useNavigate } from "react-router-dom"
 import { Play } from "lucide-react"
-import { fetchQuizzesSummary } from '../../api'
+import { fetchQuizzesSummary } from '@/api'
 
 const QUIZ_TYPE_LABEL = {
   reading: 'Đọc hiểu',
@@ -25,7 +25,7 @@ const TypeBadge = ({ label, color = "bg-gray-700"  }) => {
   )
 }
 
-const ExercisesPage = () => {
+const ExercisePage = () => {
   const [rows, setRows] = useState([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
@@ -96,7 +96,7 @@ const ExercisesPage = () => {
                  </tr>
                </thead>
                <tbody>
-                 {rows.map((row, index) => (
+                 {rows.map((row) => (
                    <tr key={row.id} className="border-t border-white/10 hover:bg-white/5">
                      <td className="py-3 px-3 align-top max-w-[280px]">{row.title}</td>
                      <td className="py-3 px-3 align-top">
@@ -136,4 +136,4 @@ const ExercisesPage = () => {
    )
  }
 
- export default ExercisesPage
+ export default ExercisePage

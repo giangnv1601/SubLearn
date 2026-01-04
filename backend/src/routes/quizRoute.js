@@ -6,8 +6,8 @@ import {
   listQuizSummary,
   deleteQuiz,
   updateQuiz,
-  generatorQuiz,
-  generatotQuizWithMovie
+  createQuizByAi,
+  createInteractiveQuizByAi
 } from '../controllers/quizController.js'
 import { authMiddleware } from '../middlewares/authMiddleware.js'
 
@@ -21,9 +21,9 @@ router.delete('/:id', authMiddleware.isAuthorized, authMiddleware.isAdmin, delet
 router.put('/:id', authMiddleware.isAuthorized, authMiddleware.isAdmin, updateQuiz)
 
 // Tạo quiz bằng AI
-router.post('/genQuiz', authMiddleware.isAuthorized, authMiddleware.isAdmin, generatorQuiz)
+router.post('/createQuizByAi', authMiddleware.isAuthorized, authMiddleware.isAdmin, createQuizByAi)
 
-// Tại bài tập tương tác phim
-router.post('/genExerciseWithMovie', authMiddleware.isAuthorized, authMiddleware.isAdminOrClient, generatotQuizWithMovie)
+// Tạo bài tập tương tác bằng AI
+router.post('/createInteractiveQuizByAi', authMiddleware.isAuthorized, authMiddleware.isClient, createInteractiveQuizByAi)
 
 export default router

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Plus, Edit2, Trash2, Image, ChevronLeft, ChevronRight } from 'lucide-react'
+import { Plus, Edit2, Trash2, Image, ChevronLeft, ChevronRight, Search } from 'lucide-react'
 import { toast } from 'sonner'
 import MovieModalNew from './MovieModal/MovieModalNew'
 import UploadSubtitleModal from './UploadSubtitleModal/UploadSubtitleModal.jsx'
@@ -37,7 +37,7 @@ const ManagerMovie = () => {
   const handleDeleteMovie = async (id) => {
     if (!id) return
     await deleteMovieApi(id)
-    toast.success('Movie deleted successfully')
+    toast.success('Xóa phim thành công')
     await fetchMovies()
   }
 
@@ -70,21 +70,22 @@ const ManagerMovie = () => {
         <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 mb-4">
           <h1 className="text-2xl font-semibold text-[#E4D161]">Manage Movies</h1>
           <div className="flex items-center gap-3 w-full md:w-auto">
-            <div className="relative w-full md:w-72">
+            <div className="relative flex-1 md:w-72">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
               <input
                 value={q}
                 onChange={(e) => { setQ(e.target.value); setPage(1) }}
-                placeholder="Search by title..."
-                className="w-full pl-10 pr-3 py-2 rounded-md bg-gray-700 placeholder-gray-400 text-white focus:outline-none focus:ring-2 focus:ring-[#E4D161]/40"
+                placeholder="Tìm kiếm theo tên phim..."
+                className="w-full pl-9 pr-3 py-2 rounded-md bg-gray-900/40 border border-gray-700 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#E4D161] focus:border-transparent"
               />
             </div>
 
             <select
               value={genre}
               onChange={(e) => { setGenre(e.target.value); setPage(1) }}
-              className="bg-gray-700 text-white px-3 py-2 rounded-md focus:outline-none"
+              className="bg-gray-900/40 border border-gray-700 text-white px-4 py-2 rounded-md focus:outline-none focus:ring-2 focus:ring-[#E4D161] focus:border-transparent cursor-pointer [&>option]:bg-gray-800 [&>option]:text-white"
             >
-              <option value="">All genres</option>
+              <option value="">Thể loại: Tất cả</option>
               <option>Hành Động</option>
               <option>Phiêu Lưu</option>
               <option>Viễn Tưởng</option>
@@ -109,26 +110,26 @@ const ManagerMovie = () => {
           <div className="overflow-x-auto">
             <table className="min-w-full table-auto border-collapse">
               <thead>
-                <tr className="text-left text-sm text-gray-300/90">
-                  <th className="px-4 py-3">Stt</th>
-                  <th className="px-4 py-3">Thumbnail</th>
-                  <th className="px-4 py-3">Title</th>
-                  <th className="px-4 py-3 hidden lg:table-cell">Genre</th>
-                  <th className="px-4 py-3 w-20 hidden sm:table-cell">Year</th>
-                  <th className="px-4 py-3">Subtitle</th>
-                  <th className="px-4 py-3 w-36 text-center">Actions</th>
+                <tr className="border-b border-gray-800 text-sm text-gray-300">
+                  <th className="px-4 py-3">STT</th>
+                  <th className="px-4 py-3">Hình ảnh</th>
+                  <th className="px-4 py-3">Tên phim</th>
+                  <th className="px-4 py-3 hidden lg:table-cell">Thể loại</th>
+                  <th className="px-4 py-3 w-20 hidden sm:table-cell">Năm</th>
+                  <th className="px-4 py-3">Phụ đề</th>
+                  <th className="px-4 py-3 w-36 text-center">Hành động</th>
                 </tr>
               </thead>
 
-              <tbody className="divide-y divide-gray-700">
+              <tbody>
                 {paged.length === 0 ? (
                   <tr>
                     <td colSpan="7" className="px-4 py-8 text-center text-gray-400">
-                      No movies found. Click "Add movie" to create one.
+                      Không tìm thấy phim nào.
                     </td>
                   </tr>
                 ) : paged.map((m, idx) => (
-                  <tr key={m._id || m.id} className="hover:bg-gray-800">
+                  <tr key={m._id || m.id} className="border-b border-gray-800/70 hover:bg-gray-900/60 transition-colors">
                     <td className="px-4 py-3 text-sm text-gray-200">{(page - 1) * perPage + idx + 1}</td>
                     <td className="px-4 py-3">
                       <div className="h-14 w-24 bg-gray-800 rounded overflow-hidden flex items-center justify-center">
@@ -145,23 +146,22 @@ const ManagerMovie = () => {
                     <td className="px-4 py-3">
                       <button
                         onClick={() => openUploadSubtitle(m)}
-                        className="px-3 py-1.5 text-sm rounded-md bg-emerald-500 hover:bg-emerald-600 text-white inline-flex items-center gap-2"
-                        title="Upload subtitle (.srt)"
+                        className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-emerald-700 hover:bg-emerald-600 rounded text-xs font-medium text-white"
+                        title="Tải lên phụ đề (.srt)"
                       >
-                        <FilePlus2 className="w-4 h-4" />
-                        Upload .srt
+                        <FilePlus2 className="w-4 h-4" /> Tải phụ đề
                       </button>
                     </td>
                     <td className="px-4 py-3 text-right">
                       <div className="inline-flex items-center gap-2">
-                        <button onClick={() => openEdit(m)} className="px-3 py-1 text-sm rounded-md bg-blue-600 hover:bg-blue-700 text-white inline-flex items-center gap-2">
-                          <Edit2 className="w-4 h-4" />
+                        <button onClick={() => openEdit(m)} className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-blue-700 hover:bg-blue-600 rounded text-xs font-medium text-white">
+                          <Edit2 className="w-4 h-4" /> Sửa
                         </button>
                         <button
                           onClick={() => handleDeleteMovie(m._id || m.id)}
-                          className="px-3 py-1 text-sm rounded-md bg-red-600 hover:bg-red-700 text-white inline-flex items-center gap-2"
+                          className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-red-700 hover:bg-red-600 rounded text-xs font-medium text-white"
                         >
-                          <Trash2 className="w-4 h-4" />
+                          <Trash2 className="w-4 h-4" /> Xóa
                         </button>
                       </div>
                     </td>
@@ -173,7 +173,7 @@ const ManagerMovie = () => {
           
           {/* Pagination */}
           <div className="mt-4 flex items-center justify-between text-sm text-gray-400">
-            <div>Showing <strong className="text-gray-200">{filtered.length}</strong> result(s)</div>
+            <div>Hiển thị <strong className="text-gray-200">{filtered.length}</strong> kết quả</div>
             <div className="flex items-center gap-2">
               <button
                 onClick={() => setPage(p => Math.max(1, p - 1))}
