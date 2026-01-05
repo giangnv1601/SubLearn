@@ -1,9 +1,11 @@
 import mongoose from "mongoose";
 
-const subtitleSchema = new mongoose.Schema(
+const { Schema, Types } = mongoose;
+
+const subtitleSchema = new Schema(
   {
     movieId: {
-      type: mongoose.Schema.Types.ObjectId,
+      type: Types.ObjectId,
       ref: "Movie",
       required: true,
       index: true
