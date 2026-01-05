@@ -4,6 +4,7 @@ import { Eye, EyeOff, Mail, Lock, User, UserPlus } from 'lucide-react'
 import { toast } from 'sonner'
 import { useForm } from 'react-hook-form'
 import { registerUserApi } from '@/api'
+import LogoSubLearn from '@/assets/sublearn.png'
 
 function RegisterPage() {
   const navigate = useNavigate()
@@ -57,7 +58,7 @@ function RegisterPage() {
         {/* Logo */}
         <div className="text-center mb-8">
           <div className="flex items-center justify-center gap-2 mb-4">
-            <img src="/sublearn.png" alt="SubLearn" className="h-12 w-auto" />
+            <img src={LogoSubLearn} alt="SubLearn" className="h-12 w-auto" />
             <h1 className="text-[#E4D161] text-2xl font-bold">SubLearn</h1>
           </div>
           <h2 className="text-white text-3xl font-semibold">Create Account</h2>
