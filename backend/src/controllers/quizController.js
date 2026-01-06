@@ -36,77 +36,57 @@ export const createQuiz = async (req, res) => {
   }
 }
 
-// Lấy phim và bài tập theo loại
-export const getUniqueMovieQuizTypes = async (req, res) => {
+// Lấy tổng quan quiz theo movie và loại quiz
+export const getListQuizSummary = async (req, res) => {
   try {
-    const data = await Quiz.aggregate([
+    const result = await Quiz.aggregate([
+      // Group theo movieId, đếm từng loại quiz và lấy thời gian tạo đầu tiên
       {
         $group: {
-          _id: { movieId: '$movieId', quizType: '$quizType' }, // gom theo cặp movieId + quizType
-          quizCount: { $sum: 1 } // đếm xem có bao nhiêu quiz cho cặp này (nếu bạn muốn xài)
+          _id: '$movieId',
+          reading: {
+            $sum: { $cond: [{ $eq: ['$quizType', 'reading'] }, 1, 0] }
+          },
+          dialogue_reordering: {
+            $sum: { $cond: [{ $eq: ['$quizType', 'dialogue_reordering'] }, 1, 0] }
+          },
+          translation: {
+            $sum: { $cond: [{ $eq: ['$quizType', 'translation'] }, 1, 0] }
+          },
+          equivalent: {
+            $sum: { $cond: [{ $eq: ['$quizType', 'equivalent'] }, 1, 0] }
+          },
+          firstCreatedAt: { $min: '$createdAt' }
         }
       },
+      // Sắp xếp theo thời gian tạo quiz đầu tiên (mới nhất trước)
+      {
+        $sort: { firstCreatedAt: -1 }
+      },
+      // Lookup lấy title từ Movie
       {
         $lookup: {
-          from: 'movies',                // tên collection Movie trong Mongo (thường là 'movies')
-          localField: '_id.movieId',
+          from: 'movies',
+          localField: '_id',
           foreignField: '_id',
           as: 'movie'
         }
       },
-      { $unwind: '$movie' },
+      // Format output
       {
         $project: {
           _id: 0,
-          movieId: '$_id.movieId',
-          quizType: '$_id.quizType',
-          quizCount: 1,
-          movieTitle: '$movie.title'
+          movieId: '$_id',
+          title: { $ifNull: [{ $arrayElemAt: ['$movie.title', 0] }, '(Unknown)'] },
+          quizCounts: {
+            reading: '$reading',
+            dialogue_reordering: '$dialogue_reordering',
+            translation: '$translation',
+            equivalent: '$equivalent'
+          }
         }
-      },
-      { $sort: { movieTitle: 1, quizType: 1 } }
-    ])
-
-    return res.status(200).json({
-      message: 'OK',
-      data
-    })
-  } catch (err) {
-    console.error('getUniqueMovieQuizTypes error:', err)
-    return res.status(500).json({ message: 'Internal server error' })
-  }
-}
-
-// Lấy số Quiz theo movie và quiz_type
-export const listQuizSummary = async (req, res) => {
-  try {
-    const grouped = await Quiz.aggregate([
-      { $group: { _id: { movieId: '$movieId', quizType: '$quizType' }, count: { $sum: 1 } } }
-    ])
-
-    const movieIdToCounts = new Map()
-    for (const g of grouped) {
-      const movieId = String(g._id.movieId)
-      const type = g._id.quizType
-      const count = g.count
-      if (!movieIdToCounts.has(movieId)) {
-        movieIdToCounts.set(movieId, { reading: 0, dialogue_reordering: 0, translation: 0, equivalent: 0 })
       }
-      const entry = movieIdToCounts.get(movieId)
-      if (type && Object.prototype.hasOwnProperty.call(entry, type)) {
-        entry[type] = count
-      }
-    }
-
-    const movieIds = Array.from(movieIdToCounts.keys())
-    const movies = await Movie.find({ _id: { $in: movieIds } }, { title: 1 }).lean()
-    const idToTitle = new Map(movies.map(m => [String(m._id), m.title]))
-
-    const result = movieIds.map(id => ({
-      movieId: id,
-      title: idToTitle.get(id) || '(Unknown)',
-      quizCounts: movieIdToCounts.get(id)
-    }))
+    ])
 
     return res.status(200).json({ ok: true, data: result })
   } catch (err) {

@@ -2,8 +2,7 @@ import express from 'express'
 import {
   createQuiz,
   listQuizzes,
-  getUniqueMovieQuizTypes,
-  listQuizSummary,
+  getListQuizSummary,
   deleteQuiz,
   updateQuiz,
   createQuizByAi,
@@ -14,8 +13,7 @@ import { authMiddleware } from '../middlewares/authMiddleware.js'
 const router = express.Router()
 
 router.post('/', authMiddleware.isAuthorized, authMiddleware.isAdmin, createQuiz)
-router.get('/unique-movie-type', authMiddleware.isAuthorized, getUniqueMovieQuizTypes)
-router.get('/summary', authMiddleware.isAuthorized, listQuizSummary)
+router.get('/summary', authMiddleware.isAuthorized, authMiddleware.isAdminOrClient, getListQuizSummary)
 router.get('/', authMiddleware.isAuthorized, listQuizzes)
 router.delete('/:id', authMiddleware.isAuthorized, authMiddleware.isAdmin, deleteQuiz)
 router.put('/:id', authMiddleware.isAuthorized, authMiddleware.isAdmin, updateQuiz)
