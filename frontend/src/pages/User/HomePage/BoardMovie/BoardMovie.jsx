@@ -1,26 +1,20 @@
-import { useEffect, useMemo, useState } from "react"
+import { useMemo, useState } from "react"
 import { Link } from "react-router"
 import { Play } from "lucide-react"
+import Pagination from "@/components/Pagination/Pagination"
 
-const PAGE_SIZE = 20
+const ITEMS_PER_PAGE = 10
 
-const BoardMovie = ({ movies = [], movieBuffer = [], totalMovies: totalMoviesProp }) => {
-  // Back-compat: nếu bạn vẫn truyền movieBuffer, ưu tiên nó; còn không thì dùng movies
-  const rawSource = movieBuffer?.length ? movieBuffer : movies
+const BoardMovie = ({ movieBuffer, loading = false }) => {
+  const rawSource = movieBuffer?.length ? movieBuffer : []
 
   // Filters
   const [levelFilter, setLevelFilter] = useState("all")
   const [genreFilter, setGenreFilter] = useState("all")
-
   const [currentPage, setCurrentPage] = useState(1)
 
-  // Reset về trang 1 khi dữ liệu nguồn hoặc filter thay đổi
-  useEffect(() => {
-    setCurrentPage(1)
-  }, [rawSource, levelFilter, genreFilter])
-
   // Áp filter lên rawSource
-  const source = useMemo(() => {
+  const filtered = useMemo(() => {
     const lf = (levelFilter || "all").toLowerCase()
     const gf = (genreFilter || "all").toLowerCase()
     return rawSource.filter((m) => {
@@ -37,54 +31,32 @@ const BoardMovie = ({ movies = [], movieBuffer = [], totalMovies: totalMoviesPro
     })
   }, [rawSource, levelFilter, genreFilter])
 
-  const totalMovies = typeof totalMoviesProp === "number" ? totalMoviesProp : source.length
+  // Reset về trang 1 khi filter thay đổi
+  useMemo(() => {
+    setCurrentPage(1)
+  }, [levelFilter, genreFilter])
 
-  const totalPages = Math.max(1, Math.ceil(totalMovies / PAGE_SIZE))
+  // Tính toán phân trang
+  const totalPages = Math.ceil(filtered.length / ITEMS_PER_PAGE)
+  const paginatedMovies = useMemo(() => {
+    const start = (currentPage - 1) * ITEMS_PER_PAGE
+    return filtered.slice(start, start + ITEMS_PER_PAGE)
+  }, [filtered, currentPage])
 
-  const pageItems = useMemo(() => {
-    // Nếu bạn đã gọi API phía server trả đúng 20 item theo page,
-    // chỉ cần truyền mảng 20 phần tử vào `movies` và set `totalMovies`.
-    // Ở chế độ client-side dưới đây, ta tự slice từ `source`.
-    const start = (currentPage - 1) * PAGE_SIZE
-    const end = start + PAGE_SIZE
-    return source.slice(start, end)
-  }, [source, currentPage])
-
-  const gotoPage = (p) => {
-    if (p < 1 || p > totalPages) return
-    setCurrentPage(p)
+  if (loading) {
+    return (
+      <div className="max-w-[1200px] mx-auto px-4 py-6">
+        <div className="text-center py-12 text-gray-400">Đang tải phim...</div>
+      </div>
+    )
   }
 
-  // Tạo dãy số trang ngắn gọn: 1 ... prev, current, next ... last
-  const renderPages = () => {
-    const pages = []
-    const add = (n) =>
-      pages.push(
-        <button
-          key={n}
-          onClick={() => gotoPage(n)}
-          className={`px-3 py-1 rounded-lg text-sm ${
-            n === currentPage
-              ? "bg-[#E4D161] text-black font-semibold"
-              : "bg-gray-700 text-white hover:bg-gray-600"
-          }`}
-        >
-          {n}
-        </button>
-      )
-
-    if (totalPages <= 7) {
-      for (let i = 1; i <= totalPages; i++) add(i)
-    } else {
-      add(1)
-      if (currentPage > 3) pages.push(<span key="l-ell" className="px-2 text-gray-300">…</span>)
-      const start = Math.max(2, currentPage - 1)
-      const end = Math.min(totalPages - 1, currentPage + 1)
-      for (let i = start; i <= end; i++) add(i)
-      if (currentPage < totalPages - 2) pages.push(<span key="r-ell" className="px-2 text-gray-300">…</span>)
-      add(totalPages)
-    }
-    return pages
+  if (!movieBuffer || movieBuffer.length === 0) {
+    return (
+      <div className="max-w-[1200px] mx-auto px-4 py-6">
+        <div className="text-center py-12 text-gray-400">Không có phim nào.</div>
+      </div>
+    )
   }
 
   return (
@@ -92,7 +64,7 @@ const BoardMovie = ({ movies = [], movieBuffer = [], totalMovies: totalMoviesPro
       {/* Header: tổng số & bộ lọc */}
       <div className="flex justify-between items-center px-2 md:px-4">
         <p className="text-[#E4D161] text-lg md:text-2xl font-semibold tracking-wide">
-          Danh sách phim ({totalMovies})
+          Danh sách phim ({filtered.length})
         </p>
 
         <div className="flex items-center gap-4">
@@ -124,10 +96,10 @@ const BoardMovie = ({ movies = [], movieBuffer = [], totalMovies: totalMoviesPro
 
       {/* Danh sách phim */}
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 mt-4">
-        {pageItems.length === 0 ? (
-          <div className="col-span-full text-center text-white">No movies found.</div>
+        {paginatedMovies.length === 0 ? (
+          <div className="col-span-full text-center text-white">Không tìm thấy phim phù hợp.</div>
         ) : (
-          pageItems.map((movie) => (
+          paginatedMovies.map((movie) => (
             <Link
               to={`/movie/${movie._id}`}
               key={movie._id}
@@ -194,27 +166,13 @@ const BoardMovie = ({ movies = [], movieBuffer = [], totalMovies: totalMoviesPro
         )}
       </div>
 
-      {/* Phân trang */}
-      {totalPages > 1 && (
-        <div className="mt-6 flex flex-wrap items-center justify-center gap-2">
-          <button
-            onClick={() => gotoPage(currentPage - 1)}
-            disabled={currentPage === 1}
-            className="px-3 py-1 rounded-lg text-sm bg-gray-700 text-white disabled:opacity-40 disabled:cursor-not-allowed hover:bg-gray-600"
-          >
-            Previous
-          </button>
-
-          {renderPages()}
-
-          <button
-            onClick={() => gotoPage(currentPage + 1)}
-            disabled={currentPage === totalPages}
-            className="px-3 py-1 rounded-lg text-sm bg-gray-700 text-white disabled:opacity-40 disabled:cursor-not-allowed hover:bg-gray-600"
-          >
-            Next
-          </button>
-        </div>
+      {/* Pagination */}
+      {filtered.length > 0 && (
+        <Pagination 
+          currentPage={currentPage} 
+          totalPages={totalPages} 
+          onPageChange={setCurrentPage} 
+        />
       )}
     </div>
   )

@@ -88,11 +88,6 @@ export const createQuizApi = async (payload) => {
   return res.data;
 }
 
-export const getUniqueMovieQuizTypesApi = async () => {
-  const res = await authorizedAxiosInstance.get(`${API_ROOT}/api/quizzes/unique-movie-type`);
-  return res.data;
-}
-
 export const fetchQuizzesSummary = async () => {
   const res = await authorizedAxiosInstance.get(`${API_ROOT}/api/quizzes/summary`);
   return res.data;

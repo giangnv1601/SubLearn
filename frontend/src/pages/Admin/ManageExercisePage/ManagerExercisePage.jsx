@@ -2,9 +2,34 @@ import { Plus, Edit, Search, Trash2 } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router'
 import { fetchQuizzesSummary } from '@/api'
+import Pagination from '@/components/Pagination/Pagination'
+
+const ITEMS_PER_PAGE = 5
+
+const QUIZ_TYPE_LABEL = {
+  reading: 'Đọc hiểu',
+  dialogue_reordering: 'Sắp xếp hội thoại',
+  translation: 'Dịch câu',
+  equivalent: 'Câu tương đương'
+}
+
+const QUIZ_TYPE_COLOR = {
+  reading: 'bg-emerald-700',
+  dialogue_reordering: 'bg-indigo-700',
+  translation: 'bg-amber-700',
+  equivalent: 'bg-rose-700'
+}
+
+const TypeBadge = ({ label, color = 'bg-gray-700' }) => (
+  <span className={`inline-flex items-center gap-2 px-2.5 py-1 rounded text-xs ${color} text-white/90`}>
+    <span className="w-2 h-2 rounded-full bg-white/60" />
+    <span className="font-medium capitalize">{label}</span>
+  </span>
+)
 
 const ManagerExercisePage = () => {
   const [query, setQuery] = useState('')
+  const [currentPage, setCurrentPage] = useState(1)
   const navigate = useNavigate()
   const [data, setData] = useState([])
   const [loading, setLoading] = useState(false)
@@ -42,31 +67,23 @@ const ManagerExercisePage = () => {
     }
   }, [])
 
+  // Lọc theo tên phim
   const filtered = useMemo(() => {
     if (!query.trim()) return data
     return data.filter((item) => item.title.toLowerCase().includes(query.toLowerCase()))
   }, [data, query])
 
-  // reuse same labels/colors as ExercisesPage / ResultsPage for visual consistency
-  const QUIZ_TYPE_LABEL = {
-    reading: 'Đọc hiểu',
-    dialogue_reordering: 'Sắp xếp hội thoại',
-    translation: 'Dịch câu',
-    equivalent: 'Câu tương đương'
-  }
-  const QUIZ_TYPE_COLOR = {
-    reading: 'bg-emerald-700',
-    dialogue_reordering: 'bg-indigo-700',
-    translation: 'bg-amber-700',
-    equivalent: 'bg-rose-700'
-  }
+  // Reset về trang 1 khi search
+  useEffect(() => {
+    setCurrentPage(1)
+  }, [query])
 
-  const TypeBadge = ({ label, color = 'bg-gray-700' }) => (
-    <span className={`inline-flex items-center gap-2 px-2.5 py-1 rounded text-xs ${color} text-white/90`}>
-      <span className="w-2 h-2 rounded-full bg-white/60" />
-      <span className="font-medium capitalize">{label}</span>
-    </span>
-  )
+  // Tính toán phân trang
+  const totalPages = Math.ceil(filtered.length / ITEMS_PER_PAGE)
+  const paginatedData = useMemo(() => {
+    const start = (currentPage - 1) * ITEMS_PER_PAGE
+    return filtered.slice(start, start + ITEMS_PER_PAGE)
+  }, [filtered, currentPage])
 
   const exerciseTypes = Object.keys(QUIZ_TYPE_LABEL).map((k) => ({
     key: k,
@@ -80,9 +97,8 @@ const ManagerExercisePage = () => {
 
   return (
     <div className="min-h-screen bg-[#2E4863] text-white">
-      {/* Board Manage Exercises */}
       <div className="max-w-[1200px] mx-auto px-4 py-6">
-        {/* Header Board */}
+        {/* Header */}
         <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 mb-4">
           <h1 className="text-2xl font-semibold text-[#E4D161]">Manage Exercises</h1>
           <div className="flex items-center gap-3 w-full md:w-auto">
@@ -104,73 +120,71 @@ const ManagerExercisePage = () => {
           </div>
         </div>
 
-        {/* Table Movie Quiz */}
+        {/* Table */}
         <div className="bg-gray-900/40 rounded-lg p-4">
-          <div className="overflow-x-auto">
-            <table className="w-full text-left">
-              <thead>
-                <tr className="border-b border-gray-800 text-sm text-gray-300">
-                  <th className="py-3 px-3 font-semibold">Phim</th>
-                  <th className="py-3 px-3 font-semibold">Loại bài tập</th>
-                </tr>
-              </thead>
-              <tbody>
-                {loading && (
-                  <tr>
-                    <td colSpan={2} className="py-6 px-3 text-center text-gray-400">
-                      Đang tải...
-                    </td>
-                  </tr>
-                )}
-                {!loading && error && (
-                  <tr>
-                    <td colSpan={2} className="py-6 px-3 text-center text-red-300">
-                      {error}
-                    </td>
-                  </tr>
-                )}
-                {!loading && !error && filtered.length === 0 && (
-                  <tr>
-                    <td colSpan={2} className="py-6 px-3 text-center text-gray-400">
-                      Không có dữ liệu
-                    </td>
-                  </tr>
-                )}
-                {!loading &&
-                  !error &&
-                  filtered.map((row) => (
-                    <tr key={row.id} className="border-b border-gray-800/70 hover:bg-gray-900/60 transition-colors">
-                      <td className="py-3 px-3 align-top max-w-[280px]">{row.title}</td>
-                      <td className="py-3 px-3 align-top">
-                        <div className="flex flex-col gap-2">
-                          {exerciseTypes
-                            .filter(t => (Number(row.quizCounts?.[t.key]) || 0) > 0)
-                            .map((type) => (
-                              <div key={type.key} className="flex items-center justify-between gap-3">
-                                <TypeBadge label={type.label} color={type.color} />
-                                <div className="flex gap-2">
-                                  <button
-                                    onClick={() => goEdit(row.id, type.key)}
-                                    className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-blue-700 hover:bg-blue-600 rounded text-xs font-medium text-white"
-                                  >
-                                    <Edit className="w-4 h-4" /> Sửa
-                                  </button>
-                                  <button
-                                    onClick={() => console.log('Delete', row.id, type.key)}
-                                    className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-red-700 hover:bg-red-600 rounded text-xs font-medium text-white"
-                                  >
-                                    <Trash2 className="w-4 h-4" /> Xóa
-                                  </button>
-                                </div>
-                              </div>
-                            ))}
-                        </div>
-                      </td>
+          {loading && <div className="text-center py-6 text-gray-400">Đang tải...</div>}
+          {!loading && error && <div className="text-center py-6 text-red-400">{error}</div>}
+
+          {!loading && !error && (
+            <>
+              <div className="overflow-x-auto">
+                <table className="w-full text-left">
+                  <thead>
+                    <tr className="border-b border-gray-800 text-sm text-gray-300">
+                      <th className="py-3 px-3 font-semibold">Phim</th>
+                      <th className="py-3 px-3 font-semibold">Loại bài tập</th>
                     </tr>
-                  ))}
-              </tbody>
-            </table>
-          </div>
+                  </thead>
+                  <tbody>
+                    {paginatedData.length === 0 && (
+                      <tr>
+                        <td colSpan={2} className="py-6 px-3 text-center text-gray-400">
+                          {query.trim() ? 'Không tìm thấy phim phù hợp.' : 'Không có dữ liệu.'}
+                        </td>
+                      </tr>
+                    )}
+                    {paginatedData.map((row) => (
+                      <tr key={row.id} className="border-b border-gray-800/70 hover:bg-gray-900/60 transition-colors">
+                        <td className="py-3 px-3 align-top max-w-[280px]">{row.title}</td>
+                        <td className="py-3 px-3 align-top">
+                          <div className="flex flex-col gap-2">
+                            {exerciseTypes
+                              .filter(t => (Number(row.quizCounts?.[t.key]) || 0) > 0)
+                              .map((type) => (
+                                <div key={type.key} className="flex items-center justify-between gap-3">
+                                  <TypeBadge label={type.label} color={type.color} />
+                                  <div className="flex gap-2">
+                                    <button
+                                      onClick={() => goEdit(row.id, type.key)}
+                                      className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-blue-700 hover:bg-blue-600 rounded text-xs font-medium text-white"
+                                    >
+                                      <Edit className="w-4 h-4" /> Sửa
+                                    </button>
+                                    <button
+                                      onClick={() => console.log('Delete', row.id, type.key)}
+                                      className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-red-700 hover:bg-red-600 rounded text-xs font-medium text-white"
+                                    >
+                                      <Trash2 className="w-4 h-4" /> Xóa
+                                    </button>
+                                  </div>
+                                </div>
+                              ))}
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Pagination */}
+              <Pagination
+                currentPage={currentPage}
+                totalPages={totalPages}
+                onPageChange={setCurrentPage}
+              />
+            </>
+          )}
         </div>
       </div>
     </div>
