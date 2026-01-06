@@ -1,7 +1,10 @@
 import React, { useEffect, useMemo, useState, useCallback } from 'react'
-import { BarChart3, TrendingUp, RefreshCcw, ListChecks } from 'lucide-react'
+import { BarChart3, TrendingUp, ListChecks, Search } from 'lucide-react'
 import { fetchResultsByUserApi } from '@/api'
 import { toast } from 'sonner'
+import Pagination from '@/components/Pagination/Pagination'
+
+const ITEMS_PER_PAGE = 5
 
 const AccuracyBadge = ({ value }) => {
   if (typeof value !== 'number' || Number.isNaN(value)) return <span className="text-xs text-slate-300">—</span>
@@ -62,6 +65,8 @@ export default function ResultPage() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
   const [filterType, setFilterType] = useState('all')
+  const [query, setQuery] = useState('')
+  const [currentPage, setCurrentPage] = useState(1)
 
   const load = useCallback(async () => {
     try {
@@ -85,12 +90,40 @@ export default function ResultPage() {
     load()
   }, [load])
 
-  // Lọc theo loại bài tập
+  // Lọc theo loại bài tập và tìm kiếm
   const filtered = useMemo(() => {
-    if (filterType === 'all') return results
-    return results.filter((r) => r.quizType === filterType || r.quiz?.quizType === filterType)
-  }, [results, filterType])
+    let data = results
 
+    // Lọc theo loại quiz
+    if (filterType !== 'all') {
+      data = data.filter((r) => r.quizType === filterType || r.quiz?.quizType === filterType)
+    }
+
+    // Lọc theo tên phim
+    if (query.trim()) {
+      const q = query.toLowerCase()
+      data = data.filter((r) => {
+        const title = r.quiz?.title || r.quiz?.movieTitle || r.movieTitle || ''
+        return title.toLowerCase().includes(q)
+      })
+    }
+
+    return data
+  }, [results, filterType, query])
+
+  // Reset về trang 1 khi thay đổi filter hoặc search
+  useEffect(() => {
+    setCurrentPage(1)
+  }, [filterType, query])
+
+  // Tính toán phân trang
+  const totalPages = Math.ceil(filtered.length / ITEMS_PER_PAGE)
+  const paginatedResults = useMemo(() => {
+    const start = (currentPage - 1) * ITEMS_PER_PAGE
+    return filtered.slice(start, start + ITEMS_PER_PAGE)
+  }, [filtered, currentPage])
+
+  // Stats dựa trên toàn bộ filtered (không phải paginated)
   const totalAttempts = filtered.length
   const avgAccuracy = useMemo(() => {
     if (!filtered.length) return 0
@@ -106,20 +139,18 @@ export default function ResultPage() {
   return (
     <div className="max-w-5xl mx-auto px-4 py-6">
       {/* Header */}
-      <div className="flex items-center justify-between mb-6 gap-3">
-        <div>
-          <h1 className="text-2xl font-semibold text-[#E4D161]">Results</h1>
-        </div>
-        <div className="flex items-center gap-3">
-          <button
-            type="button"
-            onClick={load}
-            aria-label="Tải lại kết quả"
-            className="inline-flex items-center gap-2 px-3 py-2 rounded-md border border-white/10 bg-white/5 text-xs font-medium text-white hover:bg-white/10"
-          >
-            <RefreshCcw className="w-4 h-4" />
-            Tải lại
-          </button>
+      <div className="flex flex-col md:flex-row items-start md:items-center justify-between mb-6 gap-3">
+        <h1 className="text-2xl font-semibold text-[#E4D161]">Results</h1>
+        
+        {/* Search Box */}
+        <div className="relative w-full md:w-72">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+          <input
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Tìm kiếm theo tên phim..."
+            className="w-full pl-9 pr-3 py-2 rounded-md bg-gray-900/40 border border-gray-700 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#E4D161] focus:border-transparent"
+          />
         </div>
       </div>
 
@@ -197,7 +228,11 @@ export default function ResultPage() {
         ) : error ? (
           <div className="p-6 text-sm text-rose-400">{error}</div>
         ) : !filtered.length ? (
-          <div className="p-6 text-sm text-white/70">Bạn chưa có kết quả làm bài nào.</div>
+          <div className="p-6 text-sm text-white/70">
+            {query.trim() || filterType !== 'all'
+              ? 'Không tìm thấy kết quả phù hợp.'
+              : 'Bạn chưa có kết quả làm bài nào.'}
+          </div>
         ) : (
           <div className="divide-y divide-white/10">
             {/* Header row */}
@@ -210,8 +245,8 @@ export default function ResultPage() {
               <div className="text-right">Thời gian</div>
             </div>
 
-            {/* Rows */}
-            {filtered.map((r) => {
+            {/* Rows - sử dụng paginatedResults thay vì filtered */}
+            {paginatedResults.map((r) => {
               const quizType = r.quizType || r.quiz?.quizType
               const title =
                 r.quiz?.title ||
@@ -261,6 +296,17 @@ export default function ResultPage() {
                 </div>
               )
             })}
+          </div>
+        )}
+
+        {/* Pagination */}
+        {!loading && !error && filtered.length > 0 && (
+          <div className="px-4 py-3 border-t border-white/10">
+            <Pagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              onPageChange={setCurrentPage}
+            />
           </div>
         )}
       </div>
