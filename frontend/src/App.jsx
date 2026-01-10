@@ -32,6 +32,7 @@ const MoviePlayerPage = lazy(() => import("@/pages/User/MoviePlayerPage/MoviePla
 const ExercisePage = lazy(() => import("@/pages/User/ExercisePage/ExercisePage"))
 const ExamPage = lazy(() => import("@/pages/User/ExamPage/ExamPage"))
 const ResultPage = lazy(() => import("@/pages/User/ResultPage/ResultPage"))
+const VideoPlayerPage = lazy(() => import("@/pages/User/VideoPlayerPage/VideoPlayerPage"))
 
 // Lazy load Shared pages
 const ProfilePage = lazy(() => import("@/pages/Shared/ProfilePage"))
@@ -74,6 +75,7 @@ function App() {
             <Route path="/client/exercises" element={<ExercisePage />} />
             <Route path="/client/exam" element={<ExamPage />} />
             <Route path="/client/results" element={<ResultPage />} />
+            <Route path="/client/video" element={<VideoPlayerPage />} />
 
             {/* ----ADMIN---- */}
             <Route path="/admin/users" element={<ManageUserPage />} />
