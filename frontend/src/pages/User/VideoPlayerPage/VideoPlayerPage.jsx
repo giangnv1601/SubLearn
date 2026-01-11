@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import ReactPlayer from 'react-player'
+import { Settings } from 'lucide-react'
 
 /** ===== Fake data ===== */
 const fakeMovie = {
@@ -560,6 +561,16 @@ export default function MoviePlayerUI() {
   }, [])
 
   const [subtitleMode, setSubtitleMode] = useState('bilingual')
+  const [activeIndex, setActiveIndex] = useState(-1)
+  const [showExerciseOptions, setShowExerciseOptions] = useState(false)
+  const [exerciseConfig, setExerciseConfig] = useState({
+    duration: 5, // phút
+    exercises: {
+      mcq: 1,
+      fill_blank: 1,
+      true_false: 1
+    }
+  })
 
   const filteredSubtitles = useMemo(() => {
     if (subtitleMode === 'en') return bilingualSubtitles.map(s => ({ ...s, viText: '' }))
@@ -572,8 +583,6 @@ export default function MoviePlayerUI() {
   const itemRefs = useRef([]) // Mảng ref cho từng item phụ đề
   const userScrollingRef = useRef(false) // Trng thái người dùng có đang cuộn không
   const scrollTimerRef = useRef(null) // Thời gian hẹn để phát hiện ngừng cuộn
-
-  const [activeIndex, setActiveIndex] = useState(-1)
 
   // Khi player time đổi -> cập nhật activeIndex
   const handleTimeUpdate = useCallback(() => {
@@ -734,14 +743,155 @@ export default function MoviePlayerUI() {
             Chỉ tiếng Việt
           </button>
 
-          <button
-            type="button"
-            className="ml-auto px-4 py-1.5 rounded-full text-sm font-semibold bg-purple-600 hover:bg-purple-700 disabled:opacity-60"
-            disabled
-            title="UI only (đã bỏ logic tạo bài tập)"
-          >
-            Bài tập tương tác
-          </button>
+          {/* Nút Settings và Tạo bài tập */}
+          <div className="ml-auto flex items-center gap-2">
+            {/* Nút Settings - Dropdown config */}
+            <div className="relative">
+              <button
+                type="button"
+                onClick={() => setShowExerciseOptions(!showExerciseOptions)}
+                className={`p-2 rounded-full transition ${
+                  showExerciseOptions 
+                    ? 'bg-purple-600 text-white' 
+                    : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
+                }`}
+                title="Cài đặt bài tập"
+              >
+                <Settings className="w-5 h-5" />
+              </button>
+
+              {/* Dropdown Panel */}
+              {showExerciseOptions && (
+                <div className="absolute right-0 mt-2 w-80 bg-[#1B2A36] rounded-lg shadow-xl border border-white/10 p-4 z-10">
+                  {/* Chọn thời lượng nội dung */}
+                  <div className="mb-4">
+                    <label className="block text-sm font-semibold text-gray-300 mb-2">
+                      Thời lượng nội dung quan tâm
+                    </label>
+                    <div className="flex gap-2">
+                      {[5, 10, 15].map(minutes => (
+                        <button
+                          key={minutes}
+                          type="button"
+                          onClick={() => setExerciseConfig(prev => ({ ...prev, duration: minutes }))}
+                          className={`flex-1 px-3 py-2 rounded-md text-sm font-medium transition ${
+                            exerciseConfig.duration === minutes
+                              ? 'bg-purple-600 text-white'
+                              : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
+                          }`}
+                        >
+                          {minutes} phút
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Chọn số lượng bài tập */}
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-300 mb-2">
+                      Số lượng bài tập
+                    </label>
+                    
+                    {/* Trắc nghiệm (MCQ) */}
+                    <div className="flex items-center justify-between mb-2 bg-slate-800/50 rounded-md p-2">
+                      <span className="text-sm text-gray-300">Trắc nghiệm</span>
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() => setExerciseConfig(prev => ({
+                            ...prev,
+                            exercises: { ...prev.exercises, mcq: Math.max(0, prev.exercises.mcq - 1) }
+                          }))}
+                          className="w-6 h-6 rounded bg-slate-700 hover:bg-slate-600 flex items-center justify-center"
+                        >
+                          <span className="text-lg leading-none">−</span>
+                        </button>
+                        <span className="w-8 text-center text-sm font-semibold">{exerciseConfig.exercises.mcq}</span>
+                        <button
+                          type="button"
+                          onClick={() => setExerciseConfig(prev => ({
+                            ...prev,
+                            exercises: { ...prev.exercises, mcq: Math.min(10, prev.exercises.mcq + 1) }
+                          }))}
+                          className="w-6 h-6 rounded bg-slate-700 hover:bg-slate-600 flex items-center justify-center"
+                        >
+                          <span className="text-lg leading-none">+</span>
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Điền từ (Fill Blank) */}
+                    <div className="flex items-center justify-between mb-2 bg-slate-800/50 rounded-md p-2">
+                      <span className="text-sm text-gray-300">Điền từ</span>
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() => setExerciseConfig(prev => ({
+                            ...prev,
+                            exercises: { ...prev.exercises, fill_blank: Math.max(0, prev.exercises.fill_blank - 1) }
+                          }))}
+                          className="w-6 h-6 rounded bg-slate-700 hover:bg-slate-600 flex items-center justify-center"
+                        >
+                          <span className="text-lg leading-none">−</span>
+                        </button>
+                        <span className="w-8 text-center text-sm font-semibold">{exerciseConfig.exercises.fill_blank}</span>
+                        <button
+                          type="button"
+                          onClick={() => setExerciseConfig(prev => ({
+                            ...prev,
+                            exercises: { ...prev.exercises, fill_blank: Math.min(10, prev.exercises.fill_blank + 1) }
+                          }))}
+                          className="w-6 h-6 rounded bg-slate-700 hover:bg-slate-600 flex items-center justify-center"
+                        >
+                          <span className="text-lg leading-none">+</span>
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Đúng/Sai (True/False) */}
+                    <div className="flex items-center justify-between bg-slate-800/50 rounded-md p-2">
+                      <span className="text-sm text-gray-300">Đúng/Sai</span>
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() => setExerciseConfig(prev => ({
+                            ...prev,
+                            exercises: { ...prev.exercises, true_false: Math.max(0, prev.exercises.true_false - 1) }
+                          }))}
+                          className="w-6 h-6 rounded bg-slate-700 hover:bg-slate-600 flex items-center justify-center"
+                        >
+                          <span className="text-lg leading-none">−</span>
+                        </button>
+                        <span className="w-8 text-center text-sm font-semibold">{exerciseConfig.exercises.true_false}</span>
+                        <button
+                          type="button"
+                          onClick={() => setExerciseConfig(prev => ({
+                            ...prev,
+                            exercises: { ...prev.exercises, true_false: Math.min(10, prev.exercises.true_false + 1) }
+                          }))}
+                          className="w-6 h-6 rounded bg-slate-700 hover:bg-slate-600 flex items-center justify-center"
+                        >
+                          <span className="text-lg leading-none">+</span>
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Nút Tạo bài tập */}
+            <button
+              type="button"
+              onClick={() => {
+                console.log('Tạo bài tập với config:', exerciseConfig)
+                // TODO: Gọi API tạo bài tập
+              }}
+              className="px-4 py-1.5 rounded-full text-sm font-semibold bg-purple-600 hover:bg-purple-700 transition"
+            >
+              Bài tập tương tác
+            </button>
+          </div>
         </div>
 
         {/* Info */}
