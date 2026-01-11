@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react'
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import ReactPlayer from 'react-player'
 
 /** ===== Fake data ===== */
@@ -449,13 +449,15 @@ Sớm thôi, tình yêu của anh.
 Sớm.
 `
 
-// Dịnh dàng thời gian từ HH:MM:SS,MMM sang giây
+// Định dạng thời gian từ HH:MM:SS,MMM sang giây (bao gồm mili giây)
 const timeToSeconds = (timeString) => {
-  const [hours, minutes, seconds] = timeString.split(':')
-  const [secs] = seconds.split(/[,.]/) // Bỏ phần mili giây
-  return (
-    parseInt(hours, 10) * 3600 + parseInt(minutes, 10) * 60 + parseInt(secs, 10)
-  )
+  const [hours, minutes, secondsWithMs] = timeString.split(':')
+  const [secs, ms = '0'] = secondsWithMs.split(/[,.]/)
+  
+  const totalSeconds = parseInt(hours, 10) * 3600 + parseInt(minutes, 10) * 60 + parseInt(secs, 10)
+  const milliseconds = parseInt(ms.padEnd(3, '0').slice(0, 3), 10) / 1000
+  
+  return totalSeconds + milliseconds
 }
 
 // Phân tích phụ đề từ văn bản SRT thành mảng { startTime, endTime, text }
@@ -494,7 +496,7 @@ const parseSubtitlesFromText = (subtitleContent) => {
   return subtitles
 }
 
-// Kết hợp phụ đề song ngữ vào cùng 1 mảng { startTime, endTime, englishText, vietnameseText }
+// Kết hợp phụ đề song ngữ vào mảng { startTime, endTime, enText, viText }
 const mergeBiSubs = (enSubs = [], viSubs = []) => {
   const len = Math.max(enSubs.length, viSubs.length)
   const result = []
@@ -525,31 +527,120 @@ const formatTime = (timeInSeconds = 0) => {
   return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`
 }
 
+// Tìm index phụ đề đang hoạt động theo thời gian hiện tại
+const findActiveIndex = (subs, timeCurrent) => {
+  if (subs.length === 0) return -1
+  
+  // Binary search tìm câu cuối cùng có startTime <= timeCurrent
+  let left = 0
+  let right = subs.length - 1
+  let result = -1
+  
+  while (left <= right) {
+    const mid = Math.floor((left + right) / 2)
+    
+    if (subs[mid].startTime <= timeCurrent) {
+      result = mid
+      left = mid + 1
+    } else {
+      right = mid - 1
+    }
+  }
+  
+  return result
+}
 
 export default function MoviePlayerUI() {
   const bilingualSubtitles = useMemo(() => {
     const enSubs = parseSubtitlesFromText(fakeSubEn)
     const viSubs = parseSubtitlesFromText(fakeSubVi)
     return mergeBiSubs(enSubs, viSubs)
+      .slice()
+      .sort((a, b) => a.startTime - b.startTime)
   }, [])
 
   const [subtitleMode, setSubtitleMode] = useState('bilingual')
 
   const filteredSubtitles = useMemo(() => {
-    if (subtitleMode === 'en') {
-      return bilingualSubtitles.map((sub) => ({
-        ...sub,
-        viText: '',
-      }))
-    }
-    if (subtitleMode === 'vi') {
-      return bilingualSubtitles.map((sub) => ({
-        ...sub,
-        enText: '',
-      }))
-    }
+    if (subtitleMode === 'en') return bilingualSubtitles.map(s => ({ ...s, viText: '' }))
+    if (subtitleMode === 'vi') return bilingualSubtitles.map(s => ({ ...s, enText: '' }))
     return bilingualSubtitles
   }, [subtitleMode, bilingualSubtitles])
+
+  const playerRef = useRef(null) // Ref cho ReactPlayer
+  const listRef = useRef(null) // Ref cho container danh sách phụ đề
+  const itemRefs = useRef([]) // Mảng ref cho từng item phụ đề
+  const userScrollingRef = useRef(false) // Trng thái người dùng có đang cuộn không
+  const scrollTimerRef = useRef(null) // Thời gian hẹn để phát hiện ngừng cuộn
+
+  const [activeIndex, setActiveIndex] = useState(-1)
+
+  // Khi player time đổi -> cập nhật activeIndex
+  const handleTimeUpdate = useCallback(() => {
+    const player = playerRef.current
+    if (!player) return
+
+    const time = Number(player.currentTime ?? 0)
+    const index = findActiveIndex(filteredSubtitles, time)
+    if (index !== activeIndex) setActiveIndex(index)
+  }, [filteredSubtitles, activeIndex])
+
+  // Auto-scroll khi activeIndex đổi
+  useEffect(() => {
+    if (activeIndex < 0) return
+    if (userScrollingRef.current) return
+
+    const container = listRef.current
+    const element = itemRefs.current[activeIndex] 
+    if (!container || !element) return
+
+    // Tính vị trí tương đối của element so với container
+    const containerRect = container.getBoundingClientRect()
+    const elementRect = element.getBoundingClientRect()
+    
+    // Khoảng cách từ đầu container đến element hiện tại
+    const relativeTop = elementRect.top - containerRect.top + container.scrollTop
+    
+    container.scrollTo({ 
+      top: Math.max(0, relativeTop), 
+      behavior: 'smooth' 
+    })
+  }, [activeIndex])
+
+  // Khi click vào phụ đề -> player tua tới thời điểm đó
+  const onSubtitleClick = (sub, idx) => {
+    const player = playerRef.current
+    if (!player) return
+
+    setActiveIndex(idx)
+
+    const target = Math.max(0, (sub.startTime ?? 0) + 0.01)
+
+    if ('currentTime' in player) player.currentTime = target
+    else if (typeof player.seekTo === 'function') player.seekTo(target)
+  }
+
+  // Xử lý sự kiện cuộn danh sách phụ đề
+  const onListScroll = useCallback(() => {
+    userScrollingRef.current = true
+    
+    if (scrollTimerRef.current) {
+      clearTimeout(scrollTimerRef.current)
+    }
+    
+    scrollTimerRef.current = setTimeout(() => {
+      userScrollingRef.current = false
+    }, 250)
+  }, [])
+
+  // Cleanup khi unmount
+  useEffect(() => {
+    return () => {
+      if (scrollTimerRef.current) {
+        clearTimeout(scrollTimerRef.current)
+      }
+    }
+  }, [])
 
   return (
     <div className="min-h-screen bg-[#2E4863] text-white">
@@ -564,10 +655,12 @@ export default function MoviePlayerUI() {
             <div className="bg-[#1B2A36] rounded-md border border-white/10 overflow-hidden">
               <div className="w-full h-[420px] bg-black">
                 <ReactPlayer
+                  ref={playerRef}
                   src={fakeMovie.link_m3u8}
                   controls
                   width="100%"
                   height="100%"
+                  onTimeUpdate={handleTimeUpdate}
                 />
               </div>
             </div>
@@ -575,38 +668,42 @@ export default function MoviePlayerUI() {
 
           {/* Subtitle  */}
           <div className="flex flex-col">
-            <div className="bg-[#1B2A36] rounded-md border border-white/10 h-[420px] overflow-y-auto">
-              {filteredSubtitles.length === 0 ? (
-                <div className="h-full flex items-center justify-center text-gray-400 text-sm">
-                  Chưa có phụ đề
-                </div>
-              ) : (
-                <ul className="divide-y divide-white/10">
-                  {filteredSubtitles.map((subtitle, index) => (
+            <div
+              ref={listRef}
+              onScroll={onListScroll}
+              className="bg-[#1B2A36] rounded-md border border-white/10 h-[420px] overflow-y-auto"
+            >
+              <ul className="divide-y divide-white/10">
+                {filteredSubtitles.map((subtitle, index) => {
+                  const active = index === activeIndex
+                  return (
                     <li
                       key={index}
-                      className="p-3 border-l-4 border-transparent hover:bg-white/5 transition-colors cursor-default"
+                      ref={(el) => (itemRefs.current[index] = el)}
+                      onClick={() => onSubtitleClick(subtitle, index)}
+                      className={`p-3 border-l-4 cursor-pointer transition-colors ${
+                        active ? "border-l-sky-400 bg-white/10" : "border-transparent hover:bg-white/5"
+                      }`}
                     >
-                      <div className="text-[11px] font-mono mb-1 text-gray-400">
-                        {formatTime(subtitle.startTime)} <span className="opacity-70">→</span>{' '}
-                        {formatTime(subtitle.endTime)}
+                      <div className={`text-[11px] font-mono mb-1 transition-colors ${
+                        active ? "text-sky-400 font-semibold" : "text-gray-400"
+                      }`}>
+                        {formatTime(subtitle.startTime)} <span className="opacity-70">→</span> {formatTime(subtitle.endTime)}
                       </div>
-
                       {subtitle.enText && (
                         <p className="text-[15px] text-white/90 font-semibold whitespace-pre-wrap mb-1">
                           {subtitle.enText}
                         </p>
                       )}
-
                       {subtitle.viText && (
                         <p className="text-sm italic text-gray-300 whitespace-pre-wrap">
                           {subtitle.viText}
                         </p>
                       )}
                     </li>
-                  ))}
-                </ul>
-              )}
+                  )
+                })}
+              </ul>
             </div>
           </div>
         </div>
@@ -674,7 +771,7 @@ export default function MoviePlayerUI() {
 
               <div className="flex-1 space-y-3">
                 <div>
-                  <h4 className="text-2xl font-bold text-white leading-tight">
+                  <h4 className="text-2xl font-bold text.white leading-tight">
                     {fakeMovie?.title || 'Đang tải...'}
                   </h4>
 
