@@ -192,10 +192,31 @@ export const createQuizByAi = async (req, res) => {
 export const createInteractiveQuizByAi = async (req, res) => {
   try {
     const { segmentSubtitle, mcqNum, fill_blankNum, true_falseNum } = req.body
-    if (!segmentSubtitle || !mcqNum || !fill_blankNum || !true_falseNum) {
-      return res.status(400).json({ message: 'Thiếu tham số bắt buộc' })
+    
+    // Validate required fields
+    if (!segmentSubtitle || typeof segmentSubtitle !== 'string') {
+      return res.status(400).json({ message: 'segmentSubtitle là bắt buộc và phải là chuỗi' })
     }
-    const data = await OpenaiProvider.generateInteractiveQuiz(segmentSubtitle, mcqNum, fill_blankNum, true_falseNum)
+    
+    if (typeof mcqNum !== 'number' || typeof fill_blankNum !== 'number' || typeof true_falseNum !== 'number') {
+      return res.status(400).json({ message: 'mcqNum, fill_blankNum, true_falseNum phải là số' })
+    }
+
+    if (mcqNum < 0 || fill_blankNum < 0 || true_falseNum < 0) {
+      return res.status(400).json({ message: 'Số lượng bài tập không được âm' })
+    }
+
+    if (mcqNum + fill_blankNum + true_falseNum < 3) {
+      return res.status(400).json({ message: 'Phải có ít nhất 3 câu hỏi' })
+    }
+
+    const data = await OpenaiProvider.generateInteractiveQuiz(
+      segmentSubtitle, 
+      mcqNum, 
+      fill_blankNum, 
+      true_falseNum
+    )
+    
     return res.status(200).json(data)
   } catch (err) {
     console.error('createInteractiveQuiz error:', err)

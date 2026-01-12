@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import ReactPlayer from 'react-player'
 import { Settings } from 'lucide-react'
 import { toast } from 'sonner'
+import { createInteractiveQuizByAiApi } from '@/api'
 
 /** ===== Fake data ===== */
 const fakeMovie = {
@@ -565,13 +566,17 @@ export default function MoviePlayerUI() {
   const [activeIndex, setActiveIndex] = useState(-1)
   const [showExerciseOptions, setShowExerciseOptions] = useState(false)
   const [exerciseConfig, setExerciseConfig] = useState({
-    duration: 5, // phút
+    duration: 3,
     exercises: {
       mcq: 1,
       fill_blank: 1,
       true_false: 1
     }
   })
+  const [exerciseData, setExerciseData] = useState(null) // Dữ liệu bài tập từ API
+  const [userAnswers, setUserAnswers] = useState({}) // Lưu câu trả lời của user
+  const [showResults, setShowResults] = useState(false) // Hiển thị kết quả
+  const [currentTime, setCurrentTime] = useState(0) // Thêm state để lưu current time
 
   const filteredSubtitles = useMemo(() => {
     if (subtitleMode === 'en') return bilingualSubtitles.map(s => ({ ...s, viText: '' }))
@@ -585,15 +590,32 @@ export default function MoviePlayerUI() {
   const userScrollingRef = useRef(false) // Trng thái người dùng có đang cuộn không
   const scrollTimerRef = useRef(null) // Thời gian hẹn để phát hiện ngừng cuộn
 
-  // Khi player time đổi -> cập nhật activeIndex
+  // Cập nhật hàm handleTimeUpdate để lưu current time
   const handleTimeUpdate = useCallback(() => {
     const player = playerRef.current
     if (!player) return
 
     const time = Number(player.currentTime ?? 0)
+    setCurrentTime(time)
+    
     const index = findActiveIndex(filteredSubtitles, time)
     if (index !== activeIndex) setActiveIndex(index)
   }, [filteredSubtitles, activeIndex])
+
+  // Tính toán xem button có nên disable không
+  const isExerciseButtonDisabled = useMemo(() => {
+    const requiredSeconds = exerciseConfig.duration * 60 // Chuyển phút sang giây
+    return currentTime < requiredSeconds
+  }, [currentTime, exerciseConfig.duration])
+
+  // Tính thời gian còn lại cần chờ
+  const remainingTime = useMemo(() => {
+    const requiredSeconds = exerciseConfig.duration * 60
+    const remaining = Math.max(0, requiredSeconds - currentTime)
+    const minutes = Math.floor(remaining / 60)
+    const seconds = Math.floor(remaining % 60)
+    return `${minutes}:${String(seconds).padStart(2, '0')}`
+  }, [currentTime, exerciseConfig.duration])
 
   // Auto-scroll khi activeIndex đổi
   useEffect(() => {
@@ -690,34 +712,230 @@ export default function MoviePlayerUI() {
       return
     }
 
+    // Format subtitle thành text SRT
+    const segmentSubtitle = segmentSubtitles
+      .map((sub, idx) => {
+        const start = formatTime(sub.startTime).replace(/:/g, ':').concat(',000')
+        const end = formatTime(sub.endTime).replace(/:/g, ':').concat(',000')
+        return `${idx + 1}\n${start} --> ${end}\n${sub.enText || ''}\n${sub.viText || ''}\n`
+      })
+      .join('\n')
+
     // Chuẩn bị payload để gọi API
     const payload = {
-      subtitles: segmentSubtitles,
-      mcq: exerciseConfig.exercises.mcq,
-      fill_blank: exerciseConfig.exercises.fill_blank,
-      true_false: exerciseConfig.exercises.true_false
+      segmentSubtitle,
+      mcqNum: exerciseConfig.exercises.mcq,
+      fill_blankNum: exerciseConfig.exercises.fill_blank,
+      true_falseNum: exerciseConfig.exercises.true_false
     }
-
-    console.log('Payload gửi API:', payload)
 
     // Hiển thị loading toast
-    toast.loading('Đang tạo bài tập...')
+    const loadingToastId = toast.loading('Đang tạo bài tập...', { duration: Infinity })
 
     try {
-      // TODO: Gọi API tạo bài tập ở đây
-      
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000))
+      const data = await createInteractiveQuizByAiApi(payload)
       
       toast.success(
-        `Đã tạo ${segmentSubtitles.length} câu với ${payload.mcq} trắc nghiệm, ${payload.fill_blank} điền từ, ${payload.true_false} đúng/sai`,
-        { id: 'create-exercise', duration: 4000 }
+        `Đã tạo thành công bài tập! Bạn có thể xem và làm bài tập ngay bây giờ.`,
+        { id: loadingToastId, duration: 4000 }
       )
+
+      // Hiển thị bài tập
+      setExerciseData(data)
+      setUserAnswers({})
+      setShowResults(false)
+      
     } catch (error) {
       console.error('Lỗi khi tạo bài tập:', error)
-      toast.error('Có lỗi xảy ra khi tạo bài tập!')
+      toast.error(error.message || 'Có lỗi xảy ra khi tạo bài tập!', { id: loadingToastId })
     }
   }, [getSegmentSubtitles, exerciseConfig])
+
+  // Xử lý khi user chọn đáp án
+  const handleAnswerChange = (questionIndex, answer) => {
+    setUserAnswers(prev => ({
+      ...prev,
+      [questionIndex]: answer
+    }))
+  }
+
+  // Kiểm tra đáp án
+  const handleCheckAnswers = () => {
+    setShowResults(true)
+  }
+
+  // Đóng bài tập và tiếp tục xem phim
+  const handleContinueWatching = () => {
+    const player = playerRef.current
+    if (player && typeof player.play === 'function') {
+      player.play()
+    }
+    setExerciseData(null)
+    setUserAnswers({})
+    setShowResults(false)
+  }
+
+  // Render câu hỏi theo type
+  const renderQuestion = (question, index) => {
+    const userAnswer = userAnswers[index]
+    const isCorrect = showResults && userAnswer === question.answer
+
+    if (question.type === 'mcq') {
+      return (
+        <div key={index} className="bg-slate-800/50 rounded-lg p-4 space-y-3">
+          <div className="flex items-start gap-2">
+            <span className="flex-shrink-0 w-8 h-8 bg-purple-600 text-white rounded-full flex items-center justify-center font-semibold text-sm">
+              {index + 1}
+            </span>
+            <div className="flex-1">
+              <p className="text-white font-medium mb-3">{question.question}</p>
+              <div className="space-y-2">
+                {question.options.map((option, optIndex) => {
+                  const isSelected = userAnswer === option
+                  const isCorrectOption = option === question.answer
+                  
+                  return (
+                    <button
+                      key={optIndex}
+                      onClick={() => !showResults && handleAnswerChange(index, option)}
+                      disabled={showResults}
+                      className={`w-full text-left px-4 py-2 rounded-md transition ${
+                        showResults
+                          ? isCorrectOption
+                            ? 'bg-green-600/30 border-2 border-green-500'
+                            : isSelected && !isCorrect
+                            ? 'bg-red-600/30 border-2 border-red-500'
+                            : 'bg-slate-700/50 border border-slate-600'
+                          : isSelected
+                          ? 'bg-purple-600 border-2 border-purple-400'
+                          : 'bg-slate-700 border border-slate-600 hover:bg-slate-600'
+                      }`}
+                    >
+                      <span className="text-white text-sm">{option}</span>
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
+          </div>
+          
+          {/* Hiển thị kết quả */}
+          {showResults && (
+            <div className={`mt-3 p-3 rounded-md ${isCorrect ? 'bg-green-900/30' : 'bg-red-900/30'}`}>
+              <p className={`font-semibold mb-1 ${isCorrect ? 'text-green-300' : 'text-red-300'}`}>
+                {isCorrect ? '✓ Chính xác!' : '✗ Sai rồi!'}
+              </p>
+              {!isCorrect && (
+                <p className="text-sm text-gray-300 mb-1">
+                  Đáp án đúng: <span className="font-semibold text-white">{question.answer}</span>
+                </p>
+              )}
+              <p className="text-sm text-gray-300 italic">{question.explanation}</p>
+            </div>
+          )}
+        </div>
+      )
+    }
+
+    if (question.type === 'fill_blank') {
+      return (
+        <div key={index} className="bg-slate-800/50 rounded-lg p-4 space-y-3">
+          <div className="flex items-start gap-2">
+            <span className="flex-shrink-0 w-8 h-8 bg-purple-600 text-white rounded-full flex items-center justify-center font-semibold text-sm">
+              {index + 1}
+            </span>
+            <div className="flex-1">
+              <p className="text-white font-medium mb-3">Điền từ vào chỗ trống:</p>
+              <p className="text-gray-300 mb-3 italic">{question.sentence}</p>
+              <input
+                type="text"
+                value={userAnswer || ''}
+                onChange={(e) => !showResults && handleAnswerChange(index, e.target.value)}
+                disabled={showResults}
+                placeholder="Nhập từ cần điền..."
+                className={`w-full px-4 py-2 rounded-md bg-slate-700 text-white border ${
+                  showResults
+                    ? isCorrect
+                      ? 'border-green-500'
+                      : 'border-red-500'
+                    : 'border-slate-600 focus:border-purple-500 focus:outline-none'
+                }`}
+              />
+            </div>
+          </div>
+
+          {/* Hiển thị kết quả */}
+          {showResults && (
+            <div className={`mt-3 p-3 rounded-md ${isCorrect ? 'bg-green-900/30' : 'bg-red-900/30'}`}>
+              <p className={`font-semibold mb-1 ${isCorrect ? 'text-green-300' : 'text-red-300'}`}>
+                {isCorrect ? '✓ Chính xác!' : '✗ Sai rồi!'}
+              </p>
+              {!isCorrect && (
+                <p className="text-sm text-gray-300 mb-1">
+                  Đáp án đúng: <span className="font-semibold text-white">{question.answer}</span>
+                </p>
+              )}
+              <p className="text-sm text-gray-300 italic">{question.explanation}</p>
+            </div>
+          )}
+        </div>
+      )
+    }
+
+    if (question.type === 'true_false') {
+      return (
+        <div key={index} className="bg-slate-800/50 rounded-lg p-4 space-y-3">
+          <div className="flex items-start gap-2">
+            <span className="flex-shrink-0 w-8 h-8 bg-purple-600 text-white rounded-full flex items-center justify-center font-semibold text-sm">
+              {index + 1}
+            </span>
+            <div className="flex-1">
+              <p className="text-white font-medium mb-3">{question.statement}</p>
+              <div className="flex gap-3">
+                {['True', 'False'].map((option) => {
+                  const isSelected = userAnswer === option
+                  const isCorrectOption = option === question.answer
+
+                  return (
+                    <button
+                      key={option}
+                      onClick={() => !showResults && handleAnswerChange(index, option)}
+                      disabled={showResults}
+                      className={`flex-1 px-6 py-2 rounded-md font-medium transition ${
+                        showResults
+                          ? isCorrectOption
+                            ? 'bg-green-600/30 border-2 border-green-500 text-green-200'
+                            : isSelected && !isCorrect
+                            ? 'bg-red-600/30 border-2 border-red-500 text-red-200'
+                            : 'bg-slate-700/50 border border-slate-600 text-gray-400'
+                          : isSelected
+                          ? 'bg-purple-600 border-2 border-purple-400 text-white'
+                          : 'bg-slate-700 border border-slate-600 text-white hover:bg-slate-600'
+                      }`}
+                    >
+                      {option === 'True' ? 'Đúng' : 'Sai'}
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
+          </div>
+
+          {/* Hiển thị kết quả */}
+          {showResults && (
+            <div className={`mt-3 p-3 rounded-md ${isCorrect ? 'bg-green-900/30' : 'bg-red-900/30'}`}>
+              <p className={`font-semibold mb-1 ${isCorrect ? 'text-green-300' : 'text-red-300'}`}>
+                {isCorrect ? '✓ Chính xác!' : '✗ Sai rồi!'}
+              </p>
+              <p className="text-sm text-gray-300 italic">{question.explanation}</p>
+            </div>
+          )}
+        </div>
+      )
+    }
+
+    return null
+  }
 
   return (
     <div className="min-h-screen bg-[#2E4863] text-white">
@@ -798,7 +1016,7 @@ export default function MoviePlayerUI() {
           <button
             type="button"
             onClick={() => setSubtitleMode('en')}
-            className={`px-4 py-1.5 rounded-full text-sm font-medium transition ${subtitleMode === 'en' ? 'bg-emerald-600 text-white' : 'bg-slate-700 text-slate-200 hover:bg-slate-600'}`}
+            className={`px-4 py-1.5 rounded-full text-sm font-medium transition ${subtitleMode === 'en' ? 'bg-sky-600 text-white' : 'bg-slate-700 text-slate-200 hover:bg-slate-600'}`}
           >
             Chỉ tiếng Anh
           </button>
@@ -806,7 +1024,7 @@ export default function MoviePlayerUI() {
           <button
             type="button"
             onClick={() => setSubtitleMode('vi')}
-            className={`px-4 py-1.5 rounded-full text-sm font-medium transition ${subtitleMode === 'vi' ? 'bg-amber-600 text-white' : 'bg-slate-700 text-slate-200 hover:bg-slate-600'}`}
+            className={`px-4 py-1.5 rounded-full text-sm font-medium transition ${subtitleMode === 'vi' ? 'bg-sky-600 text-white' : 'bg-slate-700 text-slate-200 hover:bg-slate-600'}`}
           >
             Chỉ tiếng Việt
           </button>
@@ -837,7 +1055,7 @@ export default function MoviePlayerUI() {
                       Thời lượng nội dung quan tâm
                     </label>
                     <div className="flex gap-2">
-                      {[5, 10, 15].map(minutes => (
+                      {[3, 5, 7].map(minutes => (
                         <button
                           key={minutes}
                           type="button"
@@ -868,9 +1086,14 @@ export default function MoviePlayerUI() {
                           type="button"
                           onClick={() => setExerciseConfig(prev => ({
                             ...prev,
-                            exercises: { ...prev.exercises, mcq: Math.max(0, prev.exercises.mcq - 1) }
+                            exercises: { ...prev.exercises, mcq: Math.max(1, prev.exercises.mcq - 1) }
                           }))}
-                          className="w-6 h-6 rounded bg-slate-700 hover:bg-slate-600 flex items-center justify-center"
+                          disabled={exerciseConfig.exercises.mcq <= 1}
+                          className={`w-6 h-6 rounded flex items-center justify-center transition ${
+                            exerciseConfig.exercises.mcq <= 1
+                              ? 'bg-slate-800 text-gray-600 cursor-not-allowed'
+                              : 'bg-slate-700 hover:bg-slate-600 text-white'
+                          }`}
                         >
                           <span className="text-lg leading-none">−</span>
                         </button>
@@ -879,9 +1102,14 @@ export default function MoviePlayerUI() {
                           type="button"
                           onClick={() => setExerciseConfig(prev => ({
                             ...prev,
-                            exercises: { ...prev.exercises, mcq: Math.min(10, prev.exercises.mcq + 1) }
+                            exercises: { ...prev.exercises, mcq: Math.min(3, prev.exercises.mcq + 1) }
                           }))}
-                          className="w-6 h-6 rounded bg-slate-700 hover:bg-slate-600 flex items-center justify-center"
+                          disabled={exerciseConfig.exercises.mcq >= 3}
+                          className={`w-6 h-6 rounded flex items-center justify-center transition ${
+                            exerciseConfig.exercises.mcq >= 3
+                              ? 'bg-slate-800 text-gray-600 cursor-not-allowed'
+                              : 'bg-slate-700 hover:bg-slate-600 text-white'
+                          }`}
                         >
                           <span className="text-lg leading-none">+</span>
                         </button>
@@ -896,9 +1124,14 @@ export default function MoviePlayerUI() {
                           type="button"
                           onClick={() => setExerciseConfig(prev => ({
                             ...prev,
-                            exercises: { ...prev.exercises, fill_blank: Math.max(0, prev.exercises.fill_blank - 1) }
+                            exercises: { ...prev.exercises, fill_blank: Math.max(1, prev.exercises.fill_blank - 1) }
                           }))}
-                          className="w-6 h-6 rounded bg-slate-700 hover:bg-slate-600 flex items-center justify-center"
+                          disabled={exerciseConfig.exercises.fill_blank <= 1}
+                          className={`w-6 h-6 rounded flex items-center justify-center transition ${
+                            exerciseConfig.exercises.fill_blank <= 1
+                              ? 'bg-slate-800 text-gray-600 cursor-not-allowed'
+                              : 'bg-slate-700 hover:bg-slate-600 text-white'
+                          }`}
                         >
                           <span className="text-lg leading-none">−</span>
                         </button>
@@ -907,9 +1140,14 @@ export default function MoviePlayerUI() {
                           type="button"
                           onClick={() => setExerciseConfig(prev => ({
                             ...prev,
-                            exercises: { ...prev.exercises, fill_blank: Math.min(10, prev.exercises.fill_blank + 1) }
+                            exercises: { ...prev.exercises, fill_blank: Math.min(3, prev.exercises.fill_blank + 1) }
                           }))}
-                          className="w-6 h-6 rounded bg-slate-700 hover:bg-slate-600 flex items-center justify-center"
+                          disabled={exerciseConfig.exercises.fill_blank >= 3}
+                          className={`w-6 h-6 rounded flex items-center justify-center transition ${
+                            exerciseConfig.exercises.fill_blank >= 3
+                              ? 'bg-slate-800 text-gray-600 cursor-not-allowed'
+                              : 'bg-slate-700 hover:bg-slate-600 text-white'
+                          }`}
                         >
                           <span className="text-lg leading-none">+</span>
                         </button>
@@ -924,9 +1162,14 @@ export default function MoviePlayerUI() {
                           type="button"
                           onClick={() => setExerciseConfig(prev => ({
                             ...prev,
-                            exercises: { ...prev.exercises, true_false: Math.max(0, prev.exercises.true_false - 1) }
+                            exercises: { ...prev.exercises, true_false: Math.max(1, prev.exercises.true_false - 1) }
                           }))}
-                          className="w-6 h-6 rounded bg-slate-700 hover:bg-slate-600 flex items-center justify-center"
+                          disabled={exerciseConfig.exercises.true_false <= 1}
+                          className={`w-6 h-6 rounded flex items-center justify-center transition ${
+                            exerciseConfig.exercises.true_false <= 1
+                              ? 'bg-slate-800 text-gray-600 cursor-not-allowed'
+                              : 'bg-slate-700 hover:bg-slate-600 text-white'
+                          }`}
                         >
                           <span className="text-lg leading-none">−</span>
                         </button>
@@ -935,9 +1178,14 @@ export default function MoviePlayerUI() {
                           type="button"
                           onClick={() => setExerciseConfig(prev => ({
                             ...prev,
-                            exercises: { ...prev.exercises, true_false: Math.min(10, prev.exercises.true_false + 1) }
+                            exercises: { ...prev.exercises, true_false: Math.min(3, prev.exercises.true_false + 1) }
                           }))}
-                          className="w-6 h-6 rounded bg-slate-700 hover:bg-slate-600 flex items-center justify-center"
+                          disabled={exerciseConfig.exercises.true_false >= 3}
+                          className={`w-6 h-6 rounded flex items-center justify-center transition ${
+                            exerciseConfig.exercises.true_false >= 3
+                              ? 'bg-slate-800 text-gray-600 cursor-not-allowed'
+                              : 'bg-slate-700 hover:bg-slate-600 text-white'
+                          }`}
                         >
                           <span className="text-lg leading-none">+</span>
                         </button>
@@ -952,9 +1200,15 @@ export default function MoviePlayerUI() {
             <button
               type="button"
               onClick={handleCreateExercise}
-              className="px-4 py-1.5 rounded-full text-sm font-semibold bg-purple-600 hover:bg-purple-700 transition"
+              disabled={isExerciseButtonDisabled}
+              className={`px-4 py-1.5 rounded-full text-sm font-semibold transition ${
+                isExerciseButtonDisabled
+                  ? 'bg-gray-600 text-gray-400 cursor-not-allowed'
+                  : 'bg-purple-600 hover:bg-purple-700 text-white'
+              }`}
+              title={isExerciseButtonDisabled ? `Cần xem thêm ${remainingTime}` : 'Tạo bài tập tương tác'}
             >
-              Bài tập tương tác
+              {isExerciseButtonDisabled ? `Chờ ${remainingTime}` : 'Bài tập tương tác'}
             </button>
           </div>
         </div>
@@ -1038,7 +1292,40 @@ export default function MoviePlayerUI() {
           </div>
 
           {/* Exercise */}
-          <div className="hidden lg:block" />
+          {exerciseData && (
+            <div className="bg-[#1B2A36] p-6 rounded-xl shadow-lg border border-white/5">
+              <div className="flex items-center justify-between mb-4 pb-3 border-b border-white/10">
+                <h3 className="text-xl font-bold text-[#E4D161]">
+                  Bài tập tương tác
+                </h3>
+                <span className="text-sm text-gray-400">
+                  {Object.keys(userAnswers).length}/{exerciseData.questions?.length || 0} câu
+                </span>
+              </div>
+
+              <div className="space-y-4 max-h-[500px] overflow-y-auto pr-2">
+                {exerciseData.questions?.map((question, index) => renderQuestion(question, index))}
+              </div>
+
+              <div className="mt-6 pt-4 border-t border-white/10 flex gap-3">
+                {!showResults ? (
+                  <button
+                    onClick={handleCheckAnswers}
+                    className="flex-1 px-6 py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold rounded-lg transition"
+                  >
+                    Kiểm tra
+                  </button>
+                ) : (
+                  <button
+                    onClick={handleContinueWatching}
+                    className="flex-1 px-6 py-3 bg-purple-600 hover:bg-purple-700 text-white font-semibold rounded-lg transition"
+                  >
+                    Tiếp tục xem
+                  </button>
+                )}
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>
