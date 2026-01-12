@@ -1,6 +1,5 @@
 import Quiz from '../models/quizModel.js'
-import Movie from '../models/movieModel.js'
-import { OpenaiService } from '../services/OpenaiService.js'
+import { OpenaiProvider } from '../providers/OpenaiProvider.js'
 
 export const createQuiz = async (req, res) => {
   try {
@@ -181,7 +180,7 @@ export const createQuizByAi = async (req, res) => {
       return res.status(400).json({ message: 'Quiz type is required' })
     }
 
-    const data = await OpenaiService.generateQuiz(subtitle, quizType)
+    const data = await OpenaiProvider.generateQuiz(subtitle, quizType)
     return res.status(200).json(data)
   } catch (err) {
     console.error('createQuiz error:', err)
@@ -192,11 +191,11 @@ export const createQuizByAi = async (req, res) => {
 // Tại quiz tương tác với phim
 export const createInteractiveQuizByAi = async (req, res) => {
   try {
-    const { subtitleSegment } = req.body
-    if (!subtitleSegment || !subtitleSegment.trim()) {
-      return res.status(400).json({ message: 'Thiếu tham số bắt buộc: subtitleSegment' })
+    const { segmentSubtitle, mcqNum, fill_blankNum, true_falseNum } = req.body
+    if (!segmentSubtitle || !mcqNum || !fill_blankNum || !true_falseNum) {
+      return res.status(400).json({ message: 'Thiếu tham số bắt buộc' })
     }
-    const data = await OpenaiService.generateInteractiveQuiz(subtitleSegment)
+    const data = await OpenaiProvider.generateInteractiveQuiz(segmentSubtitle, mcqNum, fill_blankNum, true_falseNum)
     return res.status(200).json(data)
   } catch (err) {
     console.error('createInteractiveQuiz error:', err)

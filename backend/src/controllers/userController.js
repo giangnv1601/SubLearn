@@ -1,7 +1,7 @@
 import bcrypt from 'bcrypt'
 import User from '../models/userModel.js'
-import { JwtService } from '../services/JwtService.js'
-import { CloudinaryService } from '../services/CloudinaryService.js'
+import { JwtProvider } from '../providers/JwtProvider.js'
+import { CloudinaryProvider } from '../providers/CloudinaryProvider.js'
 import { env } from '../config/environment.js'
 
 // Đăng ký
@@ -62,14 +62,14 @@ export const login = async (req, res) => {
     }
 
     // Tạo accessToken
-    const accessToken = await JwtService.generateToken(
+    const accessToken = await JwtProvider.generateToken(
       userInfo,
       env.ACCESS_TOKEN_SECRET_SIGNATURE,
       '1h'
     )
 
     // Tạo refreshToken
-    const refreshToken = await JwtService.generateToken(
+    const refreshToken = await JwtProvider.generateToken(
       userInfo,
       env.REFRESH_TOKEN_SECRET_SIGNATURE,
       '7d'
@@ -87,7 +87,7 @@ export const refreshToken = async (req, res) => {
   try {
     const refreshTokenFromBody = req.body?.refreshToken
 
-    const refreshTokenDecoded = await JwtService.verifyToken(
+    const refreshTokenDecoded = await JwtProvider.verifyToken(
       refreshTokenFromBody,
       env.REFRESH_TOKEN_SECRET_SIGNATURE
     )
@@ -99,7 +99,7 @@ export const refreshToken = async (req, res) => {
       role: refreshTokenDecoded.role
     }
 
-    const accessToken = await JwtService.generateToken(
+    const accessToken = await JwtProvider.generateToken(
       userInfo,
       env.ACCESS_TOKEN_SECRET_SIGNATURE,
       '1h'
@@ -168,7 +168,7 @@ export const updateProfile = async (req, res) => {
     // Nếu có upload file avatar
     if (userAvatarFile) {
       // Upload lên Cloudinary, folder "user/avatars"
-      const uploadResult = await CloudinaryService.streamUpload(userAvatarFile.buffer, 'user')
+      const uploadResult = await CloudinaryProvider.streamUpload(userAvatarFile.buffer, 'user')
 
       // Lưu lại URL
       user.avatar = uploadResult.secure_url
@@ -240,7 +240,7 @@ export const updateUser = async (req, res) => {
     }
     
     if (avatarFile) {
-      const uploadResult = await CloudinaryService.streamUpload(avatarFile.buffer, 'user')
+      const uploadResult = await CloudinaryProvider.streamUpload(avatarFile.buffer, 'user')
       user.avatar = uploadResult.secure_url
     }
     if (fullname) {

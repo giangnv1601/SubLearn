@@ -1,4 +1,4 @@
-import { JwtService } from "../services/JwtService.js"
+import { JwtProvider } from "../providers/JwtProvider.js"
 import { env } from "../config/environment.js"
 
 // Xác thực người dùng qua JWT
@@ -13,7 +13,7 @@ const isAuthorized = async (req, res, next) => {
   try {
     // Thực hiện giải mã token xem có hợp lệ hay không
     const token = accessTokenFromHeader.split(' ')[1]
-    const accessTokenDecoded = await JwtService.verifyToken( token, env.ACCESS_TOKEN_SECRET_SIGNATURE )
+    const accessTokenDecoded = await JwtProvider.verifyToken( token, env.ACCESS_TOKEN_SECRET_SIGNATURE )
 
     // Lưu thông tin giải mã được vào req.jwtDecoded để sử dụng cho các tầng xử lý phía sau
     req.jwtDecoded = accessTokenDecoded

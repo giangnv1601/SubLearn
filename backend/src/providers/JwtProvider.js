@@ -16,7 +16,7 @@ const verifyToken = async (token, secretSignature) => {
     }
 }
 
-export const JwtService = {
+export const JwtProvider = {
     generateToken,
     verifyToken
 }

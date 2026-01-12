@@ -175,25 +175,24 @@ const getPromptFromSubtitle = (quizType, subtitle) => {
   return prompts[quizType];
 };
 
-const getPromptForMovieInteraction = (subtitleSegment) => `
-Bạn là chuyên gia tạo bài tập tiếng Anh từ phim.
+const getPromptForMovieInteraction = (segmentSubtitle, mcqNum, fill_blankNum, true_falseNum) => `
+Bạn là chuyên gia tạo bài tập tiếng Anh từ một đoạn phụ đề phim.
 
-Nhiệm vụ của bạn: tạo ra **đúng 3 câu hỏi tương tác** từ đoạn phụ đề cung cấp.  
-Mỗi câu hỏi phải thuộc duy nhất một trong 3 loại:
+Nhiệm vụ của bạn: tạo ra **đúng ${mcqNum + fill_blankNum + true_falseNum} câu hỏi tương tác** từ đoạn phụ đề cung cấp.  
+Trong đó:
 
-1. "mcq" — trắc nghiệm 4 lựa chọn  
-2. "fill_blank" — điền từ vào chỗ trống (che đúng 1 từ)  
-3. "true_false" — câu đúng / sai  
+1. Có ${mcqNum} "mcq" — trắc nghiệm 4 lựa chọn  
+2. Có ${fill_blankNum} "fill_blank" — điền từ vào chỗ trống (che đúng 1 từ)  
+3. Có ${true_falseNum} "true_false" — câu đúng / sai  
 
 ==============================
 YÊU CẦU SỐ LƯỢNG VÀ CẤU TRÚC
 ==============================
-- Tổng cộng **3 câu hỏi**.
+- Tổng cộng **${mcqNum + fill_blankNum + true_falseNum} câu hỏi**.
 - Phân bố bắt buộc:
-  - 1 câu type "mcq"
-  - 1 câu type "fill_blank"
-  - 1 câu type "true_false"
-
+  - ${mcqNum} câu type "mcq"
+  - ${fill_blankNum} câu type "fill_blank"
+  - ${true_falseNum} câu type "true_false"
 ==============================
 YÊU CẦU CHUNG
 ==============================
@@ -235,16 +234,19 @@ Cấu trúc JSON bắt buộc:
       "options": ["A", "B", "C", "D"],
       "answer": "..."
     },
+    ...,
     {
       "type": "fill_blank",
       "sentence": "We can't ______ him now.",
       "answer": "trust"
     },
+    ...,
     {
       "type": "true_false",
       "statement": "...",
       "answer": "True"
     }
+    ...,
   ]
 }
 
@@ -292,14 +294,14 @@ const generateQuiz = async (subtitle, quizType = QUIZ_TYPES.READING, {
 }
 
 // Hàm tạo bài tập tương tác phim
-const generateInteractiveQuiz = async (subtitleSegment, {
+const generateInteractiveQuiz = async (segmentSubtitle, mcqNum, fill_blankNum, true_falseNum, {
   model = MODEL,
   temperature = 0.7,
   top_p = 0.95,
   max_tokens = 4000,
 } = {}) => {
   try {
-    const prompt = getPromptForMovieInteraction(subtitleSegment);
+    const prompt = getPromptForMovieInteraction(segmentSubtitle, mcqNum, fill_blankNum, true_falseNum);
 
     const resp = await openai.chat.completions.create({
       model,
@@ -346,4 +348,4 @@ const generateInteractiveQuiz = async (subtitleSegment, {
   }
 };
 
-export const OpenaiService = { generateQuiz, generateInteractiveQuiz};
+export const OpenaiProvider = { generateQuiz, generateInteractiveQuiz};
