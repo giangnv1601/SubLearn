@@ -2,21 +2,10 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import ReactPlayer from 'react-player'
 import { Settings } from 'lucide-react'
 import { toast } from 'sonner'
-import { createInteractiveQuizByAiApi } from '@/api'
+import { useParams } from 'react-router-dom'
+import { fetchMovieByIdApi, createInteractiveQuizByAiApi } from '@/api'
 
-/** ===== Fake data ===== */
-const fakeMovie = {
-  title: 'Thợ Săn Phù Thủy',
-  slug: 'tho-san-phu-thuy-2024',
-  description: 'Phim lấy bối cảnh một thị trấn thời trung cổ bị quái vật hoành hành nh…',
-  thumb_url: 'https://img.ophim.live/uploads/movies/tho-san-phu-thuy-2024-thumb.jpg',
-  poster_url: 'https://img.ophim.live/uploads/movies/tho-san-phu-thuy-2024-poster.jpg',
-  duration: '80 Phút',
-  year_released: 2024,
-  level: 'medium',
-  genre: 'Viễn Tưởng, Hành Động, Phiêu Lưu',
-  link_m3u8: 'https://vip.opstream90.com/20251008/14500_a8442efa/index.m3u8',
-}
+
 
 const fakeSubEn = `
 1
@@ -554,6 +543,11 @@ const findActiveIndex = (subs, timeCurrent) => {
 }
 
 export default function MoviePlayerUI() {
+  const { id } = useParams()
+  
+  const [movieData, setMovieData] = useState(null)
+  const [loading, setLoading] = useState(true)
+
   const bilingualSubtitles = useMemo(() => {
     const enSubs = parseSubtitlesFromText(fakeSubEn)
     const viSubs = parseSubtitlesFromText(fakeSubVi)
@@ -573,10 +567,36 @@ export default function MoviePlayerUI() {
       true_false: 1
     }
   })
-  const [exerciseData, setExerciseData] = useState(null) // Dữ liệu bài tập từ API
-  const [userAnswers, setUserAnswers] = useState({}) // Lưu câu trả lời của user
-  const [showResults, setShowResults] = useState(false) // Hiển thị kết quả
-  const [currentTime, setCurrentTime] = useState(0) // Thêm state để lưu current time
+  const [exerciseData, setExerciseData] = useState(null)
+  const [userAnswers, setUserAnswers] = useState({})
+  const [showResults, setShowResults] = useState(false)
+  const [currentTime, setCurrentTime] = useState(0)
+
+  // Fetch movie data khi component mount
+  useEffect(() => {
+    const fetchMovieData = async () => {
+      if (!id) {
+        toast.error('Không tìm thấy phim')
+        setLoading(false)
+        return
+      }
+
+      try {
+        setLoading(true)
+        const data = await fetchMovieByIdApi(id)
+        setMovieData(data)
+      } catch (error) {
+        console.error('Lỗi khi tải thông tin phim:', error)
+        toast.error(error.message || 'Không thể tải thông tin phim')
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchMovieData()
+    
+  }, [id])
+
 
   const filteredSubtitles = useMemo(() => {
     if (subtitleMode === 'en') return bilingualSubtitles.map(s => ({ ...s, viText: '' }))
@@ -939,395 +959,406 @@ export default function MoviePlayerUI() {
 
   return (
     <div className="min-h-screen bg-[#2E4863] text-white">
-      <div className="max-w-[1200px] mx-auto px-4 py-6">
-        <h1 className="text-2xl font-semibold text-[#E4D161] mb-3">
-          {fakeMovie.title}
-        </h1>
+      {loading ? (
+        <div className="max-w-[1200px] mx-auto px-4 py-6">
+          <div className="flex items-center justify-center h-[600px]">
+            <div className="text-center">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto mb-4"></div>
+              <p className="text-gray-300">Đang tải thông tin phim...</p>
+            </div>
+          </div>
+        </div>
+      ) : (
+        <div className="max-w-[1200px] mx-auto px-4 py-6">
+          <h1 className="text-2xl font-semibold text-[#E4D161] mb-3">
+            {movieData.title}
+          </h1>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Player */}
-          <div className="lg:col-span-2">
-            <div className="bg-[#1B2A36] rounded-md border border-white/10 overflow-hidden">
-              <div className="w-full h-[420px] bg-black">
-                <ReactPlayer
-                  ref={playerRef}
-                  src={fakeMovie.link_m3u8}
-                  controls
-                  width="100%"
-                  height="100%"
-                  onTimeUpdate={handleTimeUpdate}
-                />
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {/* Player */}
+            <div className="lg:col-span-2">
+              <div className="bg-[#1B2A36] rounded-md border border-white/10 overflow-hidden">
+                <div className="w-full h-[420px] bg-black">
+                  <ReactPlayer
+                    ref={playerRef}
+                    src={movieData.link_m3u8}
+                    controls
+                    width="100%"
+                    height="100%"
+                    onTimeUpdate={handleTimeUpdate}
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Subtitle  */}
+            <div className="flex flex-col">
+              <div
+                ref={listRef}
+                onScroll={onListScroll}
+                className="bg-[#1B2A36] rounded-md border border-white/10 h-[420px] overflow-y-auto"
+              >
+                <ul className="divide-y divide-white/10">
+                  {filteredSubtitles.map((subtitle, index) => {
+                    const active = index === activeIndex
+                    return (
+                      <li
+                        key={index}
+                        ref={(el) => (itemRefs.current[index] = el)}
+                        onClick={() => onSubtitleClick(subtitle, index)}
+                        className={`p-3 border-l-4 cursor-pointer transition-colors ${
+                          active ? "border-l-sky-400 bg-white/10" : "border-transparent hover:bg-white/5"
+                        }`}
+                      >
+                        <div className={`text-[11px] font-mono mb-1 transition-colors ${
+                          active ? "text-sky-400 font-semibold" : "text-gray-400"
+                        }`}>
+                          {formatTime(subtitle.startTime)} <span className="opacity-70">→</span> {formatTime(subtitle.endTime)}
+                        </div>
+                        {subtitle.enText && (
+                          <p className="text-[15px] text-white/90 font-semibold whitespace-pre-wrap mb-1">
+                            {subtitle.enText}
+                          </p>
+                        )}
+                        {subtitle.viText && (
+                          <p className="text-sm italic text-gray-300 whitespace-pre-wrap">
+                            {subtitle.viText}
+                          </p>
+                        )}
+                      </li>
+                    )
+                  })}
+                </ul>
               </div>
             </div>
           </div>
 
-          {/* Subtitle  */}
-          <div className="flex flex-col">
-            <div
-              ref={listRef}
-              onScroll={onListScroll}
-              className="bg-[#1B2A36] rounded-md border border-white/10 h-[420px] overflow-y-auto"
-            >
-              <ul className="divide-y divide-white/10">
-                {filteredSubtitles.map((subtitle, index) => {
-                  const active = index === activeIndex
-                  return (
-                    <li
-                      key={index}
-                      ref={(el) => (itemRefs.current[index] = el)}
-                      onClick={() => onSubtitleClick(subtitle, index)}
-                      className={`p-3 border-l-4 cursor-pointer transition-colors ${
-                        active ? "border-l-sky-400 bg-white/10" : "border-transparent hover:bg-white/5"
-                      }`}
-                    >
-                      <div className={`text-[11px] font-mono mb-1 transition-colors ${
-                        active ? "text-sky-400 font-semibold" : "text-gray-400"
-                      }`}>
-                        {formatTime(subtitle.startTime)} <span className="opacity-70">→</span> {formatTime(subtitle.endTime)}
-                      </div>
-                      {subtitle.enText && (
-                        <p className="text-[15px] text-white/90 font-semibold whitespace-pre-wrap mb-1">
-                          {subtitle.enText}
-                        </p>
-                      )}
-                      {subtitle.viText && (
-                        <p className="text-sm italic text-gray-300 whitespace-pre-wrap">
-                          {subtitle.viText}
-                        </p>
-                      )}
-                    </li>
-                  )
-                })}
-              </ul>
-            </div>
-          </div>
-        </div>
-
-        {/* Buttons */}
-        <div className="mt-4 flex flex-wrap gap-3 items-center">
-          <button
-            type="button"
-            onClick={() => setSubtitleMode('bilingual')}
-            className={`px-4 py-1.5 rounded-full text-sm font-medium transition ${subtitleMode === 'bilingual' ? 'bg-sky-600 text-white' : 'bg-slate-700 text-slate-200 hover:bg-slate-600'}`}
-          >
-            Xem song ngữ
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setSubtitleMode('en')}
-            className={`px-4 py-1.5 rounded-full text-sm font-medium transition ${subtitleMode === 'en' ? 'bg-sky-600 text-white' : 'bg-slate-700 text-slate-200 hover:bg-slate-600'}`}
-          >
-            Chỉ tiếng Anh
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setSubtitleMode('vi')}
-            className={`px-4 py-1.5 rounded-full text-sm font-medium transition ${subtitleMode === 'vi' ? 'bg-sky-600 text-white' : 'bg-slate-700 text-slate-200 hover:bg-slate-600'}`}
-          >
-            Chỉ tiếng Việt
-          </button>
-
-          {/* Nút Settings và Tạo bài tập */}
-          <div className="ml-auto flex items-center gap-2">
-            {/* Nút Settings - Dropdown config */}
-            <div className="relative">
-              <button
-                type="button"
-                onClick={() => setShowExerciseOptions(!showExerciseOptions)}
-                className={`p-2 rounded-full transition ${
-                  showExerciseOptions 
-                    ? 'bg-purple-600 text-white' 
-                    : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
-                }`}
-                title="Cài đặt bài tập"
-              >
-                <Settings className="w-5 h-5" />
-              </button>
-
-              {/* Dropdown Panel */}
-              {showExerciseOptions && (
-                <div className="absolute right-0 mt-2 w-80 bg-[#1B2A36] rounded-lg shadow-xl border border-white/10 p-4 z-10">
-                  {/* Chọn thời lượng nội dung */}
-                  <div className="mb-4">
-                    <label className="block text-sm font-semibold text-gray-300 mb-2">
-                      Thời lượng nội dung quan tâm
-                    </label>
-                    <div className="flex gap-2">
-                      {[3, 5, 7].map(minutes => (
-                        <button
-                          key={minutes}
-                          type="button"
-                          onClick={() => setExerciseConfig(prev => ({ ...prev, duration: minutes }))}
-                          className={`flex-1 px-3 py-2 rounded-md text-sm font-medium transition ${
-                            exerciseConfig.duration === minutes
-                              ? 'bg-purple-600 text-white'
-                              : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
-                          }`}
-                        >
-                          {minutes} phút
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Chọn số lượng bài tập */}
-                  <div>
-                    <label className="block text-sm font-semibold text-gray-300 mb-2">
-                      Số lượng bài tập
-                    </label>
-                    
-                    {/* Trắc nghiệm (MCQ) */}
-                    <div className="flex items-center justify-between mb-2 bg-slate-800/50 rounded-md p-2">
-                      <span className="text-sm text-gray-300">Trắc nghiệm</span>
-                      <div className="flex items-center gap-2">
-                        <button
-                          type="button"
-                          onClick={() => setExerciseConfig(prev => ({
-                            ...prev,
-                            exercises: { ...prev.exercises, mcq: Math.max(1, prev.exercises.mcq - 1) }
-                          }))}
-                          disabled={exerciseConfig.exercises.mcq <= 1}
-                          className={`w-6 h-6 rounded flex items-center justify-center transition ${
-                            exerciseConfig.exercises.mcq <= 1
-                              ? 'bg-slate-800 text-gray-600 cursor-not-allowed'
-                              : 'bg-slate-700 hover:bg-slate-600 text-white'
-                          }`}
-                        >
-                          <span className="text-lg leading-none">−</span>
-                        </button>
-                        <span className="w-8 text-center text-sm font-semibold">{exerciseConfig.exercises.mcq}</span>
-                        <button
-                          type="button"
-                          onClick={() => setExerciseConfig(prev => ({
-                            ...prev,
-                            exercises: { ...prev.exercises, mcq: Math.min(3, prev.exercises.mcq + 1) }
-                          }))}
-                          disabled={exerciseConfig.exercises.mcq >= 3}
-                          className={`w-6 h-6 rounded flex items-center justify-center transition ${
-                            exerciseConfig.exercises.mcq >= 3
-                              ? 'bg-slate-800 text-gray-600 cursor-not-allowed'
-                              : 'bg-slate-700 hover:bg-slate-600 text-white'
-                          }`}
-                        >
-                          <span className="text-lg leading-none">+</span>
-                        </button>
-                      </div>
-                    </div>
-
-                    {/* Điền từ (Fill Blank) */}
-                    <div className="flex items-center justify-between mb-2 bg-slate-800/50 rounded-md p-2">
-                      <span className="text-sm text-gray-300">Điền từ</span>
-                      <div className="flex items-center gap-2">
-                        <button
-                          type="button"
-                          onClick={() => setExerciseConfig(prev => ({
-                            ...prev,
-                            exercises: { ...prev.exercises, fill_blank: Math.max(1, prev.exercises.fill_blank - 1) }
-                          }))}
-                          disabled={exerciseConfig.exercises.fill_blank <= 1}
-                          className={`w-6 h-6 rounded flex items-center justify-center transition ${
-                            exerciseConfig.exercises.fill_blank <= 1
-                              ? 'bg-slate-800 text-gray-600 cursor-not-allowed'
-                              : 'bg-slate-700 hover:bg-slate-600 text-white'
-                          }`}
-                        >
-                          <span className="text-lg leading-none">−</span>
-                        </button>
-                        <span className="w-8 text-center text-sm font-semibold">{exerciseConfig.exercises.fill_blank}</span>
-                        <button
-                          type="button"
-                          onClick={() => setExerciseConfig(prev => ({
-                            ...prev,
-                            exercises: { ...prev.exercises, fill_blank: Math.min(3, prev.exercises.fill_blank + 1) }
-                          }))}
-                          disabled={exerciseConfig.exercises.fill_blank >= 3}
-                          className={`w-6 h-6 rounded flex items-center justify-center transition ${
-                            exerciseConfig.exercises.fill_blank >= 3
-                              ? 'bg-slate-800 text-gray-600 cursor-not-allowed'
-                              : 'bg-slate-700 hover:bg-slate-600 text-white'
-                          }`}
-                        >
-                          <span className="text-lg leading-none">+</span>
-                        </button>
-                      </div>
-                    </div>
-
-                    {/* Đúng/Sai (True/False) */}
-                    <div className="flex items-center justify-between bg-slate-800/50 rounded-md p-2">
-                      <span className="text-sm text-gray-300">Đúng/Sai</span>
-                      <div className="flex items-center gap-2">
-                        <button
-                          type="button"
-                          onClick={() => setExerciseConfig(prev => ({
-                            ...prev,
-                            exercises: { ...prev.exercises, true_false: Math.max(1, prev.exercises.true_false - 1) }
-                          }))}
-                          disabled={exerciseConfig.exercises.true_false <= 1}
-                          className={`w-6 h-6 rounded flex items-center justify-center transition ${
-                            exerciseConfig.exercises.true_false <= 1
-                              ? 'bg-slate-800 text-gray-600 cursor-not-allowed'
-                              : 'bg-slate-700 hover:bg-slate-600 text-white'
-                          }`}
-                        >
-                          <span className="text-lg leading-none">−</span>
-                        </button>
-                        <span className="w-8 text-center text-sm font-semibold">{exerciseConfig.exercises.true_false}</span>
-                        <button
-                          type="button"
-                          onClick={() => setExerciseConfig(prev => ({
-                            ...prev,
-                            exercises: { ...prev.exercises, true_false: Math.min(3, prev.exercises.true_false + 1) }
-                          }))}
-                          disabled={exerciseConfig.exercises.true_false >= 3}
-                          className={`w-6 h-6 rounded flex items-center justify-center transition ${
-                            exerciseConfig.exercises.true_false >= 3
-                              ? 'bg-slate-800 text-gray-600 cursor-not-allowed'
-                              : 'bg-slate-700 hover:bg-slate-600 text-white'
-                          }`}
-                        >
-                          <span className="text-lg leading-none">+</span>
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {/* Nút Tạo bài tập */}
+          {/* Buttons */}
+          <div className="mt-4 flex flex-wrap gap-3 items-center">
             <button
               type="button"
-              onClick={handleCreateExercise}
-              disabled={isExerciseButtonDisabled}
-              className={`px-4 py-1.5 rounded-full text-sm font-semibold transition ${
-                isExerciseButtonDisabled
-                  ? 'bg-gray-600 text-gray-400 cursor-not-allowed'
-                  : 'bg-purple-600 hover:bg-purple-700 text-white'
-              }`}
-              title={isExerciseButtonDisabled ? `Cần xem thêm ${remainingTime}` : 'Tạo bài tập tương tác'}
+              onClick={() => setSubtitleMode('bilingual')}
+              className={`px-4 py-1.5 rounded-full text-sm font-medium transition ${subtitleMode === 'bilingual' ? 'bg-sky-600 text-white' : 'bg-slate-700 text-slate-200 hover:bg-slate-600'}`}
             >
-              {isExerciseButtonDisabled ? `Chờ ${remainingTime}` : 'Bài tập tương tác'}
+              Xem song ngữ
             </button>
-          </div>
-        </div>
 
-        {/* InfoMovie + Exercise */}
-        <div className="mt-6 grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
-          <div className="bg-[#1B2A36] p-6 rounded-xl shadow-lg text-gray-300 border border-white/5">
-            <h3 className="text-xl font-bold text-[#E4D161] mb-4 border-b border-white/10 pb-2">
-              Thông tin phim
-            </h3>
+            <button
+              type="button"
+              onClick={() => setSubtitleMode('en')}
+              className={`px-4 py-1.5 rounded-full text-sm font-medium transition ${subtitleMode === 'en' ? 'bg-sky-600 text-white' : 'bg-slate-700 text-slate-200 hover:bg-slate-600'}`}
+            >
+              Chỉ tiếng Anh
+            </button>
 
-            <div className="flex flex-col sm:flex-row gap-6">
-              <div className="shrink-0 mx-auto sm:mx-0">
-                <div className="w-32 sm:w-40 aspect-[2/3] rounded-lg overflow-hidden shadow-md border border-white/10 bg-black/20">
-                  {fakeMovie?.thumb_url ? (
-                    <img
-                      src={fakeMovie.thumb_url}
-                      alt={fakeMovie?.title || 'Movie poster'}
-                      className="w-full h-full object-cover"
-                      onError={(e) => (e.currentTarget.style.display = 'none')}
-                    />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center text-gray-600 text-xs">
-                      No Image
+            <button
+              type="button"
+              onClick={() => setSubtitleMode('vi')}
+              className={`px-4 py-1.5 rounded-full text-sm font-medium transition ${subtitleMode === 'vi' ? 'bg-sky-600 text-white' : 'bg-slate-700 text-slate-200 hover:bg-slate-600'}`}
+            >
+              Chỉ tiếng Việt
+            </button>
+
+            {/* Nút Settings và Tạo bài tập */}
+            <div className="ml-auto flex items-center gap-2">
+              {/* Nút Settings - Dropdown config */}
+              <div className="relative">
+                <button
+                  type="button"
+                  onClick={() => setShowExerciseOptions(!showExerciseOptions)}
+                  className={`p-2 rounded-full transition ${
+                    showExerciseOptions 
+                      ? 'bg-purple-600 text-white' 
+                      : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
+                  }`}
+                  title="Cài đặt bài tập"
+                >
+                  <Settings className="w-5 h-5" />
+                </button>
+
+                {/* Dropdown Panel */}
+                {showExerciseOptions && (
+                  <div className="absolute right-0 mt-2 w-80 bg-[#1B2A36] rounded-lg shadow-xl border border-white/10 p-4 z-10">
+                    {/* Chọn thời lượng nội dung */}
+                    <div className="mb-4">
+                      <label className="block text-sm font-semibold text-gray-300 mb-2">
+                        Thời lượng nội dung quan tâm
+                      </label>
+                      <div className="flex gap-2">
+                        {[3, 5, 7].map(minutes => (
+                          <button
+                            key={minutes}
+                            type="button"
+                            onClick={() => setExerciseConfig(prev => ({ ...prev, duration: minutes }))}
+                            className={`flex-1 px-3 py-2 rounded-md text-sm font-medium transition ${
+                              exerciseConfig.duration === minutes
+                                ? 'bg-purple-600 text-white'
+                                : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
+                            }`}
+                          >
+                            {minutes} phút
+                          </button>
+                        ))}
+                      </div>
                     </div>
-                  )}
-                </div>
+
+                    {/* Chọn số lượng bài tập */}
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-300 mb-2">
+                        Số lượng bài tập
+                      </label>
+                      
+                      {/* Trắc nghiệm (MCQ) */}
+                      <div className="flex items-center justify-between mb-2 bg-slate-800/50 rounded-md p-2">
+                        <span className="text-sm text-gray-300">Trắc nghiệm</span>
+                        <div className="flex items-center gap-2">
+                          <button
+                            type="button"
+                            onClick={() => setExerciseConfig(prev => ({
+                              ...prev,
+                              exercises: { ...prev.exercises, mcq: Math.max(1, prev.exercises.mcq - 1) }
+                            }))}
+                            disabled={exerciseConfig.exercises.mcq <= 1}
+                            className={`w-6 h-6 rounded flex items-center justify-center transition ${
+                              exerciseConfig.exercises.mcq <= 1
+                                ? 'bg-slate-800 text-gray-600 cursor-not-allowed'
+                                : 'bg-slate-700 hover:bg-slate-600 text-white'
+                            }`}
+                          >
+                            <span className="text-lg leading-none">−</span>
+                          </button>
+                          <span className="w-8 text-center text-sm font-semibold">{exerciseConfig.exercises.mcq}</span>
+                          <button
+                            type="button"
+                            onClick={() => setExerciseConfig(prev => ({
+                              ...prev,
+                              exercises: { ...prev.exercises, mcq: Math.min(3, prev.exercises.mcq + 1) }
+                            }))}
+                            disabled={exerciseConfig.exercises.mcq >= 3}
+                            className={`w-6 h-6 rounded flex items-center justify-center transition ${
+                              exerciseConfig.exercises.mcq >= 3
+                                ? 'bg-slate-800 text-gray-600 cursor-not-allowed'
+                                : 'bg-slate-700 hover:bg-slate-600 text-white'
+                            }`}
+                          >
+                            <span className="text-lg leading-none">+</span>
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* Điền từ (Fill Blank) */}
+                      <div className="flex items-center justify-between mb-2 bg-slate-800/50 rounded-md p-2">
+                        <span className="text-sm text-gray-300">Điền từ</span>
+                        <div className="flex items-center gap-2">
+                          <button
+                            type="button"
+                            onClick={() => setExerciseConfig(prev => ({
+                              ...prev,
+                              exercises: { ...prev.exercises, fill_blank: Math.max(1, prev.exercises.fill_blank - 1) }
+                            }))}
+                            disabled={exerciseConfig.exercises.fill_blank <= 1}
+                            className={`w-6 h-6 rounded flex items-center justify-center transition ${
+                              exerciseConfig.exercises.fill_blank <= 1
+                                ? 'bg-slate-800 text-gray-600 cursor-not-allowed'
+                                : 'bg-slate-700 hover:bg-slate-600 text-white'
+                            }`}
+                          >
+                            <span className="text-lg leading-none">−</span>
+                          </button>
+                          <span className="w-8 text-center text-sm font-semibold">{exerciseConfig.exercises.fill_blank}</span>
+                          <button
+                            type="button"
+                            onClick={() => setExerciseConfig(prev => ({
+                              ...prev,
+                              exercises: { ...prev.exercises, fill_blank: Math.min(3, prev.exercises.fill_blank + 1) }
+                            }))}
+                            disabled={exerciseConfig.exercises.fill_blank >= 3}
+                            className={`w-6 h-6 rounded flex items-center justify-center transition ${
+                              exerciseConfig.exercises.fill_blank >= 3
+                                ? 'bg-slate-800 text-gray-600 cursor-not-allowed'
+                                : 'bg-slate-700 hover:bg-slate-600 text-white'
+                            }`}
+                          >
+                            <span className="text-lg leading-none">+</span>
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* Đúng/Sai (True/False) */}
+                      <div className="flex items-center justify-between bg-slate-800/50 rounded-md p-2">
+                        <span className="text-sm text-gray-300">Đúng/Sai</span>
+                        <div className="flex items-center gap-2">
+                          <button
+                            type="button"
+                            onClick={() => setExerciseConfig(prev => ({
+                              ...prev,
+                              exercises: { ...prev.exercises, true_false: Math.max(1, prev.exercises.true_false - 1) }
+                            }))}
+                            disabled={exerciseConfig.exercises.true_false <= 1}
+                            className={`w-6 h-6 rounded flex items-center justify-center transition ${
+                              exerciseConfig.exercises.true_false <= 1
+                                ? 'bg-slate-800 text-gray-600 cursor-not-allowed'
+                                : 'bg-slate-700 hover:bg-slate-600 text-white'
+                            }`}
+                          >
+                            <span className="text-lg leading-none">−</span>
+                          </button>
+                          <span className="w-8 text-center text-sm font-semibold">{exerciseConfig.exercises.true_false}</span>
+                          <button
+                            type="button"
+                            onClick={() => setExerciseConfig(prev => ({
+                              ...prev,
+                              exercises: { ...prev.exercises, true_false: Math.min(3, prev.exercises.true_false + 1) }
+                            }))}
+                            disabled={exerciseConfig.exercises.true_false >= 3}
+                            className={`w-6 h-6 rounded flex items-center justify-center transition ${
+                              exerciseConfig.exercises.true_false >= 3
+                                ? 'bg-slate-800 text-gray-600 cursor-not-allowed'
+                                : 'bg-slate-700 hover:bg-slate-600 text-white'
+                            }`}
+                          >
+                            <span className="text-lg leading-none">+</span>
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
 
-              <div className="flex-1 space-y-3">
-                <div>
-                  <h4 className="text-2xl font-bold text.white leading-tight">
-                    {fakeMovie?.title || 'Đang tải...'}
-                  </h4>
+              {/* Nút Tạo bài tập */}
+              <button
+                type="button"
+                onClick={handleCreateExercise}
+                disabled={isExerciseButtonDisabled}
+                className={`px-4 py-1.5 rounded-full text-sm font-semibold transition ${
+                  isExerciseButtonDisabled
+                    ? 'bg-gray-600 text-gray-400 cursor-not-allowed'
+                    : 'bg-purple-600 hover:bg-purple-700 text-white'
+                }`}
+                title={isExerciseButtonDisabled ? `Cần xem thêm ${remainingTime}` : 'Tạo bài tập tương tác'}
+              >
+                {isExerciseButtonDisabled ? `Chờ ${remainingTime}` : 'Bài tập tương tác'}
+              </button>
+            </div>
+          </div>
 
-                  {fakeMovie?.level && (
-                    <span
-                      className={`inline-block mt-2 text-xs font-bold px-2.5 py-1 rounded-full border 
-                        ${
-                          fakeMovie.level.toLowerCase() === 'easy'
-                            ? 'bg-green-600/20 text-green-300 border-green-500/30'
-                            : fakeMovie.level.toLowerCase() === 'medium'
-                            ? 'bg-yellow-600/20 text-yellow-300 border-yellow-500/30'
-                            : fakeMovie.level.toLowerCase() === 'hard'
-                            ? 'bg-red-600/20 text-red-300 border-red-500/30'
-                            : 'bg-gray-600/20 text-gray-300 border-gray-500/30'
-                        }`}
-                    >
-                      {fakeMovie.level}
-                    </span>
-                  )}
-                </div>
+          {/* InfoMovie + Exercise */}
+          <div className="mt-6 grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
+            <div className="bg-[#1B2A36] p-6 rounded-xl shadow-lg text-gray-300 border border-white/5">
+              <h3 className="text-xl font-bold text-[#E4D161] mb-4 border-b border-white/10 pb-2">
+                Thông tin phim
+              </h3>
 
-                <div className="flex flex-wrap gap-2 text-sm">
-                  <div className="px-3 py-1 rounded-full bg-[#14202A] border border-white/10 text-gray-300 flex items-center gap-1">
-                    <span className="text-[#E4D161]">Năm:</span>
-                    <span>{fakeMovie?.year_released ?? 'N/A'}</span>
-                  </div>
-                  <div className="px-3 py-1 rounded-full bg-[#14202A] border border-white/10 text-gray-300 flex items-center gap-1">
-                    <span className="text-[#E4D161]">Thời lượng:</span>
-                    <span>{fakeMovie?.duration ?? 'N/A'}</span>
-                  </div>
-                  <div className="px-3 py-1 rounded-full bg-[#14202A] border border-white/10 text-gray-300 flex items-center gap-1">
-                    <span className="text-[#E4D161]">Thể loại:</span>
-                    <span>{fakeMovie?.genre ?? 'Unknown'}</span>
-                  </div>
-                </div>
-
-                <div className="pt-2">
-                  <h5 className="text-sm font-semibold text-gray-400 mb-1">Mô tả:</h5>
-                  <div className="text-sm text-gray-300 leading-relaxed max-h-40 overflow-y-auto pr-2">
-                    {fakeMovie?.description ? (
-                      <p className="whitespace-pre-wrap">{fakeMovie.description}</p>
+              <div className="flex flex-col sm:flex-row gap-6">
+                <div className="shrink-0 mx-auto sm:mx-0">
+                  <div className="w-32 sm:w-40 aspect-[2/3] rounded-lg overflow-hidden shadow-md border border-white/10 bg-black/20">
+                    {movieData?.thumb_url ? (
+                      <img
+                        src={movieData.thumb_url}
+                        alt={movieData?.title || 'Movie poster'}
+                        className="w-full h-full object-cover"
+                        onError={(e) => (e.currentTarget.style.display = 'none')}
+                      />
                     ) : (
-                      <p className="italic text-gray-500">Mô tả phim chưa có.</p>
+                      <div className="w-full h-full flex items-center justify-center text-gray-600 text-xs">
+                        No Image
+                      </div>
                     )}
                   </div>
                 </div>
+
+                <div className="flex-1 space-y-3">
+                  <div>
+                    <h4 className="text-2xl font-bold text-white leading-tight">
+                      {movieData?.title || 'Đang tải...'}
+                    </h4>
+
+                    {movieData?.level && (
+                      <span
+                        className={`inline-block mt-2 text-xs font-bold px-2.5 py-1 rounded-full border 
+                          ${
+                            movieData.level.toLowerCase() === 'easy'
+                              ? 'bg-green-600/20 text-green-300 border-green-500/30'
+                              : movieData.level.toLowerCase() === 'medium'
+                              ? 'bg-yellow-600/20 text-yellow-300 border-yellow-500/30'
+                              : movieData.level.toLowerCase() === 'hard'
+                              ? 'bg-red-600/20 text-red-300 border-red-500/30'
+                              : 'bg-gray-600/20 text-gray-300 border-gray-500/30'
+                          }`}
+                      >
+                        {movieData.level}
+                      </span>
+                    )}
+                  </div>
+
+                  <div className="flex flex-wrap gap-2 text-sm">
+                    <div className="px-3 py-1 rounded-full bg-[#14202A] border border-white/10 text-gray-300 flex items-center gap-1">
+                      <span className="text-[#E4D161]">Năm:</span>
+                      <span>{movieData?.year_released ?? 'N/A'}</span>
+                    </div>
+                    <div className="px-3 py-1 rounded-full bg-[#14202A] border border-white/10 text-gray-300 flex items-center gap-1">
+                      <span className="text-[#E4D161]">Thời lượng:</span>
+                      <span>{movieData?.duration ?? 'N/A'}</span>
+                    </div>
+                    <div className="px-3 py-1 rounded-full bg-[#14202A] border border-white/10 text-gray-300 flex items-center gap-1">
+                      <span className="text-[#E4D161]">Thể loại:</span>
+                      <span>{movieData?.genre ?? 'Unknown'}</span>
+                    </div>
+                  </div>
+
+                  <div className="pt-2">
+                    <h5 className="text-sm font-semibold text-gray-400 mb-1">Mô tả:</h5>
+                    <div className="text-sm text-gray-300 leading-relaxed max-h-40 overflow-y-auto pr-2">
+                      {movieData?.description ? (
+                        <p className="whitespace-pre-wrap">{movieData.description}</p>
+                      ) : (
+                        <p className="italic text-gray-500">Mô tả phim chưa có.</p>
+                      )}
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
+
+            {/* Exercise */}
+            {exerciseData && (
+              <div className="bg-[#1B2A36] p-6 rounded-xl shadow-lg border border-white/5">
+                <div className="flex items-center justify-between mb-4 pb-3 border-b border-white/10">
+                  <h3 className="text-xl font-bold text-[#E4D161]">
+                    Bài tập tương tác
+                  </h3>
+                  <span className="text-sm text-gray-400">
+                    {Object.keys(userAnswers).length}/{exerciseData.questions?.length || 0} câu
+                  </span>
+                </div>
+
+                <div className="space-y-4 max-h-[500px] overflow-y-auto pr-2">
+                  {exerciseData.questions?.map((question, index) => renderQuestion(question, index))}
+                </div>
+
+                <div className="mt-6 pt-4 border-t border-white/10 flex gap-3">
+                  {!showResults ? (
+                    <button
+                      onClick={handleCheckAnswers}
+                      className="flex-1 px-6 py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold rounded-lg transition"
+                    >
+                      Kiểm tra
+                    </button>
+                  ) : (
+                    <button
+                      onClick={handleContinueWatching}
+                      className="flex-1 px-6 py-3 bg-purple-600 hover:bg-purple-700 text-white font-semibold rounded-lg transition"
+                    >
+                      Tiếp tục xem
+                    </button>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
-
-          {/* Exercise */}
-          {exerciseData && (
-            <div className="bg-[#1B2A36] p-6 rounded-xl shadow-lg border border-white/5">
-              <div className="flex items-center justify-between mb-4 pb-3 border-b border-white/10">
-                <h3 className="text-xl font-bold text-[#E4D161]">
-                  Bài tập tương tác
-                </h3>
-                <span className="text-sm text-gray-400">
-                  {Object.keys(userAnswers).length}/{exerciseData.questions?.length || 0} câu
-                </span>
-              </div>
-
-              <div className="space-y-4 max-h-[500px] overflow-y-auto pr-2">
-                {exerciseData.questions?.map((question, index) => renderQuestion(question, index))}
-              </div>
-
-              <div className="mt-6 pt-4 border-t border-white/10 flex gap-3">
-                {!showResults ? (
-                  <button
-                    onClick={handleCheckAnswers}
-                    className="flex-1 px-6 py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold rounded-lg transition"
-                  >
-                    Kiểm tra
-                  </button>
-                ) : (
-                  <button
-                    onClick={handleContinueWatching}
-                    className="flex-1 px-6 py-3 bg-purple-600 hover:bg-purple-700 text-white font-semibold rounded-lg transition"
-                  >
-                    Tiếp tục xem
-                  </button>
-                )}
-              </div>
-            </div>
-          )}
         </div>
-      </div>
+      )}
     </div>
   )
 }

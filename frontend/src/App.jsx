@@ -75,7 +75,7 @@ function App() {
             <Route path="/client/exercises" element={<ExercisePage />} />
             <Route path="/client/exam" element={<ExamPage />} />
             <Route path="/client/results" element={<ResultPage />} />
-            <Route path="/client/video" element={<VideoPlayerPage />} />
+            <Route path="/client/video/:id" element={<VideoPlayerPage />} />
 
             {/* ----ADMIN---- */}
             <Route path="/admin/users" element={<ManageUserPage />} />
