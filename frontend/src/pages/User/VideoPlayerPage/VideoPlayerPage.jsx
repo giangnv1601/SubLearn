@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import ReactPlayer from 'react-player'
 import { Settings } from 'lucide-react'
+import { toast } from 'sonner'
 
 /** ===== Fake data ===== */
 const fakeMovie = {
@@ -651,6 +652,73 @@ export default function MoviePlayerUI() {
     }
   }, [])
 
+  // Lấy đoạn phụ đề từ (currentTime - duration) đến currentTime
+  const getSegmentSubtitles = useCallback(() => {
+    const player = playerRef.current
+    if (!player) return []
+
+    const currentTime = Number(player.currentTime ?? 0)
+    const durationInSeconds = exerciseConfig.duration * 60 // Chuyển phút sang giây
+    const startTime = Math.max(0, currentTime - durationInSeconds)
+
+    // Lọc các phụ đề trong khoảng thời gian [startTime, currentTime]
+    const segmentSubs = bilingualSubtitles.filter(sub => {
+      return sub.startTime >= startTime && sub.startTime <= currentTime
+    })
+
+    return segmentSubs
+  }, [bilingualSubtitles, exerciseConfig.duration])
+
+  // Xử lý khi bấm nút "Bài tập tương tác"
+  const handleCreateExercise = useCallback(async () => {
+    const player = playerRef.current
+    if (!player) {
+      toast.error('Player chưa sẵn sàng')
+      return
+    }
+
+    // Pause player
+    if (typeof player.pause === 'function') {
+      player.pause()
+    }
+
+    // Lấy segment subtitle
+    const segmentSubtitles = getSegmentSubtitles()
+
+    if (segmentSubtitles.length === 0) {
+      toast.error('Không có phụ đề trong khoảng thời gian đã chọn!')
+      return
+    }
+
+    // Chuẩn bị payload để gọi API
+    const payload = {
+      subtitles: segmentSubtitles,
+      mcq: exerciseConfig.exercises.mcq,
+      fill_blank: exerciseConfig.exercises.fill_blank,
+      true_false: exerciseConfig.exercises.true_false
+    }
+
+    console.log('Payload gửi API:', payload)
+
+    // Hiển thị loading toast
+    toast.loading('Đang tạo bài tập...')
+
+    try {
+      // TODO: Gọi API tạo bài tập ở đây
+      
+      // Simulate API call
+      await new Promise(resolve => setTimeout(resolve, 1000))
+      
+      toast.success(
+        `Đã tạo ${segmentSubtitles.length} câu với ${payload.mcq} trắc nghiệm, ${payload.fill_blank} điền từ, ${payload.true_false} đúng/sai`,
+        { id: 'create-exercise', duration: 4000 }
+      )
+    } catch (error) {
+      console.error('Lỗi khi tạo bài tập:', error)
+      toast.error('Có lỗi xảy ra khi tạo bài tập!')
+    }
+  }, [getSegmentSubtitles, exerciseConfig])
+
   return (
     <div className="min-h-screen bg-[#2E4863] text-white">
       <div className="max-w-[1200px] mx-auto px-4 py-6">
@@ -883,10 +951,7 @@ export default function MoviePlayerUI() {
             {/* Nút Tạo bài tập */}
             <button
               type="button"
-              onClick={() => {
-                console.log('Tạo bài tập với config:', exerciseConfig)
-                // TODO: Gọi API tạo bài tập
-              }}
+              onClick={handleCreateExercise}
               className="px-4 py-1.5 rounded-full text-sm font-semibold bg-purple-600 hover:bg-purple-700 transition"
             >
               Bài tập tương tác
@@ -894,7 +959,7 @@ export default function MoviePlayerUI() {
           </div>
         </div>
 
-        {/* Info */}
+        {/* InfoMovie + Exercise */}
         <div className="mt-6 grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
           <div className="bg-[#1B2A36] p-6 rounded-xl shadow-lg text-gray-300 border border-white/5">
             <h3 className="text-xl font-bold text-[#E4D161] mb-4 border-b border-white/10 pb-2">
@@ -972,7 +1037,7 @@ export default function MoviePlayerUI() {
             </div>
           </div>
 
-          {/* Giữ layout giống bản cũ */}
+          {/* Exercise */}
           <div className="hidden lg:block" />
         </div>
       </div>
