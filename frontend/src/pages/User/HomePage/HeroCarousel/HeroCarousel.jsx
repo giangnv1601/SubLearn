@@ -68,7 +68,7 @@ const HeroCarousel = ({ mostMovies }) => {
               </p>
               <div className="flex gap-3">
                 <button
-                  onClick={() => navigate(`/movie/${s.id}`)}
+                  onClick={() => navigate(`/client/video/${s.id}`)}
                   className="group inline-flex items-center gap-2 px-6 py-3 bg-[#E4D161] hover:bg-[#d4c451] text-black rounded-full font-semibold shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105"
                 >
                   <Play className="w-5 h-5 fill-black group-hover:scale-110 transition-transform" />

@@ -62,7 +62,7 @@ const SearchBar = ({ onSelectMovie }) => {
     inputRef.current?.blur()
     // Chuyển đến trang playerMovie
     const id = movie._id
-    if (id) navigate(`/movie/${id}`)
+    if (id) navigate(`/client/video/${id}`)
   }
 
   return (

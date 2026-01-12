@@ -1,5 +1,5 @@
-/* --HELPERS FOR QUIZ DATA -- */
-
+/* Helpers for quiz */
+  
 // Chuyển đổi đáp án chỉ số sang chữ
 export const toLabel = (i) => ['A', 'B', 'C', 'D'][i] ?? 'A';
 
@@ -43,89 +43,105 @@ export const buildPayloads = (movieId, quizType, result) => {
   }));
 };
 
-/* --HELPERS FOR SUBTITLE-- */
+/* Helpers for subtitle */
 
-// Convert SRT text to cues array có dạng { start, end, text }
-export function srtToCues(srtText = '') {
-  const text = srtText.replace(/\r/g, '').replace(/^\uFEFF/, '')
-  const blocks = text.split(/\n\n+/).filter(Boolean)
-  const toSec = (t) => {
-    const [h, m, sMs] = t.split(':')
-    const [s, ms] = sMs.split(/[,.]/)
-    return (+h) * 3600 + (+m) * 60 + (+s) + (+ms || 0) / 1000
-  }
-  const cues = []
-  for (const block of blocks) {
-    const lines = block.split('\n').filter(Boolean)
-    if (lines.length < 2) continue
-    const timeIdx = /^\d+$/.test(lines[0]) ? 1 : 0
-    const m = lines[timeIdx].match(
-      /(\d{2}:\d{2}:\d{2}[,.]\d{3})\s*-->\s*(\d{2}:\d{2}:\d{2}[,.]\d{3})/
-    )
-    if (!m) continue
-    const start = toSec(m[1])
-    const end = toSec(m[2])
-    const textLines = lines.slice(timeIdx + 1).join('\n')
-    cues.push({ start, end, text: textLines })
-  }
-  console.log(cues)
-  return cues.sort((a, b) => a.start - b.start)
+// Định dạng thời gian từ HH:MM:SS,MMM sang giây (bao gồm mili giây)
+export const timeToSeconds = (timeString) => {
+  const [hours, minutes, secondsWithMs] = timeString.split(':')
+  const [secs, ms = '0'] = secondsWithMs.split(/[,.]/)
+  
+  const totalSeconds = parseInt(hours, 10) * 3600 + parseInt(minutes, 10) * 60 + parseInt(secs, 10)
+  const milliseconds = parseInt(ms.padEnd(3, '0').slice(0, 3), 10) / 1000
+  
+  return totalSeconds + milliseconds
 }
 
-// Kết hợp phụ đề EN & VI vào cùng 1 mảng có dạng { start, end, en, vi }
-export function pairCues(en = [], vi = []) {
-  const max = Math.max(en.length, vi.length)
-  const items = []
-  for (let i = 0; i < max; i++) {
-    const e = en[i],
-      v = vi[i]
-    if (!e && !v) continue
-    items.push({
-      start: e?.start ?? v?.start ?? 0,
-      end: e?.end ?? v?.end ?? 0,
-      en: e?.text || '',
-      vi: v?.text || '',
+// Phân tích phụ đề từ văn bản SRT thành mảng { startTime, endTime, text }
+export const parseSubtitlesFromText = (subtitleContent) => {
+  if (!subtitleContent) return []
+
+  const blocks = subtitleContent
+    .replace(/\r/g, '') // Loại bỏ ký tự carriage return
+    .replace(/^\uFEFF/, '') // Loại bỏ BOM nếu có
+    .split(/\n\s*\n/)
+    .filter((block) => block.trim())
+
+  const subtitles = []
+
+  for (const block of blocks) {
+    const lines = block.trim().split('\n').filter(Boolean)
+    if (lines.length < 2) continue
+
+    // Bỏ dòng index nếu có
+    const hasIndexLine = /^\d+$/.test(lines[0])
+    const timeLine = (hasIndexLine ? lines[1] : lines[0]).trim()
+    const times = timeLine.split('-->')
+    if (times.length !== 2) continue
+
+    const startTime = timeToSeconds(times[0].trim())
+    const endTime = timeToSeconds(times[1].trim())
+    if (Number.isNaN(startTime) || Number.isNaN(endTime)) continue
+
+    const textLines = lines.slice(hasIndexLine ? 2 : 1)
+    const text = textLines.join('\n').trim()
+    if (!text) continue
+
+    subtitles.push({ startTime, endTime, text })
+  }
+
+  return subtitles
+}
+
+// Kết hợp phụ đề song ngữ vào mảng { startTime, endTime, enText, viText }
+export const mergeBiSubs = (enSubs = [], viSubs = []) => {
+  const len = Math.max(enSubs.length, viSubs.length)
+  const result = []
+
+  for (let i = 0; i < len; i += 1) {
+    const en = enSubs[i]
+    const vi = viSubs[i]
+
+    if (!en && !vi) continue
+
+    result.push({
+      startTime: en?.startTime ?? vi?.startTime ?? 0,
+      endTime: en?.endTime ?? vi?.endTime ?? 0,
+      enText: en?.text || '',
+      viText: vi?.text || '',
     })
   }
-  return items
+
+  return result
 }
 
-// Làm sạch phụ đề
-export function sanitizeSubtitle(s = '') {
-  let out = s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
-  out = out.replace(/&lt;(\/?)?(i|b|u)&gt;/gi, '<$1$2>').replace(/\n/g, '<br/>')
-  return out
+// Định dạng thời gian từ giây sang HH:MM:SS
+export const formatTime = (timeInSeconds = 0) => {
+  const safeSeconds = Math.max(0, Math.floor(timeInSeconds))
+  const hours = Math.floor(safeSeconds / 3600)
+  const minutes = Math.floor((safeSeconds % 3600) / 60)
+  const seconds = Math.floor(safeSeconds % 60)
+  return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`
 }
 
-// Định dạng thời gian dạng HH:MM:SS
-export function fmtTime(totalSec = 0) {
-  const sec = Math.max(0, Math.floor(totalSec))
-  const h = String(Math.floor(sec / 3600)).padStart(2, '0')
-  const m = String(Math.floor((sec % 3600) / 60)).padStart(2, '0')
-  const s = String(sec % 60).padStart(2, '0')
-  return `${h}:${m}:${s}`
-}
-
-// Tìm chỉ số phụ đề đang active tại thời điểm t (giây)
-export function findActiveIndex(cues, t, eps = 0.05) {
-  let low = 0,
-    high = cues.length - 1
-  while (low <= high) {
-    const mid = (low + high) >> 1,
-      c = cues[mid]
-    if (t < c.start - eps) high = mid - 1
-    else if (t > c.end + eps) low = mid + 1
-    else return mid
-  }
-  return -1
-}
-
-// Hàm lấy index cue cuối cùng trước thời gian t - segmentDuration
-export function findSegmentBeforeTime(cues, t, segmentDuration = 300) {
-  for (let i = cues.length - 1; i >= 0; i--) {
-    if (cues[i].end < t - segmentDuration) {
-      return i
+// Tìm index phụ đề đang hoạt động theo thời gian hiện tại
+export const findActiveIndex = (subs, timeCurrent) => {
+  if (subs.length === 0) return -1
+  
+  // Binary search tìm câu cuối cùng có startTime <= timeCurrent
+  let left = 0
+  let right = subs.length - 1
+  let result = -1
+  
+  while (left <= right) {
+    const mid = Math.floor((left + right) / 2)
+    
+    if (subs[mid].startTime <= timeCurrent) {
+      result = mid
+      left = mid + 1
+    } else {
+      right = mid - 1
     }
   }
-  return -1
+  
+  return result
 }
