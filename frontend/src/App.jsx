@@ -26,6 +26,7 @@ const ManagerExercisePage = lazy(() => import("@/pages/Admin/ManageExercisePage/
 const ManageUserPage = lazy(() => import("@/pages/Admin/ManageUserPage/ManageUsersPage"))
 const QuizEditorPage = lazy(() => import("@/pages/Admin/QuizEditorPage/QuizEditorPage"))
 const CreateQuizPage = lazy(() => import("@/pages/Admin/CreateQuizPage/CreateQuizPage"))
+const AddQuizPage = lazy(() => import("@/pages/Admin/AddQuizPage/AddQuizPage"))
 
 // Lazy load User pages
 const HomePage = lazy(() => import("@/pages/User/HomePage/HomePage"))
@@ -125,6 +126,7 @@ function App() {
             <Route path="/admin/exercise" element={<ManagerExercisePage />} />
             <Route path="/admin/exercise/:movieId/:type/edit" element={<QuizEditorPage />} />
             <Route path="/admin/exercise/create" element={<CreateQuizPage />} />
+            <Route path="/admin/exercise/add" element={<AddQuizPage />} />
           </Route>
         </Route>
 

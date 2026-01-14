@@ -145,3 +145,41 @@ export const findActiveIndex = (subs, timeCurrent) => {
   
   return result
 }
+
+
+/* Helpers for add quiz */
+
+// Xử lý bỏ timestamp, số thứ tự
+export const cleanSrtContent = (srtContent) => {
+  if (!srtContent || typeof srtContent !== 'string') return '';
+
+  // Regex để tách các subtitle entry
+  const subtitleRegex = /\d+\s+\d{2}:\d{2}:\d{2},\d{3}\s+-->\s+\d{2}:\d{2}:\d{2},\d{3}\s+([\s\S]*?)(?=\n\d+\s+\d{2}:\d{2}:\d{2}|$)/g;
+  
+  const matches = [...srtContent.matchAll(subtitleRegex)];
+  
+  // Chỉ lấy phần text, loại bỏ dòng trống
+  const textLines = matches
+    .map(match => match[1].trim())
+    .filter(line => line.length > 0);
+
+  return textLines.join('\n');
+};
+
+// Cắt ngắn phụ đề xuống một độ dài tối đa
+export const truncateSubtitle = (subtitle, maxLength = 15000) => {
+  if (subtitle.length <= maxLength) return subtitle;
+  
+  // Cắt tại dấu xuống dòng gần nhất để không cắt ngang câu
+  const truncated = subtitle.substring(0, maxLength);
+  const lastNewline = truncated.lastIndexOf('\n');
+  
+  return lastNewline > 0 
+    ? truncated.substring(0, lastNewline) 
+    : truncated;
+};
+
+export const processSubtitle = (srtContent, maxLength = 70000) => {
+  const cleaned = cleanSrtContent(srtContent);
+  return truncateSubtitle(cleaned, maxLength);
+};

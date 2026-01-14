@@ -170,7 +170,7 @@ export const deleteQuiz = async (req, res) => {
 // Tạo quiz bằng AI từ subtitle
 export const createQuizByAi = async (req, res) => {
   try {
-    const { subtitle , quizType } = req.body || {}
+    const { subtitle , quizType, count } = req.body || {}
 
     if (!subtitle || !subtitle.trim()) {
       return res.status(400).json({ message: 'Subtitle is required' })
@@ -180,7 +180,7 @@ export const createQuizByAi = async (req, res) => {
       return res.status(400).json({ message: 'Quiz type is required' })
     }
 
-    const data = await OpenaiProvider.generateQuiz(subtitle, quizType)
+    const data = await OpenaiProvider.generateQuiz(subtitle, quizType, count)
     return res.status(200).json(data)
   } catch (err) {
     console.error('createQuiz error:', err)

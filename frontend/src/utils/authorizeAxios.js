@@ -81,7 +81,9 @@ authorizedAxiosInstance.interceptors.response.use(
         toast.error("Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.")
 
         // Gọi handler logout từ AuthContext
-        triggerSessionExpired()
+        setTimeout(() => {
+          triggerSessionExpired()
+        }, 1500)
 
         return Promise.reject(refreshErr)
       }
