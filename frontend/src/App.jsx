@@ -29,7 +29,6 @@ const CreateQuizPage = lazy(() => import("@/pages/Admin/CreateQuizPage/CreateQui
 
 // Lazy load User pages
 const HomePage = lazy(() => import("@/pages/User/HomePage/HomePage"))
-const MoviePlayerPage = lazy(() => import("@/pages/User/MoviePlayerPage/MoviePlayerPage"))
 const ExercisePage = lazy(() => import("@/pages/User/ExercisePage/ExercisePage"))
 const ExamPage = lazy(() => import("@/pages/User/ExamPage/ExamPage"))
 const ResultPage = lazy(() => import("@/pages/User/ResultPage/ResultPage"))
@@ -111,7 +110,6 @@ function App() {
             
             {/* ----CLIENT---- */}
             <Route path="/" element={<HomePage />} />
-            <Route path="/movie/:id" element={<MoviePlayerPage />} />
             <Route path="/client/exercises" element={<ExercisePage />} />
             <Route path="/client/exam" element={<ExamPage />} />
             <Route path="/client/results" element={<ResultPage />} />
