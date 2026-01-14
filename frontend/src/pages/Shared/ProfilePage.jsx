@@ -1,7 +1,6 @@
-import { useEffect, useState } from "react"
 import { Link } from "react-router-dom"
 import { Edit3, KeyRound } from "lucide-react"
-import { fetchProfileByIdApi } from "@/api"
+import { useAuth } from "@/contexts"
 
 const ROLE_LABEL = { admin: "Quản trị", client: "Người dùng" }
 
@@ -19,33 +18,8 @@ const fmtDate = (iso) => {
 }
 
 const ProfilePage = () => {
-  const [profile, setProfile] = useState({})
-  const [loading, setLoading] = useState(true)
+  const { profile, isLoading } = useAuth()
 
-  useEffect(() => {
-    let alive = true
-    const userInfo = JSON.parse(localStorage.getItem("userInfo"))
-    const userId = userInfo?.id || userInfo?._id
-    if (!userId) {
-      setLoading(false)
-      return
-    }
-
-    (async () => {
-      try {
-        const res = await fetchProfileByIdApi(userId)
-        if (alive) setProfile(res?.data ?? res)
-      } catch (err) {
-        console.error("Error fetching profile:", err)
-      } finally {
-        if (alive) setLoading(false)
-      }
-    })()
-
-    return () => {
-      alive = false
-    }
-  }, [])
 
   return (
     <div className="min-h-screen bg-[#2E4863] flex items-center justify-center p-6">
@@ -55,7 +29,7 @@ const ProfilePage = () => {
         </div>
 
         <div className="bg-[#1B2A36] rounded-2xl shadow-lg p-8 text-center border border-white/10">
-          {loading ? (
+          {isLoading ? (
             <div className="animate-pulse">
               <div className="mx-auto mb-4 w-28 h-28 rounded-full bg-white/10" />
               <div className="h-5 bg-white/10 rounded w-2/3 mx-auto mb-2" />
@@ -92,13 +66,13 @@ const ProfilePage = () => {
 
               <div className="space-y-3">
                 <div className="flex flex-col sm:flex-row gap-3">
-                  <Link to={`/profile/edit/${profile?.id}`} className="flex-1">
+                  <Link to={`/profile/edit/${profile?._id || profile?.id}`} className="flex-1">
                     <button className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-[#F3D96B] to-[#E4D161] text-black py-2.5 rounded-lg font-medium transition-transform duration-150 shadow-md hover:scale-[1.02]">
                       <Edit3 size={18} />
                       Sửa thông tin
                     </button>
                   </Link>
-                  <Link to={`/profile/change-password/${profile?.id}`} className="flex-1">
+                  <Link to={`/profile/change-password/${profile?._id || profile?.id}`} className="flex-1">
                     <button className="w-full flex items-center justify-center gap-2 border border-yellow-300 text-yellow-50 bg-transparent py-2.5 rounded-lg font-medium hover:bg-yellow-300/10 transition-colors duration-150">
                       <KeyRound size={18} />
                       Đổi mật khẩu

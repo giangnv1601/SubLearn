@@ -1,6 +1,7 @@
 import axios from "axios"
 import { toast } from "sonner"
-import { refreshTokenApi } from "../api"
+import { refreshTokenApi } from "@/api"
+import { triggerSessionExpired } from "@/contexts/AuthContext"
 
 // Khởi tạo axios instance
 let authorizedAxiosInstance = axios.create()
@@ -79,11 +80,9 @@ authorizedAxiosInstance.interceptors.response.use(
       } catch (refreshErr) {
         toast.error("Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.")
 
-        localStorage.removeItem("accessToken")
-        localStorage.removeItem("refreshToken")
-        localStorage.removeItem("userInfo")
+        // Gọi handler logout từ AuthContext
+        triggerSessionExpired()
 
-        window.location.href = "/login"
         return Promise.reject(refreshErr)
       }
     }

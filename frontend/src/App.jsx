@@ -1,5 +1,6 @@
 import { lazy, Suspense } from "react"
 import { Routes, Route, Navigate, Outlet } from "react-router"
+import { useAuth } from "@/contexts"
 
 // Loading component
 const PageLoading = () => (
@@ -39,15 +40,54 @@ const ProfilePage = lazy(() => import("@/pages/Shared/ProfilePage"))
 const EditProfilePage = lazy(() => import("@/pages/Shared/EditProfilePage"))
 const ChangePasswoedPage = lazy(() => import("@/pages/Shared/ChangePasswoedPage"))
 
+// Protected Route - yêu cầu đăng nhập
 const ProtectedRoute = () => {
-  const user = JSON.parse(localStorage.getItem('userInfo'))
-  if (!user) return <Navigate to="/login" replace={true} />
+  const { isAuthenticated, isLoading } = useAuth()
+  
+  if (isLoading) {
+    return <PageLoading />
+  }
+  
+  if (!isAuthenticated) {
+    return <Navigate to="/login" replace={true} />
+  }
+  
   return <Outlet />
 }
 
+// Admin Route - yêu cầu quyền admin
+const AdminRoute = () => {
+  const { isAuthenticated, isAdmin, isLoading } = useAuth()
+  
+  if (isLoading) {
+    return <PageLoading />
+  }
+  
+  if (!isAuthenticated) {
+    return <Navigate to="/login" replace={true} />
+  }
+  
+  if (!isAdmin()) {
+    return <Navigate to="/" replace={true} />
+  }
+  
+  return <Outlet />
+}
+
+// Unauthenticated Route - chỉ cho phép khi chưa đăng nhập
 const UnauthenticatedRoute = () => {
-  const user = JSON.parse(localStorage.getItem('userInfo'))
-  if (user) return <Navigate to="/" replace={true} />
+  const { isAuthenticated, isLoading, user } = useAuth()
+  
+  if (isLoading) {
+    return <PageLoading />
+  }
+  
+  if (isAuthenticated) {
+    // Redirect dựa trên role
+    const redirectPath = user?.role === 'admin' ? '/admin/users' : '/'
+    return <Navigate to={redirectPath} replace={true} />
+  }
+  
   return <Outlet />
 }
 
@@ -76,14 +116,18 @@ function App() {
             <Route path="/client/exam" element={<ExamPage />} />
             <Route path="/client/results" element={<ResultPage />} />
             <Route path="/client/video/:id" element={<VideoPlayerPage />} />
+          </Route>  
+        </Route>
 
-            {/* ----ADMIN---- */}
+        {/* Admin Routes (Requires admin role) */}
+        <Route element={<AdminRoute />}>
+          <Route element={<AuthLayout />}>
             <Route path="/admin/users" element={<ManageUserPage />} />
             <Route path="/admin/movie" element={<ManagerMoviePage />} />
             <Route path="/admin/exercise" element={<ManagerExercisePage />} />
             <Route path="/admin/exercise/:movieId/:type/edit" element={<QuizEditorPage />} />
             <Route path="/admin/exercise/create" element={<CreateQuizPage />} />
-          </Route>  
+          </Route>
         </Route>
 
         {/* 404 Not Found */}

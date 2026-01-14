@@ -1,55 +1,15 @@
-import React, { useEffect, useState } from 'react'
+import React from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { User, LogOut } from 'lucide-react'
-import { fetchProfileByIdApi } from '@/api'
-import { AUTH_PROFILE_UPDATED } from '@/utils/authEvents'
+import { useAuth } from '@/contexts'
 import AvatarDefault from '@/assets/user.webp'
 
 const Profiles = () => {
   const navigate = useNavigate()
-  const [profile, setProfile] = useState(null)
+  const { profile, logout } = useAuth()
 
-  const fetchProfile = async () => {
-    try {
-      const userInfo = JSON.parse(localStorage.getItem("userInfo"))
-      if (userInfo?.id) {
-        const profileData = await fetchProfileByIdApi(userInfo.id)
-        setProfile(profileData?.data ?? profileData)
-      }
-    } catch (error) {
-      console.error("Failed to fetch profile:", error)
-    }
-  }
-
-  useEffect(() => {
-    fetchProfile()
-
-    const onProfileUpdated = (e) => {
-      // Cập nhật trực tiếp từ event detail nếu có
-      if (e.detail) {
-        setProfile(prev => ({
-          ...prev,
-          fullname: e.detail.fullname,
-          avatar: e.detail.avatar
-        }))
-      } else {
-        fetchProfile()
-      }
-    }
-
-    window.addEventListener(AUTH_PROFILE_UPDATED, onProfileUpdated)
-    
-    // Cleanup khi component unmount
-    return () => {
-      window.removeEventListener(AUTH_PROFILE_UPDATED, onProfileUpdated)
-    }
-  }, [])
-
-  const handleLogout = async () => {
-    localStorage.removeItem('accessToken');
-    localStorage.removeItem('refreshToken');
-    localStorage.removeItem('userInfo');
-  
+  const handleLogout = () => {
+    logout()
     navigate('/login')
   }
 

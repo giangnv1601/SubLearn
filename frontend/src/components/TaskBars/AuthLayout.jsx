@@ -1,15 +1,16 @@
 import { Outlet } from 'react-router-dom'
+import { useAuth } from '@/contexts'
 import TaskbarAdmin from './TaskBarAdmin'
 import TaskbarClient from './TaskBarUser'
 
 const AuthLayout = () => {
-  const user = JSON.parse(localStorage.getItem('userInfo'))
+  const { user, isLoading } = useAuth()
   const role = user?.role
   
   const renderTaskbar = () => {
+    if (isLoading) return null
     if (role === 'admin') return <TaskbarAdmin />
-    if (role === 'client') return <TaskbarClient />
-    return <TaskbarUser />
+    return <TaskbarClient />
   }
 
   return (

@@ -2,12 +2,13 @@ import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { Eye, EyeOff, Mail, Lock, LogIn } from 'lucide-react'
 import { useForm } from 'react-hook-form'
-import { loginUserApi } from '@/api'
+import { useAuth } from '@/contexts'
 import { toast } from 'sonner'
 import LogoSubLearn from '@/assets/sublearn.png'
 
 function LoginPage() {
   const navigate = useNavigate()
+  const { login } = useAuth()
 
   const [showPassword, setShowPassword] = useState(false)
 
@@ -22,29 +23,16 @@ function LoginPage() {
   })
 
   const submitLogIn = async (data) => {
-    try {
-      const res = await loginUserApi(data)
+    const result = await login(data)
 
-      const userInfo = { 
-        id: res.id, 
-        email: res.email, 
-        role: res.role 
-      }
-
-      localStorage.setItem('accessToken', res.accessToken)
-      localStorage.setItem('refreshToken', res.refreshToken)
-      localStorage.setItem('userInfo', JSON.stringify(userInfo))
-
-      toast.success('Login successful!')
-      if (userInfo.role === 'admin') {
-        navigate('/admin/users')
-        return
-      }
-      navigate('/')
-    } catch (error) {
-      const msg = error?.response?.data?.message
-      setError('email', { type: 'server', message: msg })
-      setError('password', { type: 'server', message: msg })
+    if (result.success) {
+      toast.success('Đăng nhập thành công!')
+      // Điều hướng dựa trên role
+      const redirectPath = result.user?.role === 'admin' ? '/admin/users' : '/'
+      navigate(redirectPath)
+    } else {
+      setError('email', { type: 'server', message: result.error })
+      setError('password', { type: 'server', message: result.error })
     }
   }
 
