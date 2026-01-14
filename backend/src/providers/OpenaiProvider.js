@@ -175,24 +175,24 @@ const getPromptFromSubtitle = (quizType, subtitle) => {
   return prompts[quizType];
 };
 
-const getPromptForMovieInteraction = (subtitleSegment) => `
-Bạn là chuyên gia tạo bài tập tiếng Anh từ phim.
+const getPromptForMovieInteraction = (segmentSubtitle, mcqNum, fill_blankNum, true_falseNum) => `
+Bạn là chuyên gia tạo bài tập tiếng Anh từ một đoạn phụ đề phim.
 
-Nhiệm vụ của bạn: tạo ra **đúng 3 câu hỏi tương tác** từ đoạn phụ đề cung cấp.  
-Mỗi câu hỏi phải thuộc duy nhất một trong 3 loại:
+Nhiệm vụ của bạn: tạo ra **đúng ${mcqNum + fill_blankNum + true_falseNum} câu hỏi tương tác** từ đoạn phụ đề cung cấp.  
+Trong đó:
 
-1. "mcq" — trắc nghiệm 4 lựa chọn  
-2. "fill_blank" — điền từ vào chỗ trống (che đúng 1 từ)  
-3. "true_false" — câu đúng / sai  
+1. Có ${mcqNum} câu "mcq" — trắc nghiệm 4 lựa chọn  
+2. Có ${fill_blankNum} câu "fill_blank" — điền từ vào chỗ trống (che đúng 1 từ)  
+3. Có ${true_falseNum} câu "true_false" — câu đúng / sai  
 
 ==============================
 YÊU CẦU SỐ LƯỢNG VÀ CẤU TRÚC
 ==============================
-- Tổng cộng **3 câu hỏi**.
+- Tổng cộng **${mcqNum + fill_blankNum + true_falseNum} câu hỏi**.
 - Phân bố bắt buộc:
-  - 1 câu type "mcq"
-  - 1 câu type "fill_blank"
-  - 1 câu type "true_false"
+  - ${mcqNum} câu type "mcq"
+  - ${fill_blankNum} câu type "fill_blank"
+  - ${true_falseNum} câu type "true_false"
 
 ==============================
 YÊU CẦU CHUNG
@@ -200,50 +200,92 @@ YÊU CẦU CHUNG
 - Mọi câu hỏi đều phải bám sát nội dung phụ đề.
 - KHÔNG được bịa thêm các sự kiện không có trong đoạn phim.
 - Ngắn gọn, rõ ràng, phù hợp người học tiếng Anh.
+- Câu hỏi phải có độ khó vừa phải, phù hợp với người học tiếng Anh trung bình.
 
 ==============================
 YÊU CẦU THEO TỪNG LOẠI
 ==============================
 
-### Loại "mcq"
-- Có đúng 4 lựa chọn trong "options".
-- 1 đáp án đúng duy nhất.
-- "answer" là **nội dung đáp án**, không phải "A/B/C/D".
+### Loại "mcq" (Multiple Choice Question)
+- "question": câu hỏi bằng tiếng Anh về nội dung phim
+- "options": mảng đúng 4 chuỗi (không có A/B/C/D prefix)
+- "answer": nội dung của đáp án đúng (KHÔNG phải "A", "B", "C", "D")
+- "explanation": giải thích tại sao đáp án đúng (bằng tiếng Việt)
 
-### Loại "fill_blank"
-- "sentence" là câu tiếng Anh lấy từ phụ đề, nhưng che **chính xác 1 từ** bằng 6 dấu gạch dưới: "______".
-- "answer" là từ bị che và phải tồn tại trong phụ đề.
-- Không che cụm nhiều từ.
+Ví dụ:
+{
+  "type": "mcq",
+  "question": "What was the main reason for the Cardinal War?",
+  "options": [
+    "Power struggle between kingdoms",
+    "Religious conflict",
+    "Territory expansion",
+    "Economic crisis"
+  ],
+  "answer": "Power struggle between kingdoms",
+  "explanation": "Theo phụ đề, cuộc chiến Cardinal là cuộc tranh giành quyền lực giữa các vương quốc."
+}
 
-### Loại "true_false"
-- "statement" mô tả sự kiện trong đoạn phim.
-- "answer" = "True" hoặc "False" (viết hoa chữ cái đầu).
-- Nếu thông tin không chắc chắn → "False".
+### Loại "fill_blank" (Fill in the Blank)
+- "sentence": câu tiếng Anh lấy từ phụ đề, che **chính xác 1 từ** bằng "______" (6 dấu gạch dưới)
+- "answer": từ bị che (chỉ 1 từ đơn, viết thường)
+- "explanation": giải thích nghĩa của từ và vai trò trong câu (bằng tiếng Việt)
+- Không che động từ to be, mạo từ, giới từ đơn giản
+- Ưu tiên che danh từ, động từ chính, tính từ quan trọng
+
+Ví dụ:
+{
+  "type": "fill_blank",
+  "sentence": "The conflict reached a bloody and ______ conclusion.",
+  "answer": "decisive",
+  "explanation": "'Decisive' nghĩa là 'quyết định', mô tả kết cục của cuộc chiến là dứt khoát, không còn tranh cãi."
+}
+
+### Loại "true_false" (True/False Statement)
+- "statement": câu khẳng định bằng tiếng Anh về nội dung phim
+- "answer": "True" hoặc "False" (viết hoa chữ cái đầu)
+- "explanation": giải thích tại sao đúng/sai dựa trên phụ đề (bằng tiếng Việt)
+- Nếu thông tin không rõ ràng trong phụ đề → "False"
+
+Ví dụ:
+{
+  "type": "true_false",
+  "statement": "King Konrad ruled with absolute power after winning the war.",
+  "answer": "True",
+  "explanation": "Phụ đề nói rõ 'his power absolute' - quyền lực của ông là tuyệt đối sau khi thắng trận."
+}
 
 ==============================
 CHỈ TRẢ VỀ JSON THUẦN
 ==============================
-Không được trả markdown, không được dùng \`\`\`json hoặc \`\`\`  
-Không giải thích. Không thêm text ngoài JSON.  
+- KHÔNG được trả markdown
+- KHÔNG được dùng \`\`\`json hoặc \`\`\`
+- KHÔNG có giải thích, chỉ có JSON
+- KHÔNG có text ngoài JSON
+- PHẢI đảm bảo JSON hợp lệ, có thể parse được
+
 Cấu trúc JSON bắt buộc:
 
 {
   "questions": [
     {
       "type": "mcq",
-      "question": "...?",
-      "options": ["A", "B", "C", "D"],
-      "answer": "..."
+      "question": "câu hỏi tiếng Anh?",
+      "options": ["option1", "option2", "option3", "option4"],
+      "answer": "option đúng (không phải A/B/C/D)",
+      "explanation": "giải thích tiếng Việt"
     },
     {
       "type": "fill_blank",
-      "sentence": "We can't ______ him now.",
-      "answer": "trust"
+      "sentence": "Câu có ______ cần điền.",
+      "answer": "từ cần điền",
+      "explanation": "giải thích tiếng Việt"
     },
     {
       "type": "true_false",
-      "statement": "...",
-      "answer": "True"
+      "statement": "Câu khẳng định tiếng Anh.",
+      "answer": "True",
+      "explanation": "giải thích tiếng Việt"
     }
   ]
 }
@@ -253,8 +295,13 @@ Cấu trúc JSON bắt buộc:
 ==============================
 
 [START OF SUBTITLE]
-${subtitleSegment}
+${segmentSubtitle}
 [END OF SUBTITLE]
+
+LƯU Ý QUAN TRỌNG:
+- Phải có đúng ${mcqNum} câu mcq, ${fill_blankNum} câu fill_blank, ${true_falseNum} câu true_false
+- Tổng số câu hỏi: ${mcqNum + fill_blankNum + true_falseNum}
+- Không được thiếu hoặc thừa câu nào
 `;
 
 // Hàm tạo quiz bằng OpenAI
@@ -292,14 +339,14 @@ const generateQuiz = async (subtitle, quizType = QUIZ_TYPES.READING, {
 }
 
 // Hàm tạo bài tập tương tác phim
-const generateInteractiveQuiz = async (subtitleSegment, {
+const generateInteractiveQuiz = async (segmentSubtitle, mcqNum, fill_blankNum, true_falseNum, {
   model = MODEL,
   temperature = 0.7,
   top_p = 0.95,
   max_tokens = 4000,
 } = {}) => {
   try {
-    const prompt = getPromptForMovieInteraction(subtitleSegment);
+    const prompt = getPromptForMovieInteraction(segmentSubtitle, mcqNum, fill_blankNum, true_falseNum);
 
     const resp = await openai.chat.completions.create({
       model,
@@ -309,11 +356,7 @@ const generateInteractiveQuiz = async (subtitleSegment, {
       messages: [
         {
           role: 'system',
-          content: `
-            You are a JSON-only engine.  
-            Reply ONLY with strict JSON.  
-            No markdown. No commentary. No backticks.
-          `
+          content: `You are a JSON-only engine. Reply ONLY with valid JSON. No markdown. No commentary. No backticks.`
         },
         { role: 'user', content: prompt }
       ],
@@ -321,22 +364,67 @@ const generateInteractiveQuiz = async (subtitleSegment, {
 
     let text = resp?.choices?.[0]?.message?.content ?? '';
 
-    // Remove markdown
-    text = text.replace(/```json/gi, '')
-               .replace(/```/g, '')
-               .trim();
+    // Remove markdown code blocks
+    text = text.replace(/```json/gi, '').replace(/```/g, '').trim();
 
     // Extract JSON safely
-    const jsonMatch = text.match(/\{[\s\S]*\}$/);
+    const jsonMatch = text.match(/\{[\s\S]*\}/);
     if (!jsonMatch) {
-      throw new Error("Không tìm thấy JSON hợp lệ.");
+      throw new Error("Không tìm thấy JSON hợp lệ trong response.");
     }
 
     const data = JSON.parse(jsonMatch[0]);
 
-    // Validate
-    if (!data.questions || data.questions.length !== 3)
-      throw new Error("Sai số lượng câu hỏi — cần đúng 3.");
+    // Validate structure
+    if (!data.questions || !Array.isArray(data.questions)) {
+      throw new Error("Response không có trường 'questions' hoặc không phải mảng.");
+    }
+
+    // Validate số lượng câu hỏi
+    const expectedTotal = mcqNum + fill_blankNum + true_falseNum;
+    if (data.questions.length !== expectedTotal) {
+      throw new Error(`Sai số lượng câu hỏi — cần đúng ${expectedTotal} câu, nhận được ${data.questions.length} câu.`);
+    }
+
+    // Validate từng loại câu hỏi
+    const mcqCount = data.questions.filter(q => q.type === 'mcq').length;
+    const fillBlankCount = data.questions.filter(q => q.type === 'fill_blank').length;
+    const trueFalseCount = data.questions.filter(q => q.type === 'true_false').length;
+
+    if (mcqCount !== mcqNum) {
+      throw new Error(`Sai số lượng câu MCQ — cần ${mcqNum}, nhận được ${mcqCount}`);
+    }
+    if (fillBlankCount !== fill_blankNum) {
+      throw new Error(`Sai số lượng câu Fill Blank — cần ${fill_blankNum}, nhận được ${fillBlankCount}`);
+    }
+    if (trueFalseCount !== true_falseNum) {
+      throw new Error(`Sai số lượng câu True/False — cần ${true_falseNum}, nhận được ${trueFalseCount}`);
+    }
+
+    // Validate structure của từng câu hỏi
+    for (const q of data.questions) {
+      if (q.type === 'mcq') {
+        if (!q.question || !Array.isArray(q.options) || q.options.length !== 4 || !q.answer || !q.explanation) {
+          throw new Error(`Câu MCQ không hợp lệ: thiếu trường bắt buộc hoặc options không đủ 4`);
+        }
+      } else if (q.type === 'fill_blank') {
+        if (!q.sentence || !q.answer || !q.explanation) {
+          throw new Error(`Câu Fill Blank không hợp lệ: thiếu trường bắt buộc`);
+        }
+        if (!q.sentence.includes('______')) {
+          throw new Error(`Câu Fill Blank phải có "______"`);
+        }
+      } else if (q.type === 'true_false') {
+        if (!q.statement || !q.answer || !q.explanation) {
+          throw new Error(`Câu True/False không hợp lệ: thiếu trường bắt buộc`);
+        }
+        if (q.answer !== 'True' && q.answer !== 'False') {
+          throw new Error(`Câu True/False answer phải là "True" hoặc "False"`);
+        }
+      } else {
+        throw new Error(`Loại câu hỏi không hợp lệ: ${q.type}`);
+      }
+    }
 
     return data;
 
@@ -346,4 +434,4 @@ const generateInteractiveQuiz = async (subtitleSegment, {
   }
 };
 
-export const OpenaiService = { generateQuiz, generateInteractiveQuiz};
+export const OpenaiProvider = { generateQuiz, generateInteractiveQuiz };

@@ -80,7 +80,10 @@ export const uploadSubtitleApi = async (formData) => {
   return res.data;
 }
 
-
+export const getSubtitlesByMovieApi = async (movieId) => {
+  const res = await authorizedAxiosInstance.get(`${API_ROOT}/api/subtitles/${movieId}`)
+  return res.data;
+}
 
 /** Quizzes */
 export const createQuizApi = async (payload) => {

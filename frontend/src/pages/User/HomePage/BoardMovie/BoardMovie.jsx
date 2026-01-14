@@ -101,7 +101,7 @@ const BoardMovie = ({ movieBuffer, loading = false }) => {
         ) : (
           paginatedMovies.map((movie) => (
             <Link
-              to={`/movie/${movie._id}`}
+              to={`/client/video/${movie._id}`}
               key={movie._id}
               className="group relative overflow-hidden rounded-xl shadow-lg bg-gradient-to-b from-[#2E4863] to-[#1D2732] cursor-pointer no-underline transition-transform duration-300 hover:scale-105 hover:shadow-2xl"
             >

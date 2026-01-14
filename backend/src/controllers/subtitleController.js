@@ -31,7 +31,7 @@ export const uploadSubtitle = async (req, res) => {
       { new: true, upsert: true, setDefaultsOnInsert: true }
     );
 
-    return res.status(200).json({ ok: true, data: updated });
+    return res.status(200).json(updated);
   } catch (error) {
     console.error("Error uploading subtitle:", error);
     if (error?.code === 11000) {
@@ -45,22 +45,19 @@ export const uploadSubtitle = async (req, res) => {
 export const getSubtitlesByMovie = async (req, res) => {
   try {
     const { movieId } = req.params
-    const withContent = req.query.withContent === '1'
 
     if (!mongoose.isValidObjectId(movieId)) {
-      return res.status(400).json({ ok: false, message: "Invalid movieId" })
+      return res.status(400).json({ message: "Invalid movieId" })
     }
 
-    const projection = withContent ? undefined : { srtContent: 0 }
-
     const items = await Subtitle
-      .find({ movieId }, projection)
+      .find({ movieId })
       .sort({ language: 1 })
       .lean()
 
-    return res.status(200).json({ ok: true, data: items })
+    return res.status(200).json(items)
   } catch (error) {
     console.error("Error fetching subtitles:", error)
-    return res.status(500).json({ ok: false, message: "Server error" })
+    return res.status(500).json({ message: "Server error" })
   }
 }

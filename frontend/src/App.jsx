@@ -1,5 +1,6 @@
 import { lazy, Suspense } from "react"
 import { Routes, Route, Navigate, Outlet } from "react-router"
+import { useAuth } from "@/contexts"
 
 // Loading component
 const PageLoading = () => (
@@ -28,25 +29,64 @@ const CreateQuizPage = lazy(() => import("@/pages/Admin/CreateQuizPage/CreateQui
 
 // Lazy load User pages
 const HomePage = lazy(() => import("@/pages/User/HomePage/HomePage"))
-const MoviePlayerPage = lazy(() => import("@/pages/User/MoviePlayerPage/MoviePlayerPage"))
 const ExercisePage = lazy(() => import("@/pages/User/ExercisePage/ExercisePage"))
 const ExamPage = lazy(() => import("@/pages/User/ExamPage/ExamPage"))
 const ResultPage = lazy(() => import("@/pages/User/ResultPage/ResultPage"))
+const VideoPlayerPage = lazy(() => import("@/pages/User/VideoPlayerPage/VideoPlayerPage"))
 
 // Lazy load Shared pages
 const ProfilePage = lazy(() => import("@/pages/Shared/ProfilePage"))
 const EditProfilePage = lazy(() => import("@/pages/Shared/EditProfilePage"))
 const ChangePasswoedPage = lazy(() => import("@/pages/Shared/ChangePasswoedPage"))
 
+// Protected Route - yêu cầu đăng nhập
 const ProtectedRoute = () => {
-  const user = JSON.parse(localStorage.getItem('userInfo'))
-  if (!user) return <Navigate to="/login" replace={true} />
+  const { isAuthenticated, isLoading } = useAuth()
+  
+  if (isLoading) {
+    return <PageLoading />
+  }
+  
+  if (!isAuthenticated) {
+    return <Navigate to="/login" replace={true} />
+  }
+  
   return <Outlet />
 }
 
+// Admin Route - yêu cầu quyền admin
+const AdminRoute = () => {
+  const { isAuthenticated, isAdmin, isLoading } = useAuth()
+  
+  if (isLoading) {
+    return <PageLoading />
+  }
+  
+  if (!isAuthenticated) {
+    return <Navigate to="/login" replace={true} />
+  }
+  
+  if (!isAdmin()) {
+    return <Navigate to="/" replace={true} />
+  }
+  
+  return <Outlet />
+}
+
+// Unauthenticated Route - chỉ cho phép khi chưa đăng nhập
 const UnauthenticatedRoute = () => {
-  const user = JSON.parse(localStorage.getItem('userInfo'))
-  if (user) return <Navigate to="/" replace={true} />
+  const { isAuthenticated, isLoading, user } = useAuth()
+  
+  if (isLoading) {
+    return <PageLoading />
+  }
+  
+  if (isAuthenticated) {
+    // Redirect dựa trên role
+    const redirectPath = user?.role === 'admin' ? '/admin/users' : '/'
+    return <Navigate to={redirectPath} replace={true} />
+  }
+  
   return <Outlet />
 }
 
@@ -70,18 +110,22 @@ function App() {
             
             {/* ----CLIENT---- */}
             <Route path="/" element={<HomePage />} />
-            <Route path="/movie/:id" element={<MoviePlayerPage />} />
             <Route path="/client/exercises" element={<ExercisePage />} />
             <Route path="/client/exam" element={<ExamPage />} />
             <Route path="/client/results" element={<ResultPage />} />
+            <Route path="/client/video/:id" element={<VideoPlayerPage />} />
+          </Route>  
+        </Route>
 
-            {/* ----ADMIN---- */}
+        {/* Admin Routes (Requires admin role) */}
+        <Route element={<AdminRoute />}>
+          <Route element={<AuthLayout />}>
             <Route path="/admin/users" element={<ManageUserPage />} />
             <Route path="/admin/movie" element={<ManagerMoviePage />} />
             <Route path="/admin/exercise" element={<ManagerExercisePage />} />
             <Route path="/admin/exercise/:movieId/:type/edit" element={<QuizEditorPage />} />
             <Route path="/admin/exercise/create" element={<CreateQuizPage />} />
-          </Route>  
+          </Route>
         </Route>
 
         {/* 404 Not Found */}

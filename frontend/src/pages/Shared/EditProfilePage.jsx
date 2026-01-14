@@ -3,12 +3,14 @@ import { Camera } from "lucide-react"
 import { useNavigate, useParams } from "react-router-dom"
 import { toast } from "sonner"
 import { fetchProfileByIdApi, updateProfileApi } from "@/api"
-import { emitProfileUpdated } from "@/utils/authEvents"
+import { useAuth } from "@/contexts"
 
 export default function EditProfilePage() {
   const { id: routeId } = useParams()
   const navigate = useNavigate()
   const fileRef = useRef(null)
+  const { user, updateProfile: updateAuthProfile } = useAuth()
+
 
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
@@ -104,17 +106,12 @@ export default function EditProfilePage() {
 
       const response = await updateProfileApi(userId, payload)
       
-      // Cập nhật localStorage với data mới
-      const userInfo = JSON.parse(localStorage.getItem("userInfo"))
-      const updatedUser = {
-        ...userInfo,
+      // Cập nhật AuthContext (sẽ tự động cập nhật localStorage và state)
+      const updatedData = {
         fullname: fullname.trim(),
         avatar: response?.data?.avatar || response?.avatar || avatarUrl
       }
-      localStorage.setItem("userInfo", JSON.stringify(updatedUser))
-      
-      // Emit event với data mới
-      emitProfileUpdated(updatedUser)
+      updateAuthProfile(updatedData)
       
       toast.success("Cập nhật hồ sơ thành công")
       navigate("/profile")
