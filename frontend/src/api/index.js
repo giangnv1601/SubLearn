@@ -1,6 +1,7 @@
 import axios from "axios";
 import authorizedAxiosInstance from "../utils/authorizeAxios";
-import { API_ROOT } from "../utils/constants";
+
+const API_ROOT = import.meta.env.VITE_API_ROOT || 'http://localhost:5001';
 
 /** API User */
 export const loginUserApi = async (data) => {
@@ -85,9 +86,9 @@ export const getSubtitlesByMovieApi = async (movieId) => {
   return res.data;
 }
 
-/** Quizzes */
-export const createQuizApi = async (payload) => {
-  const res = await authorizedAxiosInstance.post(`${API_ROOT}/api/quizzes`, payload);
+/** API Quizzes */
+export const addQuizApi = async (payload) => {
+  const res = await authorizedAxiosInstance.post(`${API_ROOT}/api/quizzes/addQuiz`, payload);
   return res.data;
 }
 
@@ -111,8 +112,19 @@ export const deleteQuizApi = async (quizId) => {
   return res.data;
 }
 
+export const deleteQuizzesByMovieAndQuizTypeApi = async (movieId, quizType) => {
+  const res = await authorizedAxiosInstance.delete(`${API_ROOT}/api/quizzes/${movieId}/${quizType}`);
+  return res.data;
+}
+
+/** API generate quiz by AI */
 export const createQuizByAiApi = async (payload) => {
   const res = await authorizedAxiosInstance.post(`${API_ROOT}/api/quizzes/createQuizByAi`, payload);
+  return res.data;
+}
+
+export const createInteractiveQuizByAiApi = async (payload) => {
+  const res = await authorizedAxiosInstance.post(`${API_ROOT}/api/quizzes/createInteractiveQuizByAi`, payload);
   return res.data;
 }
 
@@ -124,13 +136,6 @@ export const submitResultApi = async (payload) => {
 
 export const fetchResultsByUserApi = async (userId) => {
   const res = await authorizedAxiosInstance.get(`${API_ROOT}/api/results/${userId}`);
-  return res.data;
-}
-
-
-/** API Exercise Interactive */
-export const createInteractiveQuizByAiApi = async (payload) => {
-  const res = await authorizedAxiosInstance.post(`${API_ROOT}/api/quizzes/createInteractiveQuizByAi`, payload);
   return res.data;
 }
 

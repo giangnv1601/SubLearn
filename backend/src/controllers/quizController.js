@@ -1,37 +1,117 @@
 import Quiz from '../models/quizModel.js'
 import { OpenaiProvider } from '../providers/OpenaiProvider.js'
 
-export const createQuiz = async (req, res) => {
+export const addQuiz = async (req, res) => {
   try {
-    const { movieId, quizType, passage, questions } = req.body
+    const quizzes = req.body;
 
-    // Chuẩn hoá dữ liệu đồng nhất
-    const normalizedQuestions = Array.isArray(questions)
-      ? questions.map(q => ({
-          question: q?.question || '',
-          answer: q?.answer || 'A',
-          explanation: q?.explanation || '',
-          quote: q?.quote || '',
-          options: Array.isArray(q?.options)
-            ? q.options.map(op => ({
-                label: op?.label || '',
-                content: op?.content || ''
-              }))
-            : []
+    // Validate input
+    if (!Array.isArray(quizzes) || quizzes.length === 0) {
+      return res.status(400).json({ 
+        ok: false, 
+        message: 'Dữ liệu không hợp lệ hoặc rỗng' 
+      });
+    }
+
+    // Validate từng quiz
+    for (let i = 0; i < quizzes.length; i++) {
+      const quiz = quizzes[i];
+      
+      if (!quiz.movieId) {
+        return res.status(400).json({ 
+          ok: false, 
+          message: `Quiz ${i + 1}: thiếu movieId` 
+        });
+      }
+
+      if (!quiz.quizType) {
+        return res.status(400).json({ 
+          ok: false, 
+          message: `Quiz ${i + 1}: thiếu quizType` 
+        });
+      }
+
+      if (!['reading', 'dialogue_reordering', 'translation', 'equivalent'].includes(quiz.quizType)) {
+        return res.status(400).json({ 
+          ok: false, 
+          message: `Quiz ${i + 1}: quizType không hợp lệ` 
+        });
+      }
+
+      if (!Array.isArray(quiz.questions) || quiz.questions.length === 0) {
+        return res.status(400).json({ 
+          ok: false, 
+          message: `Quiz ${i + 1}: thiếu hoặc không có câu hỏi nào` 
+        });
+      }
+
+      // Validate từng question
+      for (let j = 0; j < quiz.questions.length; j++) {
+        const q = quiz.questions[j];
+        
+        if (!q.question || !q.answer || !Array.isArray(q.options) || q.options.length !== 4) {
+          return res.status(400).json({ 
+            ok: false, 
+            message: `Quiz ${i + 1}, câu ${j + 1}: thiếu trường bắt buộc hoặc options không đủ 4 phần tử` 
+          });
+        }
+
+        if (!['A', 'B', 'C', 'D'].includes(q.answer)) {
+          return res.status(400).json({ 
+            ok: false, 
+            message: `Quiz ${i + 1}, câu ${j + 1}: answer phải là A, B, C hoặc D` 
+          });
+        }
+
+        // Validate options
+        for (let k = 0; k < q.options.length; k++) {
+          const opt = q.options[k];
+          if (!opt.label || !opt.content) {
+            return res.status(400).json({ 
+              ok: false, 
+              message: `Quiz ${i + 1}, câu ${j + 1}, option ${k + 1}: thiếu label hoặc content` 
+            });
+          }
+        }
+      }
+    }
+
+    // Chuẩn hóa và lưu từng quiz
+    const savedQuizzes = [];
+    for (const quiz of quizzes) {
+      const normalizedQuestions = quiz.questions.map(q => ({
+        question: q.question || '',
+        answer: q.answer || 'A',
+        explanation: q.explanation || '',
+        quote: q.quote || '',
+        options: q.options.map(opt => ({
+          label: opt.label || '',
+          content: opt.content || ''
         }))
-      : []
+      }));
 
-    const doc = await Quiz.create({
-      movieId: movieId,
-      quizType: quizType,
-      passage: passage ?? null,
-      questions: normalizedQuestions
-    })
+      const doc = await Quiz.create({
+        movieId: quiz.movieId,
+        quizType: quiz.quizType,
+        passage: quiz.passage || null,
+        questions: normalizedQuestions
+      });
 
-    return res.status(201).json({ ok: true, data: doc })
+      savedQuizzes.push(doc);
+    }
+
+    return res.status(201).json({ 
+      ok: true, 
+      message: `Đã lưu thành công ${savedQuizzes.length} bài quiz`,
+      data: savedQuizzes 
+    });
+
   } catch (err) {
-    console.error('createQuiz error:', err)
-    return res.status(500).json({ ok: false, message: err.message || 'Server error' })
+    console.error('addQuiz error:', err);
+    return res.status(500).json({ 
+      ok: false, 
+      message: err.message || 'Server error' 
+    });
   }
 }
 
@@ -164,6 +244,24 @@ export const deleteQuiz = async (req, res) => {
   } catch (err) {
     console.error('deleteQuiz error:', err);
     return res.status(500).json({ ok: false, message: err.message || 'Server error' });
+  }
+}
+
+// Xóa quiz theo movieId và typeQuiz
+export const deleteQuizzesByMovieAndTypeQuiz = async (req, res) => {
+  try {
+    const { movieId, quizType } = req.params;
+    const result = await Quiz.deleteMany({ movieId, quizType });
+    return res.status(200).json({ 
+      ok: true, 
+      message: `Xóa thành công ${result.deletedCount} bài quiz` 
+    });
+  } catch (err) {
+    console.error('deleteQuizzesByMovieAndTypeQuiz error:', err);
+    return res.status(500).json({ 
+      ok: false, 
+      message: err.message || 'Server error' 
+    });
   }
 }
 

@@ -10,18 +10,6 @@ export const toIndex = (ans) => {
   return map[String(ans || '').trim().toUpperCase()] ?? 0;
 };
 
-// Chuẩn hóa dữ liệu Quiz gen từ AI 
-export const normalizeAI = (arr) => (Array.isArray(arr) ? arr : []).map((qz) => ({
-  passage: qz.passage ?? null,
-  questions: (qz.questions || []).map((q) => ({
-    question: q.question || '',
-    options: (q.options || []).slice(0, 4).map((s) => String(s || '').trim().replace(/^[A-Za-z]\.\s*/i, '')),
-    answer: toIndex(q.answer),
-    explanation: q.explanation || '',
-    quote: q.quote || '',
-  })),
-}));
-
 // Chuẩn hóa dữ liệu Quiz để lưu vào DB
 export const buildPayloads = (movieId, quizType, result) => {
   if (!movieId || !quizType) throw new Error('Chọn phim và loại quiz trước khi lưu dữ liệu.')

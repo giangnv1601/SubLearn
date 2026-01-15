@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react'
-import { fetchMoviesApi, getSubtitlesByMovieApi, createQuizByAiApi } from '@/api'
+import { fetchMoviesApi, getSubtitlesByMovieApi, createQuizByAiApi, addQuizApi } from '@/api'
 import { processSubtitle } from '@/utils/helpers'
+import { toast } from 'sonner'
 
 const QUIZ_TYPES = [
   { value: 'reading', label: 'Đọc hiểu' },
@@ -155,9 +156,9 @@ const AddQuizPage = () => {
   }
 
   // Hàm lưu quiz vào database
-  const handleSaveQuizzes = () => {
+  const handleSaveQuizzes = async () => {
     if (!selectedMovieId || generatedQuizzes.length === 0) {
-      console.warn('Không có dữ liệu để lưu')
+      toast.error('Không có dữ liệu để lưu')
       return
     }
 
@@ -178,10 +179,26 @@ const AddQuizPage = () => {
       }))
     }))
 
-    console.log('Payload to save:', payload)
+    // console.log('Payload to save:', payload)
     
-    // TODO: Gọi API lưu vào database
-    // await createQuizApi(payload)
+    try {
+      const res = await addQuizApi(payload)
+      // console.log('Save response:', res)
+      
+      if (res.ok) {
+        toast.success(`Lưu thành công ${generatedQuizzes.length} bài quiz!`)
+        // Reset sau khi lưu thành công
+        setGeneratedQuizzes([])
+        setSelectedMovieId('')
+        setQuizType('')
+        setSubtitle('')
+      } else {
+        toast.error('Lỗi khi lưu: ' + (res.message || 'Unknown error'))
+      }
+    } catch (err) {
+      console.error('Error saving quizzes:', err)
+      toast.error('Lỗi khi lưu: ' + (err?.response?.data?.message || err.message))
+    }
   }
 
   return (
