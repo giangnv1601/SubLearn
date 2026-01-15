@@ -1,15 +1,3 @@
-/* Helpers for quiz */
-  
-// Chuyển đổi đáp án chỉ số sang chữ
-export const toLabel = (i) => ['A', 'B', 'C', 'D'][i] ?? 'A';
-
-// Chuyển đổi đáp án chữ sang chỉ số
-export const toIndex = (ans) => {
-  if (Number.isInteger(ans)) return ans;
-  const map = { A: 0, B: 1, C: 2, D: 3 };
-  return map[String(ans || '').trim().toUpperCase()] ?? 0;
-};
-
 /* Helpers for subtitle */
 
 // Định dạng thời gian từ HH:MM:SS,MMM sang giây (bao gồm mili giây)

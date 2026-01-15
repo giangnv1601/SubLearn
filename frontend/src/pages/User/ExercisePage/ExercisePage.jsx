@@ -142,11 +142,11 @@ const ExercisePage = () => {
                                   <button
                                     className="inline-flex items-center gap-1 px-3 py-1.5 bg-blue-700 hover:bg-blue-600 rounded text-xs font-medium text-white"
                                     onClick={() => {
-                                      const qs = new URLSearchParams({ movieId: String(row.id), type: type.key }).toString()
-                                      navigate(`/client/exam?${qs}`)
+                                      const qs = new URLSearchParams({ movieId: String(row.id), quizType: type.key }).toString()
+                                      navigate(`/client/practice/${row.id}/${type.key}`)
                                     }}
                                   >
-                                    <Play className="w-4 h-4" /> Kiểm tra
+                                    <Play className="w-4 h-4" /> Luyện tập
                                   </button>
                                 </div>
                               ))}
