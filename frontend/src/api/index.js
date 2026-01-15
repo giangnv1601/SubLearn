@@ -97,8 +97,10 @@ export const fetchQuizzesSummary = async () => {
   return res.data;
 }
 
-export const fetchQuizzes = async (params = {}) => {
-  const res = await authorizedAxiosInstance.get(`${API_ROOT}/api/quizzes`, { params });
+export const fetchQuizByMovieAndTypeQuizApi = async (movieId, quizType) => {
+  const res = await authorizedAxiosInstance.get(`${API_ROOT}/api/quizzes`, {
+    params: { movieId, quizType }
+  });
   return res.data;
 }
 

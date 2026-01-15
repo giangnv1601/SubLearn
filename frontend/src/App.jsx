@@ -12,7 +12,7 @@ const PageLoading = () => (
   </div>
 )
 
-// Layout - không lazy load vì dùng chung
+// Taskbar layout component
 import AuthLayout from "@/components/TaskBars/AuthLayout"
 
 // Lazy load Auth pages
@@ -24,8 +24,8 @@ const NotFound = lazy(() => import("@/pages/NotFound"))
 const ManagerMoviePage = lazy(() => import("@/pages/Admin/ManageMoviePage/ManagerMoviePage"))
 const ManagerExercisePage = lazy(() => import("@/pages/Admin/ManageExercisePage/ManagerExercisePage"))
 const ManageUserPage = lazy(() => import("@/pages/Admin/ManageUserPage/ManageUsersPage"))
-const QuizEditorPage = lazy(() => import("@/pages/Admin/QuizEditorPage/QuizEditorPage"))
 const AddQuizPage = lazy(() => import("@/pages/Admin/AddQuizPage/AddQuizPage"))
+const EditQuizPage = lazy(() => import("@/pages/Admin/EditQuizPage/EditQuizPage"))
 
 // Lazy load User pages
 const HomePage = lazy(() => import("@/pages/User/HomePage/HomePage"))
@@ -123,8 +123,8 @@ function App() {
             <Route path="/admin/users" element={<ManageUserPage />} />
             <Route path="/admin/movie" element={<ManagerMoviePage />} />
             <Route path="/admin/exercise" element={<ManagerExercisePage />} />
-            <Route path="/admin/exercise/:movieId/:type/edit" element={<QuizEditorPage />} />
             <Route path="/admin/exercise/add" element={<AddQuizPage />} />
+            <Route path="/admin/exercise/edit/:movieId/:quizType" element={<EditQuizPage />} />
           </Route>
         </Route>
 

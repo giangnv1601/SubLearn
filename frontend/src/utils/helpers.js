@@ -10,27 +10,6 @@ export const toIndex = (ans) => {
   return map[String(ans || '').trim().toUpperCase()] ?? 0;
 };
 
-// Chuẩn hóa dữ liệu Quiz để lưu vào DB
-export const buildPayloads = (movieId, quizType, result) => {
-  if (!movieId || !quizType) throw new Error('Chọn phim và loại quiz trước khi lưu dữ liệu.')
-  return (Array.isArray(result) ? result : []).map(item => ({
-    movieId,
-    quizType,
-    passage: item.passage ?? null,
-    questions: (item.questions || []).map(q => {
-      const opts = (q.options || []).slice(0, 4);
-      const ansIdx = toIndex(q.answer);
-      return {
-        question: q.question || '',
-        answer: toLabel(ansIdx),
-        explanation: q.explanation || '',
-        quote: q.quote || '',
-        options: opts.map((content, i) => ({ label: toLabel(i), content: String(content || '') })),
-      };
-    }),
-  }));
-};
-
 /* Helpers for subtitle */
 
 // Định dạng thời gian từ HH:MM:SS,MMM sang giây (bao gồm mili giây)

@@ -1,68 +1,56 @@
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { ArrowLeft } from 'lucide-react'
-import { useNavigate } from 'react-router'
-import { fetchQuizByMovieAndTypeQuizApi } from '@/api'
-
-// Fake data for testing
-const FAKE_QUIZZES = [
-    {
-        "passage": null,
-        "questions": [
-            {
-                "question": "Dịch câu sau sang tiếng Việt: 'The conflict reached a bloody and decisive conclusion, with Konrad I of the House of Barlow emerging victorious as ruler, his power absolute.'",
-                "options": [
-                    "A. Cuộc xung đột đã kết thúc đẫm máu và quyết định, với Konrad I của nhà Barlow trở thành người chiến thắng và cai trị, quyền lực của ông là tuyệt đối.",
-                    "B. Cuộc xung đột kết thúc đẫm máu và quyết định, Konrad I của nhà Barlow đang chiến thắng với tư cách là người cai trị, quyền lực của ông ấy sẽ tuyệt đối.",
-                    "C. Cuộc xung đột sẽ kết thúc đẫm máu và quyết định, Konrad I của nhà Barlow sẽ là người chiến thắng, quyền lực của ông ấy là tuyệt đối.",
-                    "D. Cuộc xung đột đã kết thúc một cách yên bình, với Konrad I của nhà Barlow thất bại, quyền lực của ông ấy là giới hạn."
-                ],
-                "answer": "A",
-                "explanation": "Đáp án A đúng về thì quá khứ, nghĩa và cấu trúc bị động/kết hợp với cụm từ 'with...emerging...'. B sai thì (hiện tại tiếp diễn và tương lai đơn), C sai thì và ý nghĩa, D sai nghĩa hoàn toàn.",
-                "quote": "The conflict reached a bloody and decisive conclusion, with Konrad I of the House of Barlow emerging victorious as ruler, his power absolute."
-            }
-        ]
-    },
-    {
-        "passage": null,
-        "questions": [
-            {
-                "question": "Dịch câu sau sang tiếng Việt: 'Children run and recoil in terror at the very mention of her.'",
-                "options": [
-                    "A. Trẻ em chạy và co rúm lại vì sợ hãi ngay khi nghe nhắc đến tên bà ấy.",
-                    "B. Trẻ em đã chạy và co rúm lại vì sợ hãi khi nhìn thấy bà ấy.",
-                    "C. Trẻ em sẽ chạy và co rúm lại vì sợ hãi mỗi lần gặp bà ấy.",
-                    "D. Trẻ em chạy và nhảy lên vì vui sướng mỗi khi nghe nhắc đến bà ấy."
-                ],
-                "answer": "A",
-                "explanation": "Câu gốc thì hiện tại đơn mô tả thói quen/phản xạ; A dịch sát nghĩa và đúng thì. B sai thì quá khứ và nghĩa ('nhìn thấy' thay vì 'nghe nhắc đến'), C sai thì tương lai và nghĩa, D sai nghĩa hoàn toàn.",
-                "quote": "Children run and recoil in terror at the very mention of her."
-            }
-        ]
-    },
-    {
-        "passage": null,
-        "questions": [
-            {
-                "question": "Dịch câu sau sang tiếng Việt: 'If we rush in with violence, we do not stand a chance.'",
-                "options": [
-                    "A. Nếu chúng ta lao vào một cách bạo lực, chúng ta sẽ không có cơ hội nào.",
-                    "B. Nếu chúng ta đã lao vào một cách bạo lực, chúng ta không có cơ hội nào.",
-                    "C. Nếu chúng ta lao vào một cách bạo lực, chúng ta đang có cơ hội.",
-                    "D. Nếu chúng ta lao vào một cách bạo lực, chúng ta sẽ thắng dễ dàng."
-                ],
-                "answer": "A",
-                "explanation": "Câu điều kiện loại 1, diễn đạt khả năng không có thật ở tương lai. A đúng về thì, cấu trúc và nghĩa. B sai thì (quá khứ), C sai nghĩa (đang có cơ hội), D sai nghĩa hoàn toàn.",
-                "quote": "If we rush in with violence, we do not stand a chance."
-            }
-        ]
-    }
-]
+import { useNavigate, useParams } from 'react-router'
+import { fetchQuizByMovieAndTypeQuizApi, updateQuizApi, deleteQuizApi } from '@/api'
+import { toast } from 'sonner'
+import ConfirmDialog from '@/components/ConfirmDialog/ConfirmDialog'
 
 const EditQuizPage = () => {
   const navigate = useNavigate()
-  const [quizzes, setQuizzes] = useState(FAKE_QUIZZES)
+  const { movieId, quizType } = useParams()
+  const [quizzes, setQuizzes] = useState([])
+  const [originalQuizzes, setOriginalQuizzes] = useState([])
   const [editingQuiz, setEditingQuiz] = useState(null)
   const [loading, setLoading] = useState(false)
+  const [savingQuizId, setSavingQuizId] = useState(null)
+  const [deletingQuizId, setDeletingQuizId] = useState(null)
+  const [confirmDelete, setConfirmDelete] = useState({ open: false, quizIdx: null })
+
+  // Hàm gọi API lấy dữ liệu quiz
+  const fetchQuizzes = async (movieId, quizType) => {
+    setLoading(true)
+    try {
+      const data = await fetchQuizByMovieAndTypeQuizApi(movieId, quizType)
+      console.log('Dữ liệu quiz lấy về từ API:', data)
+      // Chuẩn hóa dữ liệu từ API về format hiển thị
+      const normalizedData = data?.map(quiz => ({
+        ...quiz,
+        questions: quiz.questions?.map(q => ({
+          ...q,
+          options: q.options?.map(opt => 
+            typeof opt === 'string' ? opt : `${opt.label}. ${opt.content}`
+          )
+        }))
+      })) || []
+      setQuizzes(normalizedData)
+      setOriginalQuizzes(JSON.parse(JSON.stringify(normalizedData)))
+      console.log('Dữ liệu quiz lấy về đã xử lý:', normalizedData)
+    } catch (error) {
+      console.error('Lỗi khi lấy dữ liệu quiz:', error)
+      toast.error('Lỗi khi lấy dữ liệu quiz. Vui lòng thử lại.')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    fetchQuizzes(movieId, quizType)
+  }, [movieId, quizType])
+
+  // Kiểm tra quiz có thay đổi không
+  const isQuizModified = (quizIdx) => {
+    return JSON.stringify(quizzes[quizIdx]) !== JSON.stringify(originalQuizzes[quizIdx])
+  }
 
   // Hàm bật/tắt chế độ chỉnh sửa
   const handleEditToggle = (quizIdx, questionIdx, field) => {
@@ -90,48 +78,96 @@ const EditQuizPage = () => {
     setEditingQuiz(null)
   }
 
-  // Hàm xóa bài quiz
-  const handleDeleteQuiz = (quizIdx) => {
-    if (!window.confirm('Bạn có chắc chắn muốn xóa bài tập này không?')) return
-    const updated = [...quizzes]
-    updated.splice(quizIdx, 1)
-    setQuizzes(updated)
+  // Mở dialog xác nhận xóa
+  const handleDeleteClick = (quizIdx) => {
+    setConfirmDelete({ open: true, quizIdx })
   }
 
-  // Hàm chuẩn hóa payload để gửi API
-  const preparePayload = () => {
-    return quizzes.map((quiz) => ({
+  // Hàm xóa bài quiz
+  const handleDeleteQuiz = async () => {
+    const quizIdx = confirmDelete.quizIdx
+    setConfirmDelete({ open: false, quizIdx: null })
+    
+    const quiz = quizzes[quizIdx]
+    const quizId = quiz._id
+
+    if (!quizId) {
+      toast.error('Không tìm thấy ID bài tập để xóa!')
+      return
+    }
+
+    setDeletingQuizId(quizId)
+    try {
+      console.log('Xóa bài quiz với ID:', quizId)
+      
+      await deleteQuizApi(quizId)
+      
+      // Xóa khỏi state local
+      const updatedQuizzes = [...quizzes]
+      updatedQuizzes.splice(quizIdx, 1)
+      setQuizzes(updatedQuizzes)
+      
+      const updatedOriginal = [...originalQuizzes]
+      updatedOriginal.splice(quizIdx, 1)
+      setOriginalQuizzes(updatedOriginal)
+      
+      toast.success(`Đã xóa bài tập thành công!`)
+    } catch (error) {
+      console.error('Lỗi khi xóa bài tập:', error)
+      toast.error('Lỗi khi xóa bài tập. Vui lòng thử lại.')
+    } finally {
+      setDeletingQuizId(null)
+    }
+  }
+
+  // Hủy xóa
+  const handleCancelDelete = () => {
+    setConfirmDelete({ open: false, quizIdx: null })
+  }
+
+  // Hàm lưu một bài quiz cụ thể
+  const handleSaveQuiz = async (quizIdx) => {
+    const quiz = quizzes[quizIdx]
+    const quizId = quiz._id
+
+    if (!quizId) {
+      toast.error('Không tìm thấy ID bài tập để lưu!')
+      return
+    }
+
+    const payload = {
       passage: quiz.passage || null,
       questions: quiz.questions.map((q) => ({
         question: q.question || '',
         answer: q.answer || 'A',
         explanation: q.explanation || '',
         quote: q.quote || '',
-        options: q.options.map((opt, idx) => ({
-          label: String.fromCharCode(65 + idx), // A, B, C, D
-          content: opt.replace(/^[A-D]\.\s*/, '') // Xóa prefix A. B. C. D. nếu có
-        }))
+        options: q.options.map((opt, idx) => {
+          const content = typeof opt === 'string' ? opt.replace(/^[A-D]\.\s*/, '') : opt
+          return {
+            label: String.fromCharCode(65 + idx),
+            content: content
+          }
+        })
       }))
-    }))
-  }
-
-  // Hàm lưu tất cả thay đổi
-  const handleSaveAll = async () => {
-    setLoading(true)
+    }
     
-
-    const payload = preparePayload()
-
-    console.log(payload)
-
-    
-    // TODO: Call API to update quizzes
-    // const res = await updateQuizzesApi(movieId, quizType, payload)
-    
-    setTimeout(() => {
-      setLoading(false)
-      alert('Lưu thành công!')
-    }, 1000)
+    setSavingQuizId(quizId)
+    try {
+      await updateQuizApi(quizId, payload)
+      
+      // Cập nhật originalQuizzes sau khi lưu thành công
+      const updatedOriginal = [...originalQuizzes]
+      updatedOriginal[quizIdx] = JSON.parse(JSON.stringify(quiz))
+      setOriginalQuizzes(updatedOriginal)
+      
+      toast.success(`Đã lưu bài ${quizIdx + 1} thành công!`)
+    } catch (error) {
+      console.error('Lỗi khi lưu bài tập:', error)
+      toast.error('Lỗi khi lưu bài tập. Vui lòng thử lại.')
+    } finally {
+      setSavingQuizId(null)
+    }
   }
 
   return (
@@ -148,14 +184,6 @@ const EditQuizPage = () => {
             </button>
             <h1 className="text-2xl font-semibold text-[#E4D161]">Chỉnh sửa bài tập</h1>
           </div>
-
-          <button
-            onClick={handleSaveAll}
-            disabled={loading || quizzes.length === 0}
-            className="inline-flex items-center gap-2 px-5 py-2.5 bg-emerald-500 hover:bg-emerald-600 text-white rounded-md font-semibold transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
-          >
-            {loading ? 'Đang lưu...' : `Lưu thay đổi (${quizzes.length})`}
-          </button>
         </div>
 
         {/* Content */}
@@ -166,19 +194,43 @@ const EditQuizPage = () => {
             {loading ? (
               <div className="text-center py-12">
                 <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-[#E4D161] mb-4"></div>
-                <p className="text-gray-300 font-medium">Đang lưu bài tập...</p>
+                <p className="text-gray-300 font-medium">Đang tải bài tập...</p>
               </div>
             ) : quizzes.length > 0 ? (
               <div className="space-y-4">
                 {quizzes.map((quiz, quizIdx) => (
-                  <div key={quizIdx} className="bg-[#14202A] p-4 rounded-md border border-white/5 relative group">
-                    {/* Nút xóa bài quiz */}
-                    <button
-                      onClick={() => handleDeleteQuiz(quizIdx)}
-                      className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity bg-red-500 hover:bg-red-600 text-white px-2 py-1 rounded text-xs font-medium"
-                    >
-                      Xóa bài
-                    </button>
+                  <div key={quiz._id || quizIdx} className="bg-[#14202A] p-4 rounded-md border border-white/5 relative group">
+                    {/* Nút Lưu và Xóa bài quiz */}
+                    <div className="absolute top-2 right-2 flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <button
+                        onClick={() => handleSaveQuiz(quizIdx)}
+                        disabled={!isQuizModified(quizIdx) || savingQuizId === quiz._id}
+                        className="bg-emerald-500 hover:bg-emerald-600 disabled:bg-emerald-500/15 disabled:cursor-not-allowed text-white px-2 py-1 rounded text-xs font-medium flex items-center gap-1"
+                      >
+                        {savingQuizId === quiz._id ? (
+                          <>
+                            <div className="inline-block animate-spin rounded-full h-3 w-3 border-b-2 border-white"></div>
+                            <span>Đang lưu...</span>
+                          </>
+                        ) : (
+                          'Lưu bài'
+                        )}
+                      </button>
+                      <button
+                        onClick={() => handleDeleteClick(quizIdx)}
+                        disabled={deletingQuizId === quiz._id}
+                        className="bg-red-500 hover:bg-red-600 disabled:bg-red-500/50 disabled:cursor-not-allowed text-white px-2 py-1 rounded text-xs font-medium flex items-center gap-1"
+                      >
+                        {deletingQuizId === quiz._id ? (
+                          <>
+                            <div className="inline-block animate-spin rounded-full h-3 w-3 border-b-2 border-white"></div>
+                            <span>Đang xóa...</span>
+                          </>
+                        ) : (
+                          'Xóa bài'
+                        )}
+                      </button>
+                    </div>
 
                     <h3 className="font-semibold text-[#E4D161] mb-2">Bài {quizIdx + 1}</h3>
                     
@@ -361,6 +413,17 @@ const EditQuizPage = () => {
           </div>
         </div>
       </div>
+
+      {/* Confirm Dialog */}
+      <ConfirmDialog
+        open={confirmDelete.open}
+        title="Xác nhận xóa bài tập"
+        message={`Bạn có chắc chắn muốn xóa bài ${confirmDelete.quizIdx !== null ? confirmDelete.quizIdx + 1 : ''} không?\nHành động này không thể hoàn tác.`}
+        confirmText="Xóa"
+        cancelText="Hủy"
+        onConfirm={handleDeleteQuiz}
+        onCancel={handleCancelDelete}
+      />
     </div>
   )
 }

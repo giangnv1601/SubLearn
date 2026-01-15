@@ -1,7 +1,7 @@
 import express from 'express'
 import {
   addQuiz,
-  listQuizzes,
+  getQuizzesByMovieAndQuizType,
   getListQuizSummary,
   deleteQuiz,
   deleteQuizzesByMovieAndTypeQuiz,
@@ -15,7 +15,7 @@ const router = express.Router()
 
 router.post('/addQuiz', authMiddleware.isAuthorized, authMiddleware.isAdmin, addQuiz)
 router.get('/summary', authMiddleware.isAuthorized, authMiddleware.isAdminOrClient, getListQuizSummary)
-router.get('/', authMiddleware.isAuthorized, listQuizzes)
+router.get('/', authMiddleware.isAuthorized,authMiddleware.isAdminOrClient, getQuizzesByMovieAndQuizType)
 router.delete('/:id', authMiddleware.isAuthorized, authMiddleware.isAdmin, deleteQuiz)
 router.delete('/:movieId/:quizType', authMiddleware.isAuthorized, authMiddleware.isAdmin, deleteQuizzesByMovieAndTypeQuiz)
 router.put('/:id', authMiddleware.isAuthorized, authMiddleware.isAdmin, updateQuiz)

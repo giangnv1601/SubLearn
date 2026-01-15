@@ -112,7 +112,7 @@ const ManagerExercisePage = () => {
   }
 
   const handleEdit = (movieId, quizType) => {
-    navigate(`/admin/exercise/${movieId}/${quizType}/edit`)
+    navigate(`/admin/exercise/edit/${movieId}/${quizType}`)
   }
 
   // Mở confirm dialog
