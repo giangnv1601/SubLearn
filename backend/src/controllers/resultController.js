@@ -1,79 +1,58 @@
 import Result from '../models/resultModel.js'
-import Quiz from '../models/quizModel.js'
-import Movie from '../models/movieModel.js'
 
-export const submitResult = async (req, res) => {
+export const createResult = async (req, res) => {
   try {
-    const userId = req.jwtDecoded?.id || req.jwtDecoded?._id
-    if (!userId) return res.status(401).json({ message: 'Unauthorized' })
+    const userId = req.jwtDecoded.id
+    const { movieId, quizType, totalQuestions, correctCount } = req.body
 
-    const { quizId, correctCount, incorrectCount, totalQuestions, accuracy } = req.body
-
-    if (!quizId) return res.status(400).json({ message: 'quizId is required' })
-
-    if ([correctCount, incorrectCount, totalQuestions, accuracy].some(v => v === undefined)) {
-      return res.status(400).json({ message: 'Missing score fields' })
+    // Validate required fields
+    if (!movieId || !quizType || totalQuestions == null || correctCount == null) {
+      return res.status(400).json({ message: 'Thiếu dữ liệu bắt buộc.' })
     }
 
-    const prevCount = await Result.countDocuments({ userId, quizId })
-    const attempt = prevCount + 1
+    // Tính điểm phần trăm
+    const score = totalQuestions > 0 
+      ? Math.round((correctCount / totalQuestions) * 100) 
+      : 0
 
+    // Tính lần làm thứ mấy (attempt)
+    const lastResult = await Result
+      .findOne({ userId, movieId, quizType })
+      .sort({ attempt: -1 })
+
+    const attempt = (lastResult?.attempt || 0) + 1
+
+    // Tạo kết quả mới
     const result = await Result.create({
       userId,
-      quizId,
-      correctCount,
-      incorrectCount,
+      movieId,
+      quizType,
+      attempt,
       totalQuestions,
-      accuracy,
-      attempt
+      correctCount,
+      score,
     })
 
-    return res.status(201).json({
-      message: 'Submit result successfully',
-      data: result
+    return res.status(201).json({ 
+      message: 'Lưu kết quả thành công', 
+      data: result 
     })
   } catch (err) {
-    console.error('submitResult error:', err)
-    return res.status(500).json({ message: 'Internal server error' })
+    console.error('createPracticeResult error:', err)
+    return res.status(500).json({ message: 'Lỗi server', error: err.message })
   }
 }
 
-export const getResults = async (req, res) => {
+export const getResultsByUser = async (req, res) => {
   try {
-    const userId = req.params.userId
-    if (!userId) return res.status(400).json({ message: 'userId is required' })
-
-    // join với Quiz và Movie để lấy thêm thông tin hiển thị
-    const results = await Result.find({ userId })
+    const userId = req.jwtDecoded.id
+    const results = await Result
+      .find({ userId })
+      .populate('movieId', 'title')
       .sort({ createdAt: -1 })
-      .populate({
-        path: 'quizId',
-        select: 'quizType title movieId', // fields from Quiz
-        populate: {
-          path: 'movieId',
-          select: 'title movieTitle' // fields from Movie
-        }
-      })
-      .lean()
-
-    // chuẩn hóa dữ liệu trả về: thêm quizType, movieTitle vào root result object
-    const out = results.map(r => {
-      const quiz = r.quizId || {}
-      const movie = quiz.movieId || {}
-      return {
-        ...r,
-        quizType: r.quizType || quiz.quizType || null,
-        movieTitle: r.movieTitle || movie.title || movie.movieTitle || null,
-        quiz: quiz // keep full quiz doc if needed
-      }
-    })
-
-    return res.status(200).json({
-      message: 'Fetch results successfully',
-      data: out
-    })
+    return res.status(200).json({ data: results })
   } catch (err) {
-    console.error('getResults error:', err)
-    return res.status(500).json({ message: 'Internal server error' })
+    console.error('getPracticeResultsByUser error:', err)
+    return res.status(500).json({ message: 'Lỗi server', error: err.message })
   }
 }

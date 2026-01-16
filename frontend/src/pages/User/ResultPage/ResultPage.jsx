@@ -1,30 +1,57 @@
-import React, { useEffect, useMemo, useState, useCallback } from 'react'
-import { BarChart3, TrendingUp, ListChecks, Search } from 'lucide-react'
-import { fetchResultsByUserApi } from '@/api'
-import { toast } from 'sonner'
+import React, { useEffect, useState, useMemo } from 'react'
+import { useNavigate } from 'react-router-dom'
+import { 
+  Trophy, 
+  TrendingUp, 
+  ChevronDown,
+  BookOpen,
+  MessageSquare,
+  Languages,
+  RefreshCw,
+  BarChart3,
+  Calendar,
+  RotateCcw
+} from 'lucide-react'
+import { fetchPracticeResultsByUserApi } from '@/api'
 import Pagination from '@/components/Pagination/Pagination'
 
 const ITEMS_PER_PAGE = 5
 
-const AccuracyBadge = ({ value }) => {
-  if (typeof value !== 'number' || Number.isNaN(value)) return <span className="text-xs text-slate-300">—</span>
-
-  let cls = 'bg-slate-700 text-slate-100'
-  if (value >= 80) cls = 'bg-emerald-600/80 text-white'
-  else if (value >= 50) cls = 'bg-amber-500/80 text-white'
-  else cls = 'bg-rose-600/80 text-white'
-
-  return (
-    <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${cls}`}>
-      {value.toFixed(1)}%
-    </span>
-  )
+const QUIZ_TYPE_CONFIG = {
+  reading: { 
+    label: 'Đọc hiểu', 
+    icon: BookOpen,
+    color: 'text-blue-400',
+    bgColor: 'bg-blue-500/10',
+    borderColor: 'border-blue-500/30'
+  },
+  dialogue_reordering: { 
+    label: 'Sắp xếp hội thoại', 
+    icon: MessageSquare,
+    color: 'text-purple-400',
+    bgColor: 'bg-purple-500/10',
+    borderColor: 'border-purple-500/30'
+  },
+  translation: { 
+    label: 'Dịch câu', 
+    icon: Languages,
+    color: 'text-green-400',
+    bgColor: 'bg-green-500/10',
+    borderColor: 'border-green-500/30'
+  },
+  equivalent: { 
+    label: 'Câu tương đương', 
+    icon: RefreshCw,
+    color: 'text-orange-400',
+    bgColor: 'bg-orange-500/10',
+    borderColor: 'border-orange-500/30'
+  }
 }
 
 const formatDateTime = (iso) => {
-  if (!iso) return '—'
-  const d = new Date(iso)
-  return d.toLocaleString('vi-VN', {
+  if (!iso) return ''
+  const date = new Date(iso)
+  return date.toLocaleString('vi-VN', {
     day: '2-digit',
     month: '2-digit',
     year: 'numeric',
@@ -33,283 +60,342 @@ const formatDateTime = (iso) => {
   })
 }
 
-const QUIZ_TYPE_LABEL = {
-  reading: 'Đọc hiểu',
-  dialogue_reordering: 'Sắp xếp hội thoại',
-  translation: 'Dịch câu',
-  equivalent: 'Câu tương đương'
+const getScoreColor = (score) => {
+  if (score >= 80) return 'text-green-400'
+  if (score >= 50) return 'text-yellow-400'
+  return 'text-red-400'
 }
 
-const QUIZ_TYPE_COLOR = {
-  reading: 'bg-emerald-700/80 text-emerald-50',
-  dialogue_reordering: 'bg-indigo-700/80 text-indigo-50',
-  translation: 'bg-amber-700/80 text-amber-50',
-  equivalent: 'bg-rose-700/80 text-rose-50'
+const getScoreBg = (score) => {
+  if (score >= 80) return 'bg-green-500'
+  if (score >= 50) return 'bg-yellow-500'
+  return 'bg-red-500'
 }
 
-const QuizTypeBadge = ({ type }) => {
-  if (!type) return null
-  const cls = QUIZ_TYPE_COLOR[type] || 'bg-slate-700/80 text-slate-100'
+const StatCard = ({ icon: Icon, label, value, color = 'text-[#E4D161]' }) => (
+  <div className="bg-[#1B2A36] rounded-xl p-4 border border-white/10">
+    <div className="flex items-center gap-3">
+      <div className={`p-2.5 rounded-lg bg-white/5 ${color}`}>
+        <Icon className="w-5 h-5" />
+      </div>
+      <div>
+        <p className="text-xs text-gray-400">{label}</p>
+        <p className={`text-xl font-bold ${color}`}>{value}</p>
+      </div>
+    </div>
+  </div>
+)
+
+const ResultRow = ({ result, onRetry }) => {
+  const config = QUIZ_TYPE_CONFIG[result.quizType] || QUIZ_TYPE_CONFIG.reading
+  const Icon = config.icon
+  const movieTitle = result.movieId?.title || 'Không rõ phim'
+
   return (
-    <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${cls}`}>
-      {QUIZ_TYPE_LABEL[type] || type}
-    </span>
+    <div className="flex items-center gap-4 p-3 bg-[#1B2A36] rounded-lg border border-white/10 hover:border-white/20 transition-all">
+      {/* Icon + Title */}
+      <div className="flex items-center gap-2 flex-1 min-w-0">
+        <Icon className={`w-4 h-4 flex-shrink-0 ${config.color}`} />
+        <span className="text-sm text-white truncate" title={`${movieTitle} / ${config.label}`}>
+          {movieTitle} <span className="text-gray-500">/</span> <span className={config.color}>{config.label}</span>
+        </span>
+      </div>
+
+      {/* Attempt */}
+      <span className="text-xs text-gray-400 flex-shrink-0">
+        Lần {result.attempt}
+      </span>
+
+      {/* Score */}
+      <div className="flex items-center gap-2 flex-shrink-0 w-24">
+        <div className="flex-1 h-1.5 bg-gray-700 rounded-full overflow-hidden">
+          <div 
+            className={`h-full rounded-full ${getScoreBg(result.score)}`}
+            style={{ width: `${result.score}%` }}
+          />
+        </div>
+        <span className={`text-sm font-medium w-10 text-right ${getScoreColor(result.score)}`}>
+          {result.score}%
+        </span>
+      </div>
+
+      {/* Correct count */}
+      <span className="text-xs text-gray-400 flex-shrink-0 w-16 text-center">
+        {result.correctCount}/{result.totalQuestions}
+      </span>
+
+      {/* Date */}
+      <div className="flex items-center gap-1 text-xs text-gray-500 flex-shrink-0 w-32">
+        <Calendar className="w-3 h-3" />
+        <span>{formatDateTime(result.createdAt)}</span>
+      </div>
+
+      {/* Retry button */}
+      <button
+        onClick={() => onRetry(result)}
+        className="p-1.5 text-gray-400 hover:text-[#E4D161] transition-colors flex-shrink-0"
+        title="Làm lại"
+      >
+        <RotateCcw className="w-4 h-4" />
+      </button>
+    </div>
   )
 }
 
-export default function ResultPage() {
-  const userInfo = JSON.parse(localStorage.getItem('userInfo') || '{}')
-  const userId = userInfo?._id || userInfo?.id || null
+const PracticeResultPage = () => {
+  const navigate = useNavigate()
 
   const [results, setResults] = useState([])
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState(null)
-  const [filterType, setFilterType] = useState('all')
-  const [query, setQuery] = useState('')
+  const [loading, setLoading] = useState(true)
+  const [quizTypeFilter, setQuizTypeFilter] = useState('all')
+  const [movieFilter, setMovieFilter] = useState('all')
   const [currentPage, setCurrentPage] = useState(1)
 
-  const load = useCallback(async () => {
-    try {
-      setLoading(true)
-      setError(null)
-      const res = await fetchResultsByUserApi(userId)
+  useEffect(() => {
+    fetchResults()
+  }, [])
 
-      const items = Array.isArray(res) ? res : res?.data || []
-      setResults(items)
-    } catch (err) {
-      console.error('fetch results error:', err)
-      const msg = err?.response?.data?.message || err?.message || 'Lỗi khi tải kết quả'
-      setError(msg)
-      toast.error(msg)
+  useEffect(() => {
+    setCurrentPage(1)
+  }, [quizTypeFilter, movieFilter])
+
+  const fetchResults = async () => {
+    setLoading(true)
+    try {
+      const response = await fetchPracticeResultsByUserApi()
+      setResults(response.data || [])
+    } catch (error) {
+      console.error('Error fetching practice results:', error)
+      setResults([])
     } finally {
       setLoading(false)
     }
-  }, [userId])
+  }
 
-  useEffect(() => {
-    load()
-  }, [load])
+  // Danh sách phim unique từ kết quả
+  const movieList = useMemo(() => {
+    const movies = new Map()
+    results.forEach(r => {
+      const movieId = r.movieId?._id
+      const movieTitle = r.movieId?.title
+      if (movieId && movieTitle && !movies.has(movieId)) {
+        movies.set(movieId, movieTitle)
+      }
+    })
+    return Array.from(movies, ([id, title]) => ({ id, title }))
+  }, [results])
 
-  // Lọc theo loại bài tập và tìm kiếm
-  const filtered = useMemo(() => {
-    let data = results
+  const filteredResults = useMemo(() => {
+    return results.filter(r => {
+      const matchQuizType = quizTypeFilter === 'all' || r.quizType === quizTypeFilter
+      const matchMovie = movieFilter === 'all' || r.movieId?._id === movieFilter
+      return matchQuizType && matchMovie
+    })
+  }, [results, quizTypeFilter, movieFilter])
 
-    // Lọc theo loại quiz
-    if (filterType !== 'all') {
-      data = data.filter((r) => r.quizType === filterType || r.quiz?.quizType === filterType)
-    }
-
-    // Lọc theo tên phim
-    if (query.trim()) {
-      const q = query.toLowerCase()
-      data = data.filter((r) => {
-        const title = r.quiz?.title || r.quiz?.movieTitle || r.movieTitle || ''
-        return title.toLowerCase().includes(q)
-      })
-    }
-
-    return data
-  }, [results, filterType, query])
-
-  // Reset về trang 1 khi thay đổi filter hoặc search
-  useEffect(() => {
-    setCurrentPage(1)
-  }, [filterType, query])
-
-  // Tính toán phân trang
-  const totalPages = Math.ceil(filtered.length / ITEMS_PER_PAGE)
   const paginatedResults = useMemo(() => {
     const start = (currentPage - 1) * ITEMS_PER_PAGE
-    return filtered.slice(start, start + ITEMS_PER_PAGE)
-  }, [filtered, currentPage])
+    return filteredResults.slice(start, start + ITEMS_PER_PAGE)
+  }, [filteredResults, currentPage])
 
-  // Stats dựa trên toàn bộ filtered (không phải paginated)
-  const totalAttempts = filtered.length
-  const avgAccuracy = useMemo(() => {
-    if (!filtered.length) return 0
-    const sum = filtered.reduce((acc, r) => acc + (Number(r.accuracy) || 0), 0)
-    return sum / filtered.length
-  }, [filtered])
+  const totalPages = Math.ceil(filteredResults.length / ITEMS_PER_PAGE)
 
-  const bestAccuracy = useMemo(() => {
-    if (!filtered.length) return 0
-    return filtered.reduce((max, r) => Math.max(max, Number(r.accuracy) || 0), 0)
-  }, [filtered])
+  const stats = useMemo(() => {
+    if (results.length === 0) return null
+
+    const totalAttempts = results.length
+    const avgScore = Math.round(results.reduce((acc, r) => acc + r.score, 0) / totalAttempts)
+    const bestScore = Math.max(...results.map(r => r.score))
+
+    // Thống kê theo loại quiz
+    const byQuizType = Object.keys(QUIZ_TYPE_CONFIG).map(type => {
+      const typeResults = results.filter(r => r.quizType === type)
+      if (typeResults.length === 0) return null
+      return {
+        type,
+        count: typeResults.length,
+        avgScore: Math.round(typeResults.reduce((acc, r) => acc + r.score, 0) / typeResults.length),
+        bestScore: Math.max(...typeResults.map(r => r.score))
+      }
+    }).filter(Boolean)
+
+    return { totalAttempts, avgScore, bestScore, byQuizType }
+  }, [results])
+
+  const handleRetry = (result) => {
+    const movieId = result.movieId?._id || result.movieId
+    navigate(`/client/practice/${movieId}/${result.quizType}`)
+  }
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-[#2E4863] text-white flex items-center justify-center">
+        <div className="flex flex-col items-center gap-3">
+          <div className="w-10 h-10 border-4 border-[#E4D161] border-t-transparent rounded-full animate-spin" />
+          <p className="text-gray-300">Đang tải kết quả...</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (results.length === 0) {
+    return (
+      <div className="min-h-screen bg-[#2E4863] text-white">
+        <div className="max-w-[1000px] mx-auto px-4 py-6">
+          <h1 className="text-2xl font-semibold text-[#E4D161] mb-6">Results</h1>
+          <div className="bg-[#1B2A36] rounded-xl p-8 text-center border border-white/10">
+            <BarChart3 className="w-16 h-16 text-gray-600 mx-auto mb-4" />
+            <p className="text-gray-400 mb-4">Bạn chưa làm bài luyện tập nào.</p>
+          </div>
+        </div>
+      </div>
+    )
+  }
 
   return (
-    <div className="max-w-5xl mx-auto px-4 py-6">
-      {/* Header */}
-      <div className="flex flex-col md:flex-row items-start md:items-center justify-between mb-6 gap-3">
-        <h1 className="text-2xl font-semibold text-[#E4D161]">Results</h1>
-        
-        {/* Search Box */}
-        <div className="relative w-full md:w-72">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-          <input
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="Tìm kiếm theo tên phim..."
-            className="w-full pl-9 pr-3 py-2 rounded-md bg-gray-900/40 border border-gray-700 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#E4D161] focus:border-transparent"
-          />
+    <div className="min-h-screen bg-[#2E4863] text-white">
+      <div className="max-w-[1000px] mx-auto px-4 py-6">
+        {/* Header */}
+        <div className="mb-6">
+          <h1 className="text-2xl font-semibold text-[#E4D161]">Results</h1>
         </div>
-      </div>
 
-      {/* Stats */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
-        <div className="rounded-xl border border-white/10 bg-white/5 p-4 flex items-center gap-3">
-          <div className="p-2 rounded-lg bg-indigo-600/20">
-            <ListChecks className="w-5 h-5 text-indigo-300" />
+        {/* Stats Overview */}
+        {stats && (
+          <div className="grid grid-cols-3 gap-4 mb-6">
+            <StatCard 
+              icon={BarChart3} 
+              label="Tổng số lần làm" 
+              value={stats.totalAttempts}
+              color="text-blue-400"
+            />
+            <StatCard 
+              icon={TrendingUp} 
+              label="Điểm trung bình" 
+              value={`${stats.avgScore}%`}
+              color="text-green-400"
+            />
+            <StatCard 
+              icon={Trophy} 
+              label="Điểm cao nhất" 
+              value={`${stats.bestScore}%`}
+              color="text-yellow-400"
+            />
           </div>
-          <div>
-            <div className="text-xs text-white/60 uppercase tracking-wide">Tổng lượt làm</div>
-            <div className="text-xl font-semibold text-white">{totalAttempts}</div>
-          </div>
-        </div>
-        <div className="rounded-xl border border-white/10 bg-white/5 p-4 flex items-center gap-3">
-          <div className="p-2 rounded-lg bg-emerald-600/20">
-            <BarChart3 className="w-5 h-5 text-emerald-300" />
-          </div>
-          <div>
-            <div className="text-xs text-white/60 uppercase tracking-wide">Điểm trung bình</div>
-            <div className="flex items-baseline gap-1">
-              <span className="text-xl font-semibold text-white">{Number.isFinite(avgAccuracy) ? avgAccuracy.toFixed(1) : '—'}</span>
-              <span className="text-xs text-white/70">%</span>
-            </div>
-          </div>
-        </div>
-        <div className="rounded-xl border border-white/10 bg-white/5 p-4 flex items-center gap-3">
-          <div className="p-2 rounded-lg bg-amber-600/20">
-            <TrendingUp className="w-5 h-5 text-amber-300" />
-          </div>
-          <div>
-            <div className="text-xs text-white/60 uppercase tracking-wide">Kết quả tốt nhất</div>
-            <div className="flex items-baseline gap-1">
-              <span className="text-xl font-semibold text-white">{Number.isFinite(bestAccuracy) ? bestAccuracy.toFixed(1) : '—'}</span>
-              <span className="text-xs text-white/70">%</span>
-            </div>
-          </div>
-        </div>
-      </div>
+        )}
 
-      {/* Lọc theo loại Quiz */}
-      <div className="flex items-center justify-between mb-4 gap-3">
-        <div className="flex flex-wrap items-center gap-2 text-xs">
-          <span className="text-white/60">Loại bài tập:</span>
-          <button
-            onClick={() => setFilterType('all')}
-            className={`px-2 py-1 rounded-full border text-xs ${
-              filterType === 'all'
-                ? 'bg-white text-slate-900 border-white'
-                : 'bg-transparent text-white/80 border-white/20 hover:border-white/50'
-            }`}
-          >
-            Tất cả
-          </button>
-          {Object.keys(QUIZ_TYPE_LABEL).map((t) => (
-            <button
-              key={t}
-              onClick={() => setFilterType(t)}
-              className={`px-2 py-1 rounded-full border text-xs ${
-                filterType === t
-                  ? 'bg-white text-slate-900 border-white'
-                  : 'bg-transparent text-white/80 border-white/20 hover:border-white/50'
-              }`}
-            >
-              {QUIZ_TYPE_LABEL[t]}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* List results */}
-      <div className="rounded-xl border border-white/10 bg-white/5 overflow-hidden">
-        {loading ? (
-          <div className="p-6 text-sm text-white/70">Đang tải kết quả…</div>
-        ) : error ? (
-          <div className="p-6 text-sm text-rose-400">{error}</div>
-        ) : !filtered.length ? (
-          <div className="p-6 text-sm text-white/70">
-            {query.trim() || filterType !== 'all'
-              ? 'Không tìm thấy kết quả phù hợp.'
-              : 'Bạn chưa có kết quả làm bài nào.'}
-          </div>
-        ) : (
-          <div className="divide-y divide-white/10">
-            {/* Header row */}
-            <div className="hidden md:grid md:grid-cols-6 gap-3 px-4 py-2 text-xs text-white/60 bg-white/5">
-              <div>Phim/ Loại bài tập</div>
-              <div className="text-center">Lần làm</div>
-              <div className="text-center">Số câu đúng</div>
-              <div className="text-center">Tổng câu</div>
-              <div className="text-center">Độ chính xác</div>
-              <div className="text-right">Thời gian</div>
-            </div>
-
-            {/* Rows - sử dụng paginatedResults thay vì filtered */}
-            {paginatedResults.map((r) => {
-              const quizType = r.quizType || r.quiz?.quizType
-              const title =
-                r.quiz?.title ||
-                r.quiz?.movieTitle ||
-                r.movieTitle ||
-                `Quiz ${quizType ? `(${QUIZ_TYPE_LABEL[quizType] || quizType})` : ''}`
-
-              return (
-                <div
-                  key={r._id}
-                  className="px-4 py-3 flex flex-col gap-2 md:grid md:grid-cols-6 md:items-center text-sm text-white/90 hover:bg-white/5"
-                >
-                  {/* Col 1: Phim/ Bài tập */}
-                  <div className="flex flex-col gap-1">
-                    <div className="font-medium">{title}</div>
-                    <div className="flex items-center gap-2 text-xs text-white/60">
-                      <QuizTypeBadge type={quizType} />
+        {/* Quiz Type Stats */}
+        {stats?.byQuizType && stats.byQuizType.length > 0 && (
+          <div className="bg-[#1B2A36] rounded-xl p-4 border border-white/10 mb-6">
+            <h2 className="text-sm font-semibold text-[#E4D161] mb-3 flex items-center gap-2">
+              Thống kê theo loại bài
+            </h2>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              {stats.byQuizType.map(({ type, count, avgScore, bestScore }) => {
+                const config = QUIZ_TYPE_CONFIG[type]
+                const Icon = config.icon
+                return (
+                  <div 
+                    key={type}
+                    className={`p-3 rounded-lg ${config.bgColor} border ${config.borderColor}`}
+                  >
+                    <div className="flex items-center gap-2 mb-2">
+                      <Icon className={`w-4 h-4 ${config.color}`} />
+                      <span className={`text-xs font-medium ${config.color}`}>{config.label}</span>
+                    </div>
+                    <div className="space-y-1 text-xs">
+                      <div className="flex justify-between">
+                        <span className="text-gray-400">Số lần:</span>
+                        <span className="text-white font-medium">{count}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-400">Trung bình:</span>
+                        <span className={getScoreColor(avgScore)}>{avgScore}%</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-400">Cao nhất:</span>
+                        <span className={getScoreColor(bestScore)}>{bestScore}%</span>
+                      </div>
                     </div>
                   </div>
+                )
+              })}
+            </div>
+          </div>
+        )}
 
-                  {/* Col 2: Lần làm */}
-                  <div className="hidden md:flex md:justify-center">
-                    <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs bg-slate-800/80">
-                      lần {r.attempt}
-                    </span>
-                  </div>
+        {/* Filter & Title */}
+        <div className="flex items-center justify-between mb-4 flex-wrap gap-3">
+          <h2 className="text-lg font-semibold text-white">
+            Lịch sử làm bài
+            <span className="text-sm text-gray-400 font-normal ml-2">
+              ({filteredResults.length} kết quả)
+            </span>
+          </h2>
+          
+          {/* Filters */}
+          <div className="flex items-center gap-3">
+            {/* Movie Filter */}
+            <div className="relative">
+              <select
+                value={movieFilter}
+                onChange={(e) => setMovieFilter(e.target.value)}
+                className="appearance-none bg-[#1B2A36] border border-white/10 rounded-lg px-4 py-2 pr-8 text-sm text-white focus:outline-none focus:ring-2 focus:ring-[#E4D161] cursor-pointer"
+              >
+                <option value="all">Tất cả phim</option>
+                {movieList.map(({ id, title }) => (
+                  <option key={id} value={id}>{title}</option>
+                ))}
+              </select>
+              <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+            </div>
 
-                  {/* Col 3: Số câu đúng */}
-                  <div className="hidden md:flex md:justify-center">
-                    <span className="font-medium text-emerald-300">{r.correctCount}</span>
-                  </div>
+            {/* Quiz Type Filter */}
+            <div className="relative">
+              <select
+                value={quizTypeFilter}
+                onChange={(e) => setQuizTypeFilter(e.target.value)}
+                className="appearance-none bg-[#1B2A36] border border-white/10 rounded-lg px-4 py-2 pr-8 text-sm text-white focus:outline-none focus:ring-2 focus:ring-[#E4D161] cursor-pointer"
+              >
+                <option value="all">Tất cả loại bài</option>
+                {Object.entries(QUIZ_TYPE_CONFIG).map(([value, { label }]) => (
+                  <option key={value} value={value}>{label}</option>
+                ))}
+              </select>
+              <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+            </div>
+          </div>
+        </div>
 
-                  {/* Col 4: Tổng câu */}
-                  <div className="hidden md:flex md:justify-center">
-                    <span>{r.totalQuestions}</span>
-                  </div>
+        {/* Results List */}
+        <div className="space-y-2 mb-6">
+          {paginatedResults.map((result) => (
+            <ResultRow 
+              key={result._id} 
+              result={result} 
+              onRetry={handleRetry}
+            />
+          ))}
+        </div>
 
-                  {/* Col 5: Độ chính xác */}
-                  <div className="hidden md:flex md:justify-center">
-                    <AccuracyBadge value={Number.isFinite(Number(r.accuracy)) ? Number(r.accuracy) : null} />
-                  </div>
-
-                  {/* Col 6: Thời gian */}
-                  <div className="md:text-right text-xs text-white/70 flex items-center justify-end gap-2">
-                    <div>{formatDateTime(r.createdAt)}</div>
-                  </div>
-                </div>
-              )
-            })}
+        {/* Empty Filter Result */}
+        {filteredResults.length === 0 && (quizTypeFilter !== 'all' || movieFilter !== 'all') && (
+          <div className="bg-[#1B2A36] rounded-xl p-8 text-center border border-white/10">
+            <p className="text-gray-400">Không có kết quả phù hợp với bộ lọc.</p>
           </div>
         )}
 
         {/* Pagination */}
-        {!loading && !error && filtered.length > 0 && (
-          <div className="px-4 py-3 border-t border-white/10">
-            <Pagination
-              currentPage={currentPage}
-              totalPages={totalPages}
-              onPageChange={setCurrentPage}
-            />
-          </div>
+        {totalPages > 1 && (
+          <Pagination 
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={setCurrentPage}
+          />
         )}
       </div>
     </div>
   )
 }
+
+export default PracticeResultPage

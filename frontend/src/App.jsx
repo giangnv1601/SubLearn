@@ -30,9 +30,9 @@ const EditQuizPage = lazy(() => import("@/pages/Admin/EditQuizPage/EditQuizPage"
 // Lazy load User pages
 const HomePage = lazy(() => import("@/pages/User/HomePage/HomePage"))
 const ExercisePage = lazy(() => import("@/pages/User/ExercisePage/ExercisePage"))
-const ResultPage = lazy(() => import("@/pages/User/ResultPage/ResultPage"))
 const VideoPlayerPage = lazy(() => import("@/pages/User/VideoPlayerPage/VideoPlayerPage"))
 const PracticePage = lazy(() => import("@/pages/User/PracticePage/PracticePage"))
+const ResultPage = lazy(() => import("@/pages/User/ResultPage/ResultPage"))
 
 // Lazy load Shared pages
 const ProfilePage = lazy(() => import("@/pages/Shared/ProfilePage"))
@@ -111,9 +111,9 @@ function App() {
             {/* ----CLIENT---- */}
             <Route path="/" element={<HomePage />} />
             <Route path="/client/exercises" element={<ExercisePage />} />
-            <Route path="/client/results" element={<ResultPage />} />
             <Route path="/client/video/:id" element={<VideoPlayerPage />} />
             <Route path="/client/practice/:movieId/:quizType" element={<PracticePage />} />
+            <Route path="/client/results" element={<ResultPage />} />
           </Route>
         </Route>
 
