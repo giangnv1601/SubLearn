@@ -91,7 +91,7 @@ export default function UploadSubtitleModal({ isOpen, onClose, movie }) {
       <div className="relative z-10 w-full max-w-lg rounded-2xl bg-[#1D2732] border border-white/10 shadow-xl">
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-4 border-b border-white/10">
-          <h3 className="text-white font-semibold">Upload Subtitle (.srt)</h3>
+          <h3 className="text-white font-semibold">Tải phụ đề (.srt)</h3>
           <button 
             onClick={onClose} 
             className="p-1 rounded hover:bg-white/10 transition-colors"

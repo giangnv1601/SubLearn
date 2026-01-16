@@ -6,6 +6,11 @@ import { useParams } from 'react-router-dom'
 import { fetchMovieByIdApi, createInteractiveQuizByAiApi, getSubtitlesByMovieApi } from '@/api'
 import { parseSubtitlesFromText, findActiveIndex, mergeBiSubs, formatTime } from '@/utils/helpers'
 
+const capitalizeFirstLetter = (str) => {
+  if (!str) return ''
+  return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase()
+}
+
 export default function VideoPlayerPage() {
   const { id } = useParams()
   
@@ -606,7 +611,7 @@ export default function VideoPlayerPage() {
                               : 'bg-gray-600/20 text-gray-300 border-gray-500/30'
                           }`}
                       >
-                        {movieData.level}
+                        {capitalizeFirstLetter(movieData.level)}
                       </span>
                     )}
                   </div>
