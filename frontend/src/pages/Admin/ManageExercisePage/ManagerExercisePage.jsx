@@ -1,6 +1,6 @@
-import { Plus, Edit, Search, Trash2 } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router'
+import { Plus, Edit, Search, Trash2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { fetchQuizzesSummary, deleteQuizzesByMovieAndQuizTypeApi } from '@/api'
 import Pagination from '@/components/Pagination/Pagination'
@@ -41,13 +41,15 @@ const hasAnyQuizzes = (quizCounts) => {
 
 const ManagerExercisePage = () => {
   const navigate = useNavigate()
-  const [query, setQuery] = useState('')
-  const [currentPage, setCurrentPage] = useState(1)
+
   const [data, setData] = useState([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   
-  // State cho confirm dialog
+  const [searchQuery, setSearchQuery] = useState('')
+  const [currentPage, setCurrentPage] = useState(1)
+  
+  // Xóa trạng thái 
   const [confirmDialog, setConfirmDialog] = useState({
     open: false,
     movieId: null,
@@ -58,13 +60,13 @@ const ManagerExercisePage = () => {
   useEffect(() => {
     let mounted = true
 
-    const fetchData = async () => {
+    const loadData = async () => {
       setLoading(true)
       setError('')
 
       try {
-        const res = await fetchQuizzesSummary()
-        const items = Array.isArray(res) ? res : (res?.data || [])
+        const response = await fetchQuizzesSummary()
+        const items = Array.isArray(response) ? response : (response?.data || [])
         
         if (!mounted) return
 
@@ -72,13 +74,14 @@ const ManagerExercisePage = () => {
         setData(normalizedData)
       } catch (err) {
         if (!mounted) return
-        setError(err?.response?.data?.message || err.message || 'Không thể tải dữ liệu')
+        const errorMessage = err?.response?.data?.message || err.message || 'Không thể tải dữ liệu'
+        setError(errorMessage)
       } finally {
         if (mounted) setLoading(false)
       }
     }
 
-    fetchData()
+    loadData()
 
     return () => {
       mounted = false
@@ -86,10 +89,10 @@ const ManagerExercisePage = () => {
   }, [])
 
   const filteredData = useMemo(() => {
-    if (!query.trim()) return data
-    const lowerQuery = query.toLowerCase()
+    if (!searchQuery.trim()) return data
+    const lowerQuery = searchQuery.toLowerCase()
     return data.filter((item) => item.title.toLowerCase().includes(lowerQuery))
-  }, [data, query])
+  }, [data, searchQuery])
 
   const totalPages = Math.ceil(filteredData.length / ITEMS_PER_PAGE)
 
@@ -107,16 +110,19 @@ const ManagerExercisePage = () => {
   }, [])
 
   const handleSearchChange = (value) => {
-    setQuery(value)
+    setSearchQuery(value)
     setCurrentPage(1)
   }
 
-  const handleEdit = (movieId, quizType) => {
+  const handleCreateQuiz = () => {
+    navigate('/admin/exercise/add')
+  }
+
+  const handleEditQuiz = (movieId, quizType) => {
     navigate(`/admin/exercise/edit/${movieId}/${quizType}`)
   }
 
-  // Mở confirm dialog
-  const handleDeleteClick = (movieId, quizType) => {
+  const handleOpenDeleteConfirm = (movieId, quizType) => {
     const quizTypeLabel = QUIZ_TYPE_LABEL[quizType] || quizType
     setConfirmDialog({
       open: true,
@@ -126,19 +132,18 @@ const ManagerExercisePage = () => {
     })
   }
 
-  //  Xác nhận xóa
   const handleConfirmDelete = async () => {
     const { movieId, quizType } = confirmDialog
     
-    // Đóng dialog trước
+    // Close dialog first
     setConfirmDialog({ open: false, movieId: null, quizType: null, quizTypeLabel: '' })
     
     setLoading(true)
 
     try {
-      const res = await deleteQuizzesByMovieAndQuizTypeApi(movieId, quizType)
+      const response = await deleteQuizzesByMovieAndQuizTypeApi(movieId, quizType)
 
-      if (res.ok) {
+      if (response.ok) {
         setData((prev) =>
           prev
             .map((item) => {
@@ -156,19 +161,19 @@ const ManagerExercisePage = () => {
             .filter((item) => hasAnyQuizzes(item.quizCounts))
         )
 
-        toast.success(res.message || 'Xóa thành công!')
+        toast.success(response.message || 'Xóa thành công!')
       } else {
-        toast.error(res.message || 'Xóa thất bại')
+        toast.error(response.message || 'Xóa thất bại')
       }
     } catch (err) {
       console.error('Delete error:', err)
-      toast.error(err?.response?.data?.message || err.message || 'Xóa thất bại')
+      const errorMessage = err?.response?.data?.message || err.message || 'Xóa thất bại'
+      toast.error(errorMessage)
     } finally {
       setLoading(false)
     }
   }
 
-  // Hủy xóa
   const handleCancelDelete = () => {
     setConfirmDialog({ open: false, movieId: null, quizType: null, quizTypeLabel: '' })
   }
@@ -185,7 +190,7 @@ const ManagerExercisePage = () => {
             <div className="relative flex-1 md:w-72">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
               <input
-                value={query}
+                value={searchQuery}
                 onChange={(e) => handleSearchChange(e.target.value)}
                 placeholder="Tìm kiếm theo tên phim..."
                 className="w-full pl-9 pr-3 py-2 rounded-md bg-gray-900/40 border border-gray-700 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#E4D161] focus:border-transparent"
@@ -194,8 +199,8 @@ const ManagerExercisePage = () => {
 
             {/* Create Button */}
             <button
-              onClick={() => navigate('/admin/exercise/add')}
-              className="inline-flex items-center gap-2 px-4 py-2 bg-[#E4D161] text-black rounded-md font-semibold shadow hover:opacity-95 whitespace-nowrap"
+              onClick={handleCreateQuiz}
+              className="inline-flex items-center gap-2 px-4 py-2 bg-[#E4D161] text-black rounded-md font-semibold shadow hover:opacity-95 transition-opacity whitespace-nowrap"
             >
               <Plus className="w-4 h-4" /> Create Quiz
             </button>
@@ -230,7 +235,7 @@ const ManagerExercisePage = () => {
                     {paginatedData.length === 0 && (
                       <tr>
                         <td colSpan={2} className="py-6 px-3 text-center text-gray-400">
-                          {query.trim() ? 'Không tìm thấy phim phù hợp.' : 'Không có dữ liệu.'}
+                          {searchQuery.trim() ? 'Không tìm thấy phim phù hợp.' : 'Không có dữ liệu.'}
                         </td>
                       </tr>
                     )}
@@ -259,14 +264,14 @@ const ManagerExercisePage = () => {
                                   {/* Action Buttons */}
                                   <div className="flex gap-2">
                                     <button
-                                      onClick={() => handleEdit(movie.id, type.key)}
+                                      onClick={() => handleEditQuiz(movie.id, type.key)}
                                       disabled={loading}
                                       className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-blue-700 hover:bg-blue-600 rounded text-xs font-medium text-white disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                                     >
                                       <Edit className="w-4 h-4" /> Sửa
                                     </button>
                                     <button
-                                      onClick={() => handleDeleteClick(movie.id, type.key)}
+                                      onClick={() => handleOpenDeleteConfirm(movie.id, type.key)}
                                       disabled={loading}
                                       className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-red-700 hover:bg-red-600 rounded text-xs font-medium text-white disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                                     >
@@ -294,6 +299,7 @@ const ManagerExercisePage = () => {
         </main>
       </div>
 
+      {/* Confirm Dialog */}
       <ConfirmDialog
         open={confirmDialog.open}
         title="Xác nhận xóa bài tập"
