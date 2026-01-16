@@ -7,7 +7,7 @@ import movieRoute from './routes/movieRoute.js'
 import subtitleRoute from './routes/subtitleRoute.js'
 import userRoute from './routes/userRoute.js'
 import quizRoute from './routes/quizRoute.js'
-import resultRoute from './routes/resultRoute.js'
+import practiceResultRoute from './routes/practiceResultRoute.js'
 
 dotenv.config();
 
@@ -40,7 +40,7 @@ app.use('/api/movies', movieRoute)
 app.use('/api/subtitles', subtitleRoute)
 app.use('/api/users', userRoute)
 app.use('/api/quizzes', quizRoute)
-app.use('/api/results', resultRoute)
+app.use('/api/practiceResults', practiceResultRoute)
 
 // Start server
 connectDB().then(() => {

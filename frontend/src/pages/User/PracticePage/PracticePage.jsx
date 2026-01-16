@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react'
 import { useParams } from 'react-router-dom'
-import { fetchQuizByMovieAndTypeQuizApi } from "@/api"
+import { toast } from 'sonner'
+import { fetchQuizByMovieAndTypeQuizApi, submitPracticeResultApi } from "@/api"
 import { Check, X, BookOpen, Quote } from 'lucide-react'
 
 const PracticePage = () => {
@@ -9,6 +10,8 @@ const PracticePage = () => {
   const [userAnswers, setUserAnswers] = useState({})
   const [submitted, setSubmitted] = useState(false)
   const [loading, setLoading] = useState(true)
+  const [submitting, setSubmitting] = useState(false)
+  const [savedResult, setSavedResult] = useState(null)
 
   const handleSelectAnswer = (quizIndex, questionIndex, selectedLabel) => {
     if (submitted) return
@@ -38,15 +41,6 @@ const PracticePage = () => {
     }
   }, [movieId, quizType])
 
-  const handleSubmit = () => {
-    setSubmitted(true)
-  }
-
-  const handleReset = () => {
-    setUserAnswers({})
-    setSubmitted(false)
-  }
-
   const calculateScore = () => {
     if (quizzes.length === 0) return { correct: 0, total: 0 }
     let correct = 0
@@ -62,6 +56,38 @@ const PracticePage = () => {
     })
     
     return { correct, total }
+  }
+
+  const handleSubmit = async () => {
+    const { correct, total } = calculateScore()
+
+    try {
+      setSubmitting(true)
+      
+      const response = await submitPracticeResultApi({
+        movieId,
+        quizType,
+        totalQuestions: total,
+        correctCount: correct,
+      })
+
+      setSavedResult(response.data)
+      setSubmitted(true)
+      toast.success('Nộp bài thành công!')
+    } catch (error) {
+      console.error('Error submitting result:', error)
+      toast.error('Không thể lưu kết quả. Vui lòng thử lại.')
+      // Vẫn cho hiển thị kết quả dù không lưu được
+      setSubmitted(true)
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
+  const handleReset = () => {
+    setUserAnswers({})
+    setSubmitted(false)
+    setSavedResult(null)
   }
 
   if (loading) {
@@ -105,6 +131,11 @@ const PracticePage = () => {
                 <p className="text-sm font-semibold">
                   Điểm: <span className="text-[#E4D161]">{correct}/{total}</span>
                 </p>
+                {savedResult && (
+                  <p className="text-xs text-gray-400 mt-0.5">
+                    Lần làm thứ: {savedResult.attempt}
+                  </p>
+                )}
               </div>
             )}
           </div>
@@ -271,10 +302,17 @@ const PracticePage = () => {
           {!submitted ? (
             <button
               onClick={handleSubmit}
-              disabled={Object.keys(userAnswers).length === 0}
-              className="px-6 py-2 bg-[#E4D161] text-[#2E4863] font-semibold rounded-lg hover:bg-[#d4c151] disabled:bg-gray-500 disabled:cursor-not-allowed transition-colors text-sm"
+              disabled={Object.keys(userAnswers).length === 0 || submitting}
+              className="px-6 py-2 bg-[#E4D161] text-[#2E4863] font-semibold rounded-lg hover:bg-[#d4c151] disabled:bg-gray-500 disabled:cursor-not-allowed transition-colors text-sm inline-flex items-center gap-2"
             >
-              Nộp bài
+              {submitting ? (
+                <>
+                  <span className="w-4 h-4 border-2 border-[#2E4863]/40 border-t-[#2E4863] rounded-full animate-spin" />
+                  Đang nộp...
+                </>
+              ) : (
+                'Nộp bài'
+              )}
             </button>
           ) : (
             <button

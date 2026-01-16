@@ -130,17 +130,6 @@ export const createInteractiveQuizByAiApi = async (payload) => {
   return res.data;
 }
 
-/** API Result */
-export const submitResultApi = async (payload) => {
-  const res = await authorizedAxiosInstance.post(`${API_ROOT}/api/results`, payload);
-  return res.data;
-}
-
-export const fetchResultsByUserApi = async (userId) => {
-  const res = await authorizedAxiosInstance.get(`${API_ROOT}/api/results/${userId}`);
-  return res.data;
-}
-
 // API Manage Users (Admin)
 export const fetchAllUsersApi = async () => {
   const res = await authorizedAxiosInstance.get(`${API_ROOT}/api/users`);
@@ -154,5 +143,16 @@ export const deleteUserApi = async (userId) => {
 
 export const updateUserApi = async (userId, data) => {
   const res = await authorizedAxiosInstance.put(`${API_ROOT}/api/users/update-user/${userId}`, data);
+  return res.data;
+}
+
+/** API Practice Results */
+export const submitPracticeResultApi = async (payload) => {
+  const res = await authorizedAxiosInstance.post(`${API_ROOT}/api/practiceResults`, payload);
+  return res.data;
+}
+
+export const fetchPracticeResultsByUserApi = async () => {
+  const res = await authorizedAxiosInstance.get(`${API_ROOT}/api/practiceResults`);
   return res.data;
 }
