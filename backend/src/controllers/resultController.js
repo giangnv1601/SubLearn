@@ -1,6 +1,6 @@
-import PracticeResult from '../models/practiceResultModel.js'
+import Result from '../models/resultModel.js'
 
-export const createPracticeResult = async (req, res) => {
+export const createResult = async (req, res) => {
   try {
     const userId = req.jwtDecoded.id
     const { movieId, quizType, totalQuestions, correctCount } = req.body
@@ -16,14 +16,14 @@ export const createPracticeResult = async (req, res) => {
       : 0
 
     // Tính lần làm thứ mấy (attempt)
-    const lastResult = await PracticeResult
+    const lastResult = await Result
       .findOne({ userId, movieId, quizType })
       .sort({ attempt: -1 })
 
     const attempt = (lastResult?.attempt || 0) + 1
 
     // Tạo kết quả mới
-    const result = await PracticeResult.create({
+    const result = await Result.create({
       userId,
       movieId,
       quizType,
@@ -43,10 +43,10 @@ export const createPracticeResult = async (req, res) => {
   }
 }
 
-export const getPracticeResultsByUser = async (req, res) => {
+export const getResultsByUser = async (req, res) => {
   try {
     const userId = req.jwtDecoded.id
-    const results = await PracticeResult
+    const results = await Result
       .find({ userId })
       .populate('movieId', 'title')
       .sort({ createdAt: -1 })

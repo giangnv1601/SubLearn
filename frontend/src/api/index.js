@@ -148,11 +148,11 @@ export const updateUserApi = async (userId, data) => {
 
 /** API Practice Results */
 export const submitPracticeResultApi = async (payload) => {
-  const res = await authorizedAxiosInstance.post(`${API_ROOT}/api/practiceResults`, payload);
+  const res = await authorizedAxiosInstance.post(`${API_ROOT}/api/results`, payload);
   return res.data;
 }
 
 export const fetchPracticeResultsByUserApi = async () => {
-  const res = await authorizedAxiosInstance.get(`${API_ROOT}/api/practiceResults`);
+  const res = await authorizedAxiosInstance.get(`${API_ROOT}/api/results`);
   return res.data;
 }

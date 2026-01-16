@@ -10,13 +10,11 @@ import {
   RefreshCw,
   BarChart3,
   Calendar,
-  RotateCcw,
-  Film
+  RotateCcw
 } from 'lucide-react'
 import { fetchPracticeResultsByUserApi } from '@/api'
 import Pagination from '@/components/Pagination/Pagination'
 
-// ============ CONSTANTS ============
 const ITEMS_PER_PAGE = 5
 
 const QUIZ_TYPE_CONFIG = {
@@ -50,7 +48,6 @@ const QUIZ_TYPE_CONFIG = {
   }
 }
 
-// ============ HELPERS ============
 const formatDateTime = (iso) => {
   if (!iso) return ''
   const date = new Date(iso)
@@ -75,7 +72,6 @@ const getScoreBg = (score) => {
   return 'bg-red-500'
 }
 
-// ============ SUB COMPONENTS ============
 const StatCard = ({ icon: Icon, label, value, color = 'text-[#E4D161]' }) => (
   <div className="bg-[#1B2A36] rounded-xl p-4 border border-white/10">
     <div className="flex items-center gap-3">
@@ -146,18 +142,15 @@ const ResultRow = ({ result, onRetry }) => {
   )
 }
 
-// ============ MAIN COMPONENT ============
 const PracticeResultPage = () => {
   const navigate = useNavigate()
 
-  // -------- STATE --------
   const [results, setResults] = useState([])
   const [loading, setLoading] = useState(true)
   const [quizTypeFilter, setQuizTypeFilter] = useState('all')
   const [movieFilter, setMovieFilter] = useState('all')
   const [currentPage, setCurrentPage] = useState(1)
 
-  // -------- EFFECTS --------
   useEffect(() => {
     fetchResults()
   }, [])
@@ -166,7 +159,6 @@ const PracticeResultPage = () => {
     setCurrentPage(1)
   }, [quizTypeFilter, movieFilter])
 
-  // -------- DATA FETCHING --------
   const fetchResults = async () => {
     setLoading(true)
     try {
@@ -180,7 +172,6 @@ const PracticeResultPage = () => {
     }
   }
 
-  // -------- COMPUTED VALUES --------
   // Danh sách phim unique từ kết quả
   const movieList = useMemo(() => {
     const movies = new Map()
@@ -231,13 +222,11 @@ const PracticeResultPage = () => {
     return { totalAttempts, avgScore, bestScore, byQuizType }
   }, [results])
 
-  // -------- HANDLERS --------
   const handleRetry = (result) => {
     const movieId = result.movieId?._id || result.movieId
     navigate(`/client/practice/${movieId}/${result.quizType}`)
   }
 
-  // -------- RENDER: Loading --------
   if (loading) {
     return (
       <div className="min-h-screen bg-[#2E4863] text-white flex items-center justify-center">
@@ -249,28 +238,20 @@ const PracticeResultPage = () => {
     )
   }
 
-  // -------- RENDER: Empty --------
   if (results.length === 0) {
     return (
       <div className="min-h-screen bg-[#2E4863] text-white">
         <div className="max-w-[1000px] mx-auto px-4 py-6">
-          <h1 className="text-2xl font-semibold text-[#E4D161] mb-6">Kết quả luyện tập</h1>
+          <h1 className="text-2xl font-semibold text-[#E4D161] mb-6">Results</h1>
           <div className="bg-[#1B2A36] rounded-xl p-8 text-center border border-white/10">
             <BarChart3 className="w-16 h-16 text-gray-600 mx-auto mb-4" />
             <p className="text-gray-400 mb-4">Bạn chưa làm bài luyện tập nào.</p>
-            <button
-              onClick={() => navigate('/client')}
-              className="px-6 py-2 bg-[#E4D161] text-[#2E4863] font-semibold rounded-lg hover:bg-[#d4c151] transition-colors"
-            >
-              Bắt đầu luyện tập
-            </button>
           </div>
         </div>
       </div>
     )
   }
 
-  // -------- RENDER: Main --------
   return (
     <div className="min-h-screen bg-[#2E4863] text-white">
       <div className="max-w-[1000px] mx-auto px-4 py-6">
@@ -306,7 +287,7 @@ const PracticeResultPage = () => {
         {/* Quiz Type Stats */}
         {stats?.byQuizType && stats.byQuizType.length > 0 && (
           <div className="bg-[#1B2A36] rounded-xl p-4 border border-white/10 mb-6">
-            <h2 className="text-sm font-semibold text-gray-300 mb-3 flex items-center gap-2">
+            <h2 className="text-sm font-semibold text-[#E4D161] mb-3 flex items-center gap-2">
               Thống kê theo loại bài
             </h2>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3">

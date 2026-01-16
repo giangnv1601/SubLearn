@@ -2,7 +2,7 @@ import mongoose from 'mongoose'
 
 const { Schema, Types } = mongoose
 
-const practiceResultSchema = new Schema(
+const resultSchema = new Schema(
   {
     userId: { type: Types.ObjectId, ref: 'User', required: true },
     movieId: { type: Types.ObjectId, ref: 'Movie', required: true },
@@ -19,4 +19,4 @@ const practiceResultSchema = new Schema(
   { timestamps: true }
 )
 
-export default mongoose.model('PracticeResult', practiceResultSchema)
+export default mongoose.model('Result', resultSchema)

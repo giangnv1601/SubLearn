@@ -1,29 +1,51 @@
 import { useEffect, useMemo, useState } from "react"
 import { useNavigate } from "react-router-dom"
-import { Play, Search } from "lucide-react"
+import { Play, Search, BookOpen, MessageSquare, Languages, RefreshCw } from "lucide-react"
 import { fetchQuizzesSummary } from '@/api'
 import Pagination from '@/components/Pagination/Pagination'
 
-const ITEMS_PER_PAGE = 3
+const ITEMS_PER_PAGE = 5
 
-const QUIZ_TYPE_LABEL = {
-  reading: 'Đọc hiểu',
-  dialogue_reordering: 'Sắp xếp hội thoại',
-  translation: 'Dịch câu',
-  equivalent: 'Câu tương đương'
+const QUIZ_TYPE_CONFIG = {
+  reading: { 
+    label: 'Đọc hiểu', 
+    icon: BookOpen,
+    color: 'text-blue-400',
+    bgColor: 'bg-blue-500/10',
+    borderColor: 'border-blue-500/30'
+  },
+  dialogue_reordering: { 
+    label: 'Sắp xếp hội thoại', 
+    icon: MessageSquare,
+    color: 'text-purple-400',
+    bgColor: 'bg-purple-500/10',
+    borderColor: 'border-purple-500/30'
+  },
+  translation: { 
+    label: 'Dịch câu', 
+    icon: Languages,
+    color: 'text-green-400',
+    bgColor: 'bg-green-500/10',
+    borderColor: 'border-green-500/30'
+  },
+  equivalent: { 
+    label: 'Câu tương đương', 
+    icon: RefreshCw,
+    color: 'text-orange-400',
+    bgColor: 'bg-orange-500/10',
+    borderColor: 'border-orange-500/30'
+  }
 }
 
-const QUIZ_TYPE_COLOR = {
-  reading: 'bg-emerald-700',
-  dialogue_reordering: 'bg-indigo-700',
-  translation: 'bg-amber-700',
-  equivalent: 'bg-rose-700'
-}
+const TypeBadge = ({ type }) => {
+  const config = QUIZ_TYPE_CONFIG[type]
+  if (!config) return null
+  const Icon = config.icon
 
-const TypeBadge = ({ label, color = "bg-gray-700" }) => {
   return (
-    <span className={`inline-flex items-center gap-2 px-2.5 py-1 rounded text-xs ${color}`}>
-      <span className="font-medium capitalize">{label}</span>
+    <span className={`inline-flex items-center gap-2 px-2.5 py-1 rounded-lg ${config.bgColor} border ${config.borderColor}`}>
+      <Icon className={`w-3.5 h-3.5 ${config.color}`} />
+      <span className={`text-xs font-medium ${config.color}`}>{config.label}</span>
     </span>
   )
 }
@@ -86,19 +108,13 @@ const ExercisePage = () => {
     return filtered.slice(start, start + ITEMS_PER_PAGE)
   }, [filtered, currentPage])
 
-  const exerciseTypes = [
-    ...Object.keys(QUIZ_TYPE_LABEL).map((k) => ({
-      key: k,
-      label: QUIZ_TYPE_LABEL[k],
-      color: QUIZ_TYPE_COLOR[k] || 'bg-gray-700'
-    }))
-  ]
+  const exerciseTypes = Object.keys(QUIZ_TYPE_CONFIG)
 
   return (
     <div className="min-h-screen bg-[#2E4863] text-white">
-      <div className="max-w-[1200px] mx-auto px-4 py-6">
+      <div className="max-w-[1000px] mx-auto px-4 py-6">
         {/* Header */}
-        <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 mb-4">
+        <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 mb-6">
           <h1 className="text-2xl font-semibold text-[#E4D161]">Exercises</h1>
           
           {/* Search Box */}
@@ -108,45 +124,52 @@ const ExercisePage = () => {
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder="Tìm kiếm theo tên phim..."
-              className="w-full pl-9 pr-3 py-2 rounded-md bg-gray-900/40 border border-gray-700 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#E4D161] focus:border-transparent"
+              className="w-full pl-9 pr-3 py-2 rounded-lg bg-[#1B2A36] border border-white/10 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#E4D161] focus:border-transparent text-sm"
             />
           </div>
         </div>
 
-        {/* Table */}
-        <div className="bg-gray-900/40 rounded-lg p-4">
-          {loading && <div className="text-center py-6 text-gray-400">Đang tải...</div>}
-          {!loading && error && <div className="text-center py-6 text-red-400">{error}</div>}
+        {/* Content */}
+        <div className="bg-[#1B2A36] rounded-xl border border-white/10 overflow-hidden">
+          {loading && (
+            <div className="flex flex-col items-center justify-center py-12">
+              <div className="w-10 h-10 border-4 border-[#E4D161] border-t-transparent rounded-full animate-spin" />
+              <p className="text-gray-400 mt-3">Đang tải...</p>
+            </div>
+          )}
+          
+          {!loading && error && (
+            <div className="text-center py-12 text-red-400">{error}</div>
+          )}
 
           {!loading && !error && (
             <>
               <div className="overflow-x-auto">
                 <table className="w-full text-left">
                   <thead>
-                    <tr className="text-sm text-gray-300">
-                      <th className="py-3 px-3 font-semibold">Phim</th>
-                      <th className="py-3 px-3 font-semibold">Loại bài tập</th>
+                    <tr className="text-sm text-[#E4D161] border-b border-white/10 bg-white/5">
+                      <th className="py-3 px-4 font-semibold">Phim</th>
+                      <th className="py-3 px-4 font-semibold">Loại bài tập</th>
                     </tr>
                   </thead>
                   <tbody>
                     {paginatedRows.map((row) => (
-                      <tr key={row.id} className="border-t border-white/10 hover:bg-white/5">
-                        <td className="py-3 px-3 align-top max-w-[280px]">{row.title}</td>
-                        <td className="py-3 px-3 align-top">
+                      <tr key={row.id} className="border-b border-white/5 hover:bg-white/5 transition-colors">
+                        <td className="py-4 px-4 align-top">
+                          <span className="text-sm text-white font-medium">{row.title}</span>
+                        </td>
+                        <td className="py-4 px-4 align-top">
                           <div className="flex flex-col gap-2">
                             {exerciseTypes
-                              .filter(t => (Number(row.quizCounts?.[t.key]) || 0) > 0)
+                              .filter(type => (Number(row.quizCounts?.[type]) || 0) > 0)
                               .map((type) => (
-                                <div key={type.key} className="flex items-center justify-between gap-3">
-                                  <TypeBadge label={type.label} color={type.color} />
+                                <div key={type} className="flex items-center justify-between gap-3">
+                                  <TypeBadge type={type} />
                                   <button
-                                    className="inline-flex items-center gap-1 px-3 py-1.5 bg-blue-700 hover:bg-blue-600 rounded text-xs font-medium text-white"
-                                    onClick={() => {
-                                      const qs = new URLSearchParams({ movieId: String(row.id), quizType: type.key }).toString()
-                                      navigate(`/client/practice/${row.id}/${type.key}`)
-                                    }}
+                                    className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#E4D161] hover:bg-[#d4c151] rounded-lg text-xs font-medium text-[#2E4863] transition-colors"
+                                    onClick={() => navigate(`/client/practice/${row.id}/${type}`)}
                                   >
-                                    <Play className="w-4 h-4" /> Luyện tập
+                                    <Play className="w-3.5 h-3.5" /> Luyện tập
                                   </button>
                                 </div>
                               ))}
@@ -156,7 +179,7 @@ const ExercisePage = () => {
                     ))}
                     {paginatedRows.length === 0 && (
                       <tr>
-                        <td colSpan={2} className="py-6 text-center text-gray-400">
+                        <td colSpan={2} className="py-12 text-center text-gray-400">
                           {query.trim() ? 'Không tìm thấy phim phù hợp.' : 'Không có bài tập.'}
                         </td>
                       </tr>
@@ -166,11 +189,15 @@ const ExercisePage = () => {
               </div>
 
               {/* Pagination */}
-              <Pagination 
-                currentPage={currentPage} 
-                totalPages={totalPages} 
-                onPageChange={setCurrentPage} 
-              />
+              {totalPages > 1 && (
+                <div className="p-4 border-t border-white/10">
+                  <Pagination 
+                    currentPage={currentPage} 
+                    totalPages={totalPages} 
+                    onPageChange={setCurrentPage} 
+                  />
+                </div>
+              )}
             </>
           )}
         </div>
