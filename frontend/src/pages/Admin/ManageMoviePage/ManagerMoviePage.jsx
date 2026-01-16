@@ -3,6 +3,7 @@ import { Plus, Edit2, Trash2, Image, ChevronLeft, ChevronRight, Search } from 'l
 import { toast } from 'sonner'
 import MovieModalNew from './MovieModal/MovieModalNew'
 import UploadSubtitleModal from './UploadSubtitleModal/UploadSubtitleModal.jsx'
+import ConfirmDialog from '@/components/ConfirmDialog/ConfirmDialog'
 import { FilePlus2 } from 'lucide-react'
 import { fetchMoviesApi, deleteMovieApi } from '@/api'
 
@@ -19,6 +20,10 @@ const ManagerMovie = () => {
   const [showSubModal, setShowSubModal] = useState(false)
   const [subMovie, setSubMovie] = useState(null)
 
+  // State cho confirm dialog
+  const [showConfirmDelete, setShowConfirmDelete] = useState(false)
+  const [movieToDelete, setMovieToDelete] = useState(null)
+
   useEffect(() => {
     fetchMovies();
   }, [])
@@ -33,12 +38,33 @@ const ManagerMovie = () => {
     setShowSubModal(true)
   }
 
-  // Xóa movie theo id
-  const handleDeleteMovie = async (id) => {
-    if (!id) return
-    await deleteMovieApi(id)
-    toast.success('Xóa phim thành công')
-    await fetchMovies()
+  // Mở confirm dialog trước khi xóa
+  const openDeleteConfirm = (movie) => {
+    setMovieToDelete(movie)
+    setShowConfirmDelete(true)
+  }
+
+  // Xóa movie sau khi confirm
+  const handleConfirmDelete = async () => {
+    if (!movieToDelete) return
+    
+    try {
+      await deleteMovieApi(movieToDelete._id || movieToDelete.id)
+      toast.success('Xóa phim thành công')
+      await fetchMovies()
+    } catch (error) {
+      console.error('Error deleting movie:', error)
+      toast.error('Không thể xóa phim. Vui lòng thử lại.')
+    } finally {
+      setShowConfirmDelete(false)
+      setMovieToDelete(null)
+    }
+  }
+
+  // Hủy xóa
+  const handleCancelDelete = () => {
+    setShowConfirmDelete(false)
+    setMovieToDelete(null)
   }
 
   // Mở modal sửa movie
@@ -158,7 +184,7 @@ const ManagerMovie = () => {
                           <Edit2 className="w-4 h-4" /> Sửa
                         </button>
                         <button
-                          onClick={() => handleDeleteMovie(m._id || m.id)}
+                          onClick={() => openDeleteConfirm(m)}
                           className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-red-700 hover:bg-red-600 rounded text-xs font-medium text-white"
                         >
                           <Trash2 className="w-4 h-4" /> Xóa
@@ -210,11 +236,23 @@ const ManagerMovie = () => {
           setEditMovie(null)
         }}
       />
+
       {/* Upload Subtitle Modal */}
       <UploadSubtitleModal
         isOpen={showSubModal}
         onClose={() => { setShowSubModal(false); setSubMovie(null) }}
         movie={subMovie}
+      />
+
+      {/* Confirm Delete Dialog */}
+      <ConfirmDialog
+        open={showConfirmDelete}
+        title="Xác nhận xóa phim"
+        message={`Bạn có chắc chắn muốn xóa phim "${movieToDelete?.title}"?\n\nHành động này không thể hoàn tác.`}
+        confirmText="Xóa"
+        cancelText="Hủy"
+        onConfirm={handleConfirmDelete}
+        onCancel={handleCancelDelete}
       />
     </div>
   )

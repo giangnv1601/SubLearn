@@ -1,10 +1,15 @@
-import React, { useEffect } from "react"
+import React, { useEffect, useState } from "react"
 import { useForm } from "react-hook-form"
-import { ChevronDown } from "lucide-react"
+import { ChevronDown, Upload, X, Image as ImageIcon } from "lucide-react"
 import { toast } from "sonner"
 import { createMovieApi, updateMovieApi } from "@/api"
 
 function MovieModalNew({ open, initial = {}, onSave, onClose }) {
+  const [thumbFile, setThumbFile] = useState(null)
+  const [thumbPreview, setThumbPreview] = useState(initial?.thumb_url || "")
+  const [posterFile, setPosterFile] = useState(null)
+  const [posterPreview, setPosterPreview] = useState(initial?.poster_url || "")
+
   const {
     register,
     handleSubmit,
@@ -18,8 +23,6 @@ function MovieModalNew({ open, initial = {}, onSave, onClose }) {
       title: initial?.title || "",
       slug: initial?.slug || "",
       description: initial?.description || "",
-      thumb_url: initial?.thumb_url || "",
-      poster_url: initial?.poster_url || "",
       duration: initial?.duration || "",
       year_released: initial?.year_released ?? new Date().getFullYear(),
       level: initial?.level || "medium",
@@ -28,14 +31,12 @@ function MovieModalNew({ open, initial = {}, onSave, onClose }) {
     },
   })
 
-  // Cập nhập form khi initial thay đổi
+  // Cập nhật form khi initial thay đổi
   useEffect(() => {
     const defaults = {
       title: initial?.title || "",
       slug: initial?.slug || "",
       description: initial?.description || "",
-      thumb_url: initial?.thumb_url || "",
-      poster_url: initial?.poster_url || "",
       duration: initial?.duration || "",
       year_released: initial?.year_released ?? new Date().getFullYear(),
       level: initial?.level || "medium",
@@ -43,6 +44,10 @@ function MovieModalNew({ open, initial = {}, onSave, onClose }) {
       link_m3u8: initial?.link_m3u8 || "",
     }
     reset(defaults)
+    setThumbPreview(initial?.thumb_url || "")
+    setPosterPreview(initial?.poster_url || "")
+    setThumbFile(null)
+    setPosterFile(null)
   }, [initial, open, reset])
 
   // Auto-focus tiêu đề khi mở
@@ -58,6 +63,78 @@ function MovieModalNew({ open, initial = {}, onSave, onClose }) {
     return () => (document.body.style.overflow = prev)
   }, [open])
 
+  // Xử lý chọn file thumb
+  const handleThumbChange = (e) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    // Validate file type
+    if (!['image/jpeg', 'image/jpg', 'image/png', 'image/webp'].includes(file.type)) {
+      toast.error('Chỉ chấp nhận file JPG, PNG hoặc WebP')
+      return
+    }
+
+    // Validate file size (5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error('Kích thước file tối đa 5MB')
+      return
+    }
+
+    setThumbFile(file)
+    
+    // Create preview
+    const reader = new FileReader()
+    reader.onloadend = () => {
+      setThumbPreview(reader.result)
+    }
+    reader.onerror = () => {
+      toast.error('Không thể đọc file ảnh')
+    }
+    reader.readAsDataURL(file)
+  }
+
+  // Xử lý chọn file poster
+  const handlePosterChange = (e) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    // Validate file type
+    if (!['image/jpeg', 'image/jpg', 'image/png', 'image/webp'].includes(file.type)) {
+      toast.error('Chỉ chấp nhận file JPG, PNG hoặc WebP')
+      return
+    }
+
+    // Validate file size (5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error('Kích thước file tối đa 5MB')
+      return
+    }
+
+    setPosterFile(file)
+    
+    // Create preview
+    const reader = new FileReader()
+    reader.onloadend = () => {
+      setPosterPreview(reader.result)
+    }
+    reader.onerror = () => {
+      toast.error('Không thể đọc file ảnh')
+    }
+    reader.readAsDataURL(file)
+  }
+
+  // Xóa thumb
+  const removeThumb = () => {
+    setThumbFile(null)
+    setThumbPreview("")
+  }
+
+  // Xóa poster
+  const removePoster = () => {
+    setPosterFile(null)
+    setPosterPreview("")
+  }
+
   const onSubmit = async (data) => {
     // Validate thủ công bổ sung
     if (data.year_released && Number.isNaN(Number(data.year_released))) {
@@ -65,18 +142,36 @@ function MovieModalNew({ open, initial = {}, onSave, onClose }) {
       return
     }
 
-    const payload = {
-      ...data,
-      year_released: data.year_released ? Number(data.year_released) : null,
-      duration: data.duration?.trim() || "Đang cập nhật",
+    // Tạo FormData để gửi file
+    const formData = new FormData()
+    formData.append('title', data.title)
+    formData.append('slug', data.slug)
+    formData.append('description', data.description || '')
+    formData.append('duration', data.duration?.trim() || 'Đang cập nhật')
+    formData.append('year_released', data.year_released ? Number(data.year_released) : new Date().getFullYear())
+    formData.append('level', data.level)
+    formData.append('genre', data.genre)
+    formData.append('link_m3u8', data.link_m3u8)
+    
+    // Nếu có file mới thì gửi file, không thì gửi URL cũ
+    if (thumbFile) {
+      formData.append('thumb_url', thumbFile)
+    } else if (initial?.thumb_url) {
+      formData.append('thumb_url', initial.thumb_url)
+    }
+    
+    if (posterFile) {
+      formData.append('poster_url', posterFile)
+    } else if (initial?.poster_url) {
+      formData.append('poster_url', initial.poster_url)
     }
 
     try {
       let res
       if (initial?._id) {
-        res = await updateMovieApi(initial._id, payload)
+        res = await updateMovieApi(initial._id, formData)
       } else {
-        res = await createMovieApi(payload)
+        res = await createMovieApi(formData)
       }
 
       toast.success("Lưu phim thành công")
@@ -151,24 +246,82 @@ function MovieModalNew({ open, initial = {}, onSave, onClose }) {
                 />
               </div>
 
-              {/* Thumb URL */}
+              {/* Thumb Image Upload */}
               <div>
-                <label className="block text-sm text-gray-200 mb-1">Thumb URL</label>
-                <input
-                  {...register("thumb_url")}
-                  className="w-full rounded-md bg-[#1b2735] border border-white/10 px-3 py-2.5 text-white placeholder:text-gray-400"
-                  placeholder="https://..."
-                />
+                <label className="block text-sm text-gray-200 mb-1">Thumb Image</label>
+                {!thumbPreview ? (
+                  <label
+                    htmlFor="thumb-upload"
+                    className="flex cursor-pointer items-center justify-center gap-2 rounded-md border-2 border-dashed border-gray-600 bg-[#1b2735] px-3 py-8 hover:border-gray-500 transition-colors"
+                  >
+                    <Upload className="w-5 h-5 text-gray-400" />
+                    <div className="text-sm">
+                      <div className="text-gray-300">Upload Thumb</div>
+                      <div className="text-gray-500 text-xs">JPG, PNG, WebP • Max 5MB</div>
+                    </div>
+                    <input
+                      id="thumb-upload"
+                      type="file"
+                      accept="image/jpeg,image/jpg,image/png,image/webp"
+                      className="hidden"
+                      onChange={handleThumbChange}
+                    />
+                  </label>
+                ) : (
+                  <div className="relative rounded-md border border-gray-600 bg-[#1b2735] overflow-hidden">
+                    <img
+                      src={thumbPreview}
+                      alt="Thumb preview"
+                      className="w-full h-32 object-cover"
+                    />
+                    <button
+                      type="button"
+                      onClick={removeThumb}
+                      className="absolute top-2 right-2 p-1 rounded-full bg-red-500 hover:bg-red-600 text-white"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+                )}
               </div>
 
-              {/* Poster URL */}
+              {/* Poster Image Upload */}
               <div>
-                <label className="block text-sm text-gray-200 mb-1">Poster URL</label>
-                <input
-                  {...register("poster_url")}
-                  className="w-full rounded-md bg-[#1b2735] border border-white/10 px-3 py-2.5 text-white placeholder:text-gray-400"
-                  placeholder="https://..."
-                />
+                <label className="block text-sm text-gray-200 mb-1">Poster Image</label>
+                {!posterPreview ? (
+                  <label
+                    htmlFor="poster-upload"
+                    className="flex cursor-pointer items-center justify-center gap-2 rounded-md border-2 border-dashed border-gray-600 bg-[#1b2735] px-3 py-8 hover:border-gray-500 transition-colors"
+                  >
+                    <ImageIcon className="w-5 h-5 text-gray-400" />
+                    <div className="text-sm">
+                      <div className="text-gray-300">Upload Poster</div>
+                      <div className="text-gray-500 text-xs">JPG, PNG, WebP • Max 5MB</div>
+                    </div>
+                    <input
+                      id="poster-upload"
+                      type="file"
+                      accept="image/jpeg,image/jpg,image/png,image/webp"
+                      className="hidden"
+                      onChange={handlePosterChange}
+                    />
+                  </label>
+                ) : (
+                  <div className="relative rounded-md border border-gray-600 bg-[#1b2735] overflow-hidden">
+                    <img
+                      src={posterPreview}
+                      alt="Poster preview"
+                      className="w-full h-32 object-cover"
+                    />
+                    <button
+                      type="button"
+                      onClick={removePoster}
+                      className="absolute top-2 right-2 p-1 rounded-full bg-red-500 hover:bg-red-600 text-white"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+                )}
               </div>
 
               {/* Duration */}
@@ -260,9 +413,9 @@ function MovieModalNew({ open, initial = {}, onSave, onClose }) {
             </button>
             <button
               type="submit"
-              disabled={isSubmitting || !isDirty}
+              disabled={isSubmitting}
               className={`px-4 sm:px-5 py-2 rounded-md text-black font-semibold shadow-md ${
-                isSubmitting || !isDirty
+                isSubmitting
                   ? "bg-gray-600 cursor-not-allowed opacity-60"
                   : "bg-gradient-to-r from-[#F3D96B] to-[#E4D161] hover:scale-[1.02]"
               }`}
