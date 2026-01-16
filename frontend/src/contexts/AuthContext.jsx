@@ -138,9 +138,11 @@ export const AuthProvider = ({ children }) => {
   }, [])
 
   // Đăng xuất
-  const logout = useCallback(() => {
+  const logout = useCallback((showToast = true) => {
     clearAuthData()
-    toast.success("Đã đăng xuất")
+    if (showToast) {
+      toast.success("Đã đăng xuất")
+    }
   }, [clearAuthData])
 
   // Cập nhật profile (gọi sau khi edit profile thành công)

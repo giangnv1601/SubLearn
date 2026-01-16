@@ -1,10 +1,12 @@
 import { useState } from "react"
 import { useNavigate } from "react-router-dom"
+import { useAuth } from "@/contexts"
 import { changePasswordApi } from "@/api"
 import { toast } from "sonner"
 
 const ChangePasswordPage = () => {
   const navigate = useNavigate()
+  const { user, logout } = useAuth()
   const [form, setForm] = useState({
     currentPassword: "",
     newPassword: "",
@@ -37,10 +39,9 @@ const ChangePasswordPage = () => {
 
     setSaving(true)
     try {
-      const userInfo = JSON.parse(localStorage.getItem("userInfo"))
-      const userId = userInfo?.id
+      const userId = user?.id
       if (!userId) {
-        setError("User not found. Please log in again.")
+        setError("Không tìm thấy người dùng. Vui lòng đăng nhập lại.")
         setSaving(false)
         return
       }
@@ -51,13 +52,16 @@ const ChangePasswordPage = () => {
       }
 
       await changePasswordApi(userId, payload)
-      localStorage.removeItem("accessToken")
-      localStorage.removeItem("refreshToken")
-      localStorage.removeItem("userInfo")
+      
+      toast.success("Đổi mật khẩu thành công! Vui lòng đăng nhập lại.")
 
-      toast.success("Password changed. Please log in again.")
-
-      navigate("/login", { replace: true })
+      // Logout không hiển thị toast
+      logout(false)
+      
+      // Chuyển về trang login
+      setTimeout(() => {
+        navigate("/login", { replace: true })
+      }, 500)
     } catch (err) {
       const msg = err?.response?.data?.message || err?.message
       setError(msg)

@@ -1,48 +1,3 @@
-/* Helpers for quiz */
-  
-// Chuyển đổi đáp án chỉ số sang chữ
-export const toLabel = (i) => ['A', 'B', 'C', 'D'][i] ?? 'A';
-
-// Chuyển đổi đáp án chữ sang chỉ số
-export const toIndex = (ans) => {
-  if (Number.isInteger(ans)) return ans;
-  const map = { A: 0, B: 1, C: 2, D: 3 };
-  return map[String(ans || '').trim().toUpperCase()] ?? 0;
-};
-
-// Chuẩn hóa dữ liệu Quiz gen từ AI 
-export const normalizeAI = (arr) => (Array.isArray(arr) ? arr : []).map((qz) => ({
-  passage: qz.passage ?? null,
-  questions: (qz.questions || []).map((q) => ({
-    question: q.question || '',
-    options: (q.options || []).slice(0, 4).map((s) => String(s || '').trim().replace(/^[A-Za-z]\.\s*/i, '')),
-    answer: toIndex(q.answer),
-    explanation: q.explanation || '',
-    quote: q.quote || '',
-  })),
-}));
-
-// Chuẩn hóa dữ liệu Quiz để lưu vào DB
-export const buildPayloads = (movieId, quizType, result) => {
-  if (!movieId || !quizType) throw new Error('Chọn phim và loại quiz trước khi lưu dữ liệu.')
-  return (Array.isArray(result) ? result : []).map(item => ({
-    movieId,
-    quizType,
-    passage: item.passage ?? null,
-    questions: (item.questions || []).map(q => {
-      const opts = (q.options || []).slice(0, 4);
-      const ansIdx = toIndex(q.answer);
-      return {
-        question: q.question || '',
-        answer: toLabel(ansIdx),
-        explanation: q.explanation || '',
-        quote: q.quote || '',
-        options: opts.map((content, i) => ({ label: toLabel(i), content: String(content || '') })),
-      };
-    }),
-  }));
-};
-
 /* Helpers for subtitle */
 
 // Định dạng thời gian từ HH:MM:SS,MMM sang giây (bao gồm mili giây)
@@ -145,3 +100,41 @@ export const findActiveIndex = (subs, timeCurrent) => {
   
   return result
 }
+
+
+/* Helpers for add quiz */
+
+// Xử lý bỏ timestamp, số thứ tự
+export const cleanSrtContent = (srtContent) => {
+  if (!srtContent || typeof srtContent !== 'string') return '';
+
+  // Regex để tách các subtitle entry
+  const subtitleRegex = /\d+\s+\d{2}:\d{2}:\d{2},\d{3}\s+-->\s+\d{2}:\d{2}:\d{2},\d{3}\s+([\s\S]*?)(?=\n\d+\s+\d{2}:\d{2}:\d{2}|$)/g;
+  
+  const matches = [...srtContent.matchAll(subtitleRegex)];
+  
+  // Chỉ lấy phần text, loại bỏ dòng trống
+  const textLines = matches
+    .map(match => match[1].trim())
+    .filter(line => line.length > 0);
+
+  return textLines.join('\n');
+};
+
+// Cắt ngắn phụ đề xuống một độ dài tối đa
+export const truncateSubtitle = (subtitle, maxLength = 15000) => {
+  if (subtitle.length <= maxLength) return subtitle;
+  
+  // Cắt tại dấu xuống dòng gần nhất để không cắt ngang câu
+  const truncated = subtitle.substring(0, maxLength);
+  const lastNewline = truncated.lastIndexOf('\n');
+  
+  return lastNewline > 0 
+    ? truncated.substring(0, lastNewline) 
+    : truncated;
+};
+
+export const processSubtitle = (srtContent, maxLength = 70000) => {
+  const cleaned = cleanSrtContent(srtContent);
+  return truncateSubtitle(cleaned, maxLength);
+};

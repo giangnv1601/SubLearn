@@ -10,7 +10,7 @@ if (!apiKey) {
 const openai = new OpenAI({ apiKey });
 const MODEL = 'gpt-4.1';
 
-// Các loại quiz
+// Thêm định nghĩa QUIZ_TYPES
 const QUIZ_TYPES = {
   READING: 'reading',
   DIALOGUE_REORDERING: 'dialogue_reordering',
@@ -19,7 +19,7 @@ const QUIZ_TYPES = {
 };
 
 // Hàm tạo prompt dựa trên loại quiz và phụ đề
-const getPromptFromSubtitle = (quizType, subtitle) => { 
+const getPromptFromSubtitle = (subtitle, quizType, count = 2) => { 
   const prompts = {
     [QUIZ_TYPES.READING]: `
       Bạn là một giáo viên luyện thi TOEIC chuyên nghiệp.
@@ -31,82 +31,105 @@ const getPromptFromSubtitle = (quizType, subtitle) => {
       [END OF MOVIE SUBTITLES]
 
       ===> Nhiệm vụ:
-      Tạo 2 bài đọc hiểu tiếng anh theo dạng TOEIC Part 7:
-      - Mỗi bài là một đoạn văn tóm tắt nội dung phim (khoảng 300 đến 350 từ)
-      - Mỗi bài có 5 câu hỏi trắc nghiệm bằng tiếng anh
-      - Trong 5 câu hỏi, bắt buộc phải có ít nhất 1 câu hỏi về từ đồng nghĩa (synonym) với format:
-        * Câu hỏi: "The word 'X' in line Y, paragraph Z is closest in meaning to"
-        * 4 lựa chọn là các từ/cụm từ tiếng Anh có nghĩa tương đương
-        * Đáp án đúng và giải thích chi tiết
-        * Trích dẫn câu chứa từ đó từ phụ đề
-      - Các câu hỏi còn lại có thể là:
-        * Câu hỏi về ý chính
-        * Câu hỏi về chi tiết
-        * Câu hỏi về suy luận
-        * Câu hỏi về từ vựng khác
+      Tạo ${count} bài đọc hiểu tiếng Anh theo dạng TOEIC Part 7:
+      - Mỗi bài là một đoạn văn tóm tắt nội dung phim (khoảng 250-300 từ)
+      - Đoạn văn phải có cấu trúc rõ ràng với 3-4 đoạn
+      - Mỗi bài có ĐÚNG 5 câu hỏi trắc nghiệm bằng tiếng Anh
+      - Trong 5 câu hỏi, BẮT BUỘC phải có ít nhất 1 câu về từ đồng nghĩa (synonym):
+        * Format câu hỏi: "The word '[từ]' in line [số], paragraph [số] is closest in meaning to"
+        * [từ] phải là từ vựng quan trọng có trong đoạn văn (danh từ, động từ, tính từ)
+        * 4 lựa chọn phải là các từ/cụm từ tiếng Anh ở cùng loại từ
+        * Các lựa chọn sai phải hợp lý nhưng khác nghĩa rõ ràng
+      - Các câu hỏi còn lại (4 câu) phân bố như sau:
+        * 1 câu về ý chính (main idea): "What is the main purpose/idea of the passage?"
+        * 2 câu về chi tiết (details): "According to the passage, what/when/where/why..."
+        * 1 câu về suy luận (inference): "What can be inferred/suggested/implied..."
+
+      ===> Yêu cầu chất lượng:
+      - Đoạn văn phải súc tích, mạch lạc, văn phong học thuật
+      - Câu hỏi phải đa dạng về độ khó (dễ - trung bình - khó)
+      - Tất cả câu hỏi phải có thể trả lời DỰA TRÊN ĐOẠN VĂN
+      - **QUAN TRỌNG: Trường "explanation" và "quote" BẮT BUỘC phải viết bằng TIẾNG VIỆT**
+      - Giải thích phải rõ ràng, trích dẫn cụ thể từ đoạn văn
 
       ===> Output format:
-      TRẢ VỀ DUY NHẤT MỘT MẢNG JSON KHÔNG CÓ BẤT KỲ KÝ TỰ ĐẶC BIỆT NÀO KHÁC.
-      KHÔNG THÊM \`\`\`json, \`\`\` HOẶC BẤT KỲ ĐỊNH DẠNG MARKDOWN NÀO.
-      KHÔNG THÊM BẤT KỲ CHÚ THÍCH HOẶC VĂN BẢN NÀO KHÁC.
+      CHỈ TRẢ VỀ MỘT MẢNG JSON THUẦN TUẦN, KHÔNG CÓ BẤT KỲ KÝ TỰ ĐẶC BIỆT NÀO.
+      KHÔNG THÊM \`\`\`json, \`\`\` HOẶC BẤT KỲ MARKDOWN NÀO.
+      KHÔNG THÊM CHÚ THÍCH.
 
       [
         {
-          "passage": "Đoạn văn bài đọc 5",
+          "passage": "Đoạn văn bài đọc với cấu trúc rõ ràng (TIẾNG ANH)...",
           "questions": [
             {
               "question": "The word 'determined' in line 3, paragraph 1 is closest in meaning to",
               "options": ["A. decided", "B. confused", "C. worried", "D. excited"],
               "answer": "A",
-              "explanation": "Trong ngữ cảnh này, 'determined' có nghĩa là 'đã quyết định' (decided), thể hiện sự kiên định trong quyết định của nhân vật",
-              "quote": "Trích dẫn từ phụ đề liên quan"
+              "explanation": "Trong ngữ cảnh 'She was determined to succeed', từ 'determined' mang nghĩa 'quyết tâm' (decided), thể hiện sự kiên định. Các từ khác không phù hợp: confused (bối rối), worried (lo lắng), excited (phấn khích).",
+              "quote": "She was determined to succeed despite many challenges."
             },
             {
-              "question": "Câu hỏi thông thường khác?",
-              "options": ["A. Lựa chọn A", "B. Lựa chọn B", "C. Lựa chọn C", "D. Lựa chọn D"],
+              "question": "What is the main idea of the passage?",
+              "options": ["A. Option 1", "B. Option 2", "C. Option 3", "D. Option 4"],
               "answer": "B",
-              "explanation": "Giải thích tại sao B là đáp án đúng",
-              "quote": "Trích dẫn từ phụ đề liên quan"
+              "explanation": "Ý chính của đoạn văn là... (GIẢI THÍCH BẰNG TIẾNG VIỆT CHI TIẾT)",
+              "quote": "Trích dẫn từ đoạn văn (câu tiếng Anh gốc)"
+            },
+            {
+              "question": "According to the passage, what happened first?",
+              "options": ["A. Option 1", "B. Option 2", "C. Option 3", "D. Option 4"],
+              "answer": "C",
+              "explanation": "Theo đoạn văn, sự kiện đầu tiên là... (GIẢI THÍCH BẰNG TIẾNG VIỆT)",
+              "quote": "Trích dẫn câu tiếng Anh chứng minh"
             }
           ]
         }
       ]
+
+      ===> LƯU Ý CỰC KỲ QUAN TRỌNG:
+      - "passage": viết bằng TIẾNG ANH (đoạn văn đọc hiểu)
+      - "question": viết bằng TIẾNG ANH (câu hỏi)
+      - "options": viết bằng TIẾNG ANH (các lựa chọn)
+      - "answer": chữ cái A/B/C/D
+      - "explanation": BẮT BUỘC phải viết bằng TIẾNG VIỆT, giải thích chi tiết tại sao đáp án đúng
+      - "quote": câu tiếng Anh trích từ passage làm bằng chứng
     `,
     [QUIZ_TYPES.DIALOGUE_REORDERING]: `
       Bạn là một giáo viên luyện thi TOEIC chuyên nghiệp.
-
-      Dưới đây là nội dung phụ đề phim:
 
       [START OF MOVIE SUBTITLES]
       ${subtitle}
       [END OF MOVIE SUBTITLES]
 
       ===> Nhiệm vụ:
-      Tạo 5 bài tập sắp xếp hội thoại:
-      - Mỗi bài là một đoạn hội thoại hoàn chỉnh từ phim (khoảng 5-7 câu) giữa 2 người trở lên
-      - Các đoạn hội thoại phải:
-        + Dựa trên nội dung từ phim nhưng được viết lại để tự nhiên và hấp dẫn hơn
-        + Thêm các yếu tố giao tiếp tự nhiên như (well, actually, you know...), cảm thán ngắn (Really? Wow! ...), câu hỏi đuôi...
-        + Giữ nguyên bối cảnh/ý chính, tiếng Anh chuẩn TOEIC
-      - Mỗi câu được đánh số (1..n), sau đó ĐẢO LỘN thứ tự
-      - Tạo 5 câu hỏi trắc nghiệm kiểm tra thứ tự đúng (4 lựa chọn là chuỗi số), kèm đáp án và giải thích
+      Tạo ĐÚNG ${count} bài tập sắp xếp hội thoại (PHẢI TRẢ VỀ ${count} OBJECTS):
+      - Mỗi bài là một đoạn hội thoại hoàn chỉnh (5-7 câu) giữa 2-3 người
+      - Hội thoại phải:
+        + Có tình huống rõ ràng (gặp gỡ, thảo luận công việc, mua sắm...)
+        + Sử dụng các mẫu câu giao tiếp tự nhiên (Well, Actually, You know, I mean...)
+        + Có các marker từ vựng (First, Then, However, By the way...)
+        + Logic chặt chẽ, dễ suy luận thứ tự
+      - Đánh số từ 1 đến n, SAU ĐÓ ĐẢO LỘN thứ tự hoàn toàn
+      - Mỗi bài có 1 câu hỏi: "Sắp xếp các câu hội thoại theo thứ tự đúng"
+      - 4 lựa chọn là 4 chuỗi số khác nhau (trong đó chỉ có 1 đúng)
 
       ===> Output format:
-      TRẢ VỀ DUY NHẤT MỘT MẢNG JSON, KHÔNG THÊM BẤT KỲ VĂN BẢN NÀO KHÁC.
+      CHỈ TRẢ VỀ MẢNG JSON GỒM ĐÚNG ${count} OBJECTS.
 
       [
         {
-          "passage": "1. Emma: ...\\n2. James: ...\\n3. Emma: ...\\n4. James: ...\\n5. Emma: ...",
+          "passage": "3. Sarah: Well, I think we should start with the budget.\n1. Tom: Good morning everyone. Let's begin our meeting.\n5. Sarah: That makes sense. I'll prepare the report.\n2. Mark: Sounds good. What's our first topic?\n4. Tom: Actually, let's discuss the timeline first.",
           "questions": [
             {
               "question": "Sắp xếp các câu hội thoại theo thứ tự đúng:",
-              "options": ["A. 2,1,3,4,5", "B. 1,2,3,4,5", "C. 3,2,1,4,5", "D. 1,3,2,4,5"],
-              "answer": "B",
-              "explanation": "Giải thích tại sao thứ tự 1,2,3,4,5 là đúng",
-              "quote": "Trích dẫn từ phụ đề liên quan"
+              "options": ["A. 1,2,4,3,5", "B. 1,3,2,4,5", "C. 3,1,2,4,5", "D. 1,2,3,4,5"],
+              "answer": "A",
+              "explanation": "Thứ tự đúng là 1,2,4,3,5: Tom mở đầu cuộc họp (1) → Mark hỏi chủ đề (2) → Tom đề xuất timeline trước (4) → Sarah đề xuất ngân sách (3) → Sarah nhận task (5)",
+              "quote": "Từ hội thoại phim"
             }
           ]
-        }
+        },
+        ... (tổng ${count} objects)
       ]
     `,
     [QUIZ_TYPES.TRANSLATION]: `
@@ -117,27 +140,54 @@ const getPromptFromSubtitle = (quizType, subtitle) => {
       [END OF MOVIE SUBTITLES]
 
       ===> Nhiệm vụ:
-      Tạo 5 bài tập dịch câu:
-      - Chọn 5 câu tiếng Anh từ phụ đề
-      - Mỗi câu tạo 4 lựa chọn dịch tiếng Việt (1 đúng), kèm giải thích
+      Tạo ĐÚNG ${count} bài tập dịch câu (PHẢI TRẢ VỀ ${count} OBJECTS):
+      - Chọn ${count} câu tiếng Anh KHÁC NHAU từ phụ đề (độ dài 10-20 từ)
+      - Ưu tiên câu có cấu trúc ngữ pháp đặc biệt (thì, bị động, câu điều kiện...)
+      - MỖI OBJECT chứa 1 câu hỏi duy nhất với 4 bản dịch tiếng Việt (1 đúng, 3 sai)
+      - Các bản dịch sai phải sai về:
+        + Thì (quá khứ/hiện tại/tương lai)
+        + Nghĩa từ vựng
+        + Cấu trúc ngữ pháp
 
       ===> Output format:
-      CHỈ TRẢ VỀ MẢNG JSON.
+      CHỈ TRẢ VỀ MẢNG JSON GỒM ĐÚNG ${count} OBJECTS (MỖI OBJECT = 1 CÂU HỎI).
 
       [
         {
           "passage": null,
           "questions": [
             {
-              "question": "Dịch câu sau: 'I have been waiting for you for hours.'",
-              "options": ["A. Tôi đã đợi bạn nhiều giờ", "B. Tôi đang đợi bạn nhiều giờ", "C. Tôi sẽ đợi bạn nhiều giờ", "D. Tôi đã đợi bạn"],
+              "question": "Dịch câu sau sang tiếng Việt: 'I have been waiting for you for hours.'",
+              "options": [
+                "A. Tôi đã đợi bạn nhiều giờ rồi.",
+                "B. Tôi đang đợi bạn nhiều giờ.",
+                "C. Tôi sẽ đợi bạn nhiều giờ.",
+                "D. Tôi đợi bạn."
+              ],
               "answer": "A",
-              "explanation": "Giải thích về thì và cách dịch",
+              "explanation": "Thì hiện tại hoàn thành tiếp diễn (have been waiting) diễn tả hành động bắt đầu trong quá khứ và còn tiếp diễn đến hiện tại. 'For hours' nhấn mạnh khoảng thời gian. Đáp án A dịch đúng nghĩa và thì. B sai vì dùng hiện tại tiếp diễn, C sai vì dùng tương lai, D thiếu 'nhiều giờ'.",
               "quote": "I have been waiting for you for hours."
             }
           ]
         },
-        ...
+        {
+          "passage": null,
+          "questions": [
+            {
+              "question": "Dịch câu sau sang tiếng Việt: 'She would go if she had time.'",
+              "options": [
+                "A. Cô ấy sẽ đi nếu có thời gian.",
+                "B. Cô ấy đã đi nếu có thời gian.",
+                "C. Cô ấy đang đi nếu có thời gian.",
+                "D. Cô ấy đi nếu có thời gian."
+              ],
+              "answer": "A",
+              "explanation": "Câu điều kiện loại 2 (would go / had) diễn tả điều không có thật ở hiện tại. Đáp án A dịch đúng. B sai vì dùng quá khứ, C sai vì dùng hiện tại tiếp diễn, D thiếu 'sẽ'.",
+              "quote": "She would go if she had time."
+            }
+          ]
+        },
+        ... (tổng ${count} objects)
       ]
     `,
     [QUIZ_TYPES.EQUIVALENT]: `
@@ -145,34 +195,60 @@ const getPromptFromSubtitle = (quizType, subtitle) => {
 
       [START OF MOVIE SUBTITLES]
       ${subtitle}
-      [END OF MOVIE SUBTITLES]
+      [END OF MOVIE SUBTITLES}
 
       ===> Nhiệm vụ:
-      Tạo 5 bài tập chọn câu tương đương:
-      - Chọn 5 câu tiếng Việt (từ phụ đề/diễn giải)
-      - Mỗi câu tạo 4 lựa chọn tiếng Anh tương đương (1 đúng), kèm giải thích
+      Tạo ĐÚNG ${count} bài tập chọn câu tương đương (PHẢI TRẢ VỀ ${count} OBJECTS):
+      - Chọn ${count} câu tiếng Việt KHÁC NHAU từ nghĩa của phụ đề
+      - MỖI OBJECT chứa 1 câu hỏi duy nhất với 4 lựa chọn tiếng Anh (1 đúng, 3 sai)
+      - Các lựa chọn sai phải hợp lý nhưng sai rõ:
+        + Sai thì
+        + Sai cấu trúc câu
+        + Sai từ vựng then chốt
 
       ===> Output format:
-      CHỈ TRẢ VỀ MẢNG JSON.
+      CHỈ TRẢ VỀ MẢNG JSON GỒM ĐÚNG ${count} OBJECTS (MỖI OBJECT = 1 CÂU HỎI).
 
       [
         {
           "passage": null,
           "questions": [
             {
-              "question": "Chọn câu tiếng Anh tương đương với: 'Tôi đã đợi bạn nhiều giờ.'",
-              "options": ["A. I am waiting for you for hours", "B. I have been waiting for you for hours", "C. I will wait for you for hours", "D. I waited for you for hours"],
+              "question": "Chọn câu tiếng Anh tương đương với: 'Tôi đã đợi bạn nhiều giờ rồi.'",
+              "options": [
+                "A. I am waiting for you for hours.",
+                "B. I have been waiting for you for hours.",
+                "C. I will wait for you for hours.",
+                "D. I waited for you for hours."
+              ],
               "answer": "B",
-              "explanation": "Giải thích về thì và cách dịch",
-              "quote": "Tôi đã đợi bạn nhiều giờ."
+              "explanation": "Câu tiếng Việt 'đã...rồi' thể hiện hành động bắt đầu trong quá khứ và còn tiếp diễn → dùng Present Perfect Continuous (have been waiting). A sai vì dùng hiện tại tiếp diễn, C sai vì dùng tương lai, D sai vì quá khứ đơn không thể hiện tính liên tục đến hiện tại.",
+              "quote": "Tôi đã đợi bạn nhiều giờ rồi."
             }
           ]
         },
-        ...
+        {
+          "passage": null,
+          "questions": [
+            {
+              "question": "Chọn câu tiếng Anh tương đương với: 'Cô ấy sẽ đi nếu có thời gian.'",
+              "options": [
+                "A. She goes if she has time.",
+                "B. She would go if she had time.",
+                "C. She will go if she has time.",
+                "D. She went if she had time."
+              ],
+              "answer": "B",
+              "explanation": "Câu điều kiện loại 2 (would go / had) diễn tả điều không có thật ở hiện tại. Đáp án B đúng. A sai vì dùng hiện tại đơn, C sai vì điều kiện loại 1, D sai vì quá khứ.",
+              "quote": "Cô ấy sẽ đi nếu có thời gian."
+            }
+          ]
+        },
+        ... (tổng ${count} objects)
       ]
     `,
   };
-  return prompts[quizType];
+  return prompts[quizType] || prompts[QUIZ_TYPES.READING];
 };
 
 const getPromptForMovieInteraction = (segmentSubtitle, mcqNum, fill_blankNum, true_falseNum) => `
@@ -305,15 +381,27 @@ LƯU Ý QUAN TRỌNG:
 `;
 
 // Hàm tạo quiz bằng OpenAI
-const generateQuiz = async (subtitle, quizType = QUIZ_TYPES.READING, {
+const generateQuiz = async (subtitle, quizType, count, {
   model = MODEL,
-  temperature = 0.7, // độ sáng tạo
-  top_p = 0.95, // lọc theo xác suất
-  max_tokens = 8000, // giới hạn token
+  temperature = 0.7,
+  top_p = 0.95,
+  max_tokens = 8000,
 } = {}) => {
+  // Validation đầu vào
+  if (typeof subtitle !== 'string' || !subtitle.trim()) {
+    throw new Error('subtitle phải là chuỗi không rỗng');
+  }
+  if (!Object.values(QUIZ_TYPES).includes(quizType)) {
+    throw new Error(`quizType không hợp lệ. Phải là một trong: ${Object.values(QUIZ_TYPES).join(', ')}`);
+  }
+  if (!Number.isInteger(count) || count < 1 || count > 10) {
+    throw new Error('count phải là số nguyên từ 1 đến 10');
+  }
 
   try {
-    const prompt = getPromptFromSubtitle(quizType, subtitle);
+    const prompt = getPromptFromSubtitle(subtitle, quizType, count);
+    
+    //console.log(`Đang tạo ${count} bài quiz loại '${quizType}'...`);
 
     const resp = await openai.chat.completions.create({
       model,
@@ -321,20 +409,56 @@ const generateQuiz = async (subtitle, quizType = QUIZ_TYPES.READING, {
       top_p,
       max_tokens,
       messages: [
-        { role: 'system', content: 'You are a helpful assistant that ONLY replies with valid JSON when asked.' },
+        { 
+          role: 'system', 
+          content: 'You are a professional TOEIC teacher. You ONLY reply with valid JSON arrays. No markdown, no commentary, no code blocks.' 
+        },
         { role: 'user', content: prompt },
       ],
     });
 
     let text = resp?.choices?.[0]?.message?.content ?? '';
-    // Xóa các đoạn `json ...` kèm theo khoảng trắng nếu có
-    text = text.replace(/```json\s*/gi, '').replace(/```\s*/g, '').trim();
-    // parse JSON
-    const data = JSON.parse(text);
+    //console.log('OpenAI raw response (first 200 chars):', text.substring(0, 200));
+
+    // Xóa markdown
+    text = text.replace(/```json\s*/gi, '').replace(/```/g, '').trim();
+
+    // Tìm JSON array
+    const jsonMatch = text.match(/\[[\s\S]*\]/);
+    if (!jsonMatch) {
+      console.error('Không tìm thấy JSON array. Full response:', text);
+      throw new Error('OpenAI không trả về JSON array hợp lệ');
+    }
+
+    const data = JSON.parse(jsonMatch[0]);
+
+    // Validate structure
+    if (!Array.isArray(data) || data.length !== count) {
+      throw new Error(`Kỳ vọng ${count} bài quiz, nhận được ${data?.length ?? 0}`);
+    }
+
+    // Validate từng bài quiz
+    data.forEach((quiz, idx) => {
+      if (!quiz.questions || !Array.isArray(quiz.questions)) {
+        throw new Error(`Quiz ${idx + 1}: thiếu trường 'questions' hoặc không phải array`);
+      }
+      quiz.questions.forEach((q, qIdx) => {
+        if (!q.question || !q.options || !q.answer || !q.explanation) {
+          throw new Error(`Quiz ${idx + 1}, câu ${qIdx + 1}: thiếu trường bắt buộc`);
+        }
+        if (!Array.isArray(q.options) || q.options.length !== 4) {
+          throw new Error(`Quiz ${idx + 1}, câu ${qIdx + 1}: options phải có đúng 4 phần tử`);
+        }
+      });
+    });
+
+    //console.log(`Tạo thành công ${count} bài quiz`);
     return data;
+
   } catch (err) {
+    console.error('Lỗi generateQuiz:', err);
     const msg = err?.response?.data?.error?.message || err.message || 'OpenAI error';
-    throw new Error(`Lỗi tạo quiz (OpenAI): ${msg}`);
+    throw new Error(`Lỗi tạo quiz: ${msg}`);
   }
 }
 
@@ -434,4 +558,4 @@ const generateInteractiveQuiz = async (segmentSubtitle, mcqNum, fill_blankNum, t
   }
 };
 
-export const OpenaiProvider = { generateQuiz, generateInteractiveQuiz };
+export const OpenaiProvider = { generateQuiz, generateInteractiveQuiz, QUIZ_TYPES };

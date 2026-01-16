@@ -1,8 +1,25 @@
-import React, { useEffect, useState, useRef } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { toast } from 'sonner'
 
+const MAX_FILE_SIZE = 5 * 1024 * 1024 // 5MB
+const ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp']
+
+const validateImageFile = (file) => {
+  if (!ALLOWED_IMAGE_TYPES.includes(file.type)) {
+    toast.error('Chỉ chấp nhận file JPG, PNG hoặc WebP')
+    return false
+  }
+
+  if (file.size > MAX_FILE_SIZE) {
+    toast.error('Kích thước file tối đa 5MB')
+    return false
+  }
+
+  return true
+}
+
 const EditUserModal = ({ open, user, onClose, onSubmit }) => {
-  const [form, setForm] = useState({
+  const [formData, setFormData] = useState({
     fullname: '',
     email: '',
     isActive: true,
@@ -10,11 +27,12 @@ const EditUserModal = ({ open, user, onClose, onSubmit }) => {
 
   const [avatarPreview, setAvatarPreview] = useState('')
   const [avatarFile, setAvatarFile] = useState(null)
+  
   const fileInputRef = useRef(null)
 
   useEffect(() => {
     if (open && user) {
-      setForm({
+      setFormData({
         fullname: user.fullname || '',
         email: user.email || '',
         isActive: user.isActive ?? true,
@@ -26,59 +44,63 @@ const EditUserModal = ({ open, user, onClose, onSubmit }) => {
 
   if (!open || !user) return null
 
-  // Hàm thay đổi giá trị input
-  const handleChange = (e) => {
+  const hasChanges =
+    formData.fullname !== (user.fullname || '') ||
+    formData.isActive !== (user.isActive ?? true) ||
+    avatarFile !== null
+
+  const handleInputChange = (e) => {
     const { name, value } = e.target
-    setForm((prev) => ({
+    setFormData((prev) => ({
       ...prev,
       [name]: value,
     }))
   }
 
-  // Hàm xử lý khi gạt nút trạng thái
   const handleToggleActive = () => {
-    setForm((prev) => ({
+    setFormData((prev) => ({
       ...prev,
       isActive: !prev.isActive,
     }))
   }
 
-  // Hàm xử lý khi chọn nút đổi ảnh đại diện
-  const handleAvatarClick = () => {
-    if (fileInputRef.current) {
-      fileInputRef.current.click()
-    }
+  const handleOpenFilePicker = () => {
+    fileInputRef.current?.click()
   }
 
-  // Hàm xử lý khi chọn file ảnh
   const handleAvatarChange = (e) => {
     const file = e.target.files?.[0]
     if (!file) return
-    setAvatarFile(file)
-    const url = URL.createObjectURL(file)
-    setAvatarPreview(url)
-  }
 
-  const hasChanges =
-    form.fullname !== (user.fullname || '') ||
-    form.isActive !== (user.isActive ?? true) ||
-    avatarFile !== null
+    if (!validateImageFile(file)) return
+
+    setAvatarFile(file)
+    
+    const reader = new FileReader()
+    reader.onloadend = () => {
+      setAvatarPreview(reader.result)
+    }
+    reader.onerror = () => {
+      toast.error('Không thể đọc file ảnh')
+    }
+    reader.readAsDataURL(file)
+  }
 
   const handleSubmit = (e) => {
     e.preventDefault()
     
-    // Validate họ tên không được để trống
-    if (!form.fullname.trim()) {
+    // Validate fullname
+    if (!formData.fullname.trim()) {
       toast.error('Họ tên không được để trống')
       return
     }
     
     if (!hasChanges) return
 
-    // gửi lên parent: fullname + isActive + file avatar (nếu có)
+    // Submit to parent component
     onSubmit({
-      fullname: form.fullname,
-      isActive: form.isActive,
+      fullname: formData.fullname,
+      isActive: formData.isActive,
       avatarFile,
     })
   }
@@ -86,14 +108,16 @@ const EditUserModal = ({ open, user, onClose, onSubmit }) => {
   return (
     <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/60">
       <div className="bg-gray-900 border border-gray-700 rounded-lg shadow-xl w-full max-w-lg p-6">
+        {/* Header */}
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-lg font-semibold text-gray-100">
             Chỉnh sửa người dùng
           </h2>
         </div>
 
+        {/* Form */}
         <form onSubmit={handleSubmit} className="space-y-4">
-          {/* Avatar + name + nút đổi ảnh */}
+          {/* Avatar Section */}
           <div className="flex items-center gap-3 mb-2">
             <div className="relative">
               <img
@@ -108,37 +132,37 @@ const EditUserModal = ({ open, user, onClose, onSubmit }) => {
               </span>
               <button
                 type="button"
-                onClick={handleAvatarClick}
-                className="inline-flex items-center px-3 py-1.5 rounded-md border border-gray-600 text-xs text-gray-200 hover:bg-gray-800 transition"
+                onClick={handleOpenFilePicker}
+                className="inline-flex items-center px-3 py-1.5 rounded-md border border-gray-600 text-xs text-gray-200 hover:bg-gray-800 transition-colors"
               >
                 Đổi ảnh đại diện
               </button>
               <input
                 ref={fileInputRef}
                 type="file"
-                accept="image/*"
+                accept={ALLOWED_IMAGE_TYPES.join(',')}
                 className="hidden"
                 onChange={handleAvatarChange}
               />
             </div>
           </div>
 
-          {/* Họ tên */}
+          {/* Fullname Input */}
           <div className="space-y-2">
             <label className="block text-xs font-medium text-gray-300">
               Họ tên
             </label>
             <input
               name="fullname"
-              value={form.fullname}
-              onChange={handleChange}
+              value={formData.fullname}
+              onChange={handleInputChange}
               required
               className="w-full rounded-md border border-gray-700 bg-gray-950 px-3 py-2 text-sm text-gray-100 focus:outline-none focus:ring-1 focus:ring-yellow-500"
               placeholder="Nhập họ tên"
             />
           </div>
 
-          {/* Email - chỉ hiện, không cho sửa */}
+          {/* Email Input (Read-only) */}
           <div className="space-y-2">
             <label className="block text-xs font-medium text-gray-300">
               Email
@@ -146,13 +170,13 @@ const EditUserModal = ({ open, user, onClose, onSubmit }) => {
             <input
               name="email"
               type="email"
-              value={form.email}
+              value={formData.email}
               readOnly
               className="w-full rounded-md border border-gray-700 bg-gray-900 px-3 py-2 text-sm text-gray-400 cursor-not-allowed"
             />
           </div>
 
-          {/* Trạng thái: nút gạt */}
+          {/* Active Status Toggle */}
           <div className="mt-4">
             <div className="flex items-center justify-between">
               <span className="text-sm text-gray-200">
@@ -162,35 +186,36 @@ const EditUserModal = ({ open, user, onClose, onSubmit }) => {
                 type="button"
                 onClick={handleToggleActive}
                 className={`relative inline-flex h-6 w-11 items-center rounded-full transition ${
-                  form.isActive ? 'bg-emerald-500' : 'bg-gray-600'
+                  formData.isActive ? 'bg-emerald-500' : 'bg-gray-600'
                 }`}
               >
                 <span
                   className={`inline-block h-5 w-5 transform rounded-full bg-white shadow transition ${
-                    form.isActive ? 'translate-x-5' : 'translate-x-1'
+                    formData.isActive ? 'translate-x-5' : 'translate-x-1'
                   }`}
                 />
               </button>
             </div>
             <p className="mt-1 text-xs text-gray-400">
-              {form.isActive
+              {formData.isActive
                 ? 'Đang hoạt động – người dùng có thể đăng nhập.'
                 : 'Đã khóa – người dùng không thể đăng nhập.'}
             </p>
           </div>
 
+          {/* Action Buttons */}
           <div className="flex justify-end gap-3 pt-4">
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-1.5 rounded-md text-sm border border-gray-600 text-gray-200 hover:bg-gray-800 transition"
+              className="px-4 py-1.5 rounded-md text-sm border border-gray-600 text-gray-200 hover:bg-gray-800 transition-colors"
             >
               Hủy
             </button>
             <button
               type="submit"
               disabled={!hasChanges}
-              className={`px-4 py-1.5 rounded-md text-sm border text-gray-900 font-medium 
+              className={`px-4 py-1.5 rounded-md text-sm border text-gray-900 font-medium transition-colors
                 ${
                   hasChanges
                     ? 'border-yellow-400 bg-yellow-400 hover:bg-yellow-300'

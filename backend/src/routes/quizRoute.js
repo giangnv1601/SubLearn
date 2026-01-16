@@ -1,9 +1,10 @@
 import express from 'express'
 import {
-  createQuiz,
-  listQuizzes,
+  addQuiz,
+  getQuizzesByMovieAndQuizType,
   getListQuizSummary,
   deleteQuiz,
+  deleteQuizzesByMovieAndTypeQuiz,
   updateQuiz,
   createQuizByAi,
   createInteractiveQuizByAi
@@ -12,10 +13,11 @@ import { authMiddleware } from '../middlewares/authMiddleware.js'
 
 const router = express.Router()
 
-router.post('/', authMiddleware.isAuthorized, authMiddleware.isAdmin, createQuiz)
+router.post('/addQuiz', authMiddleware.isAuthorized, authMiddleware.isAdmin, addQuiz)
 router.get('/summary', authMiddleware.isAuthorized, authMiddleware.isAdminOrClient, getListQuizSummary)
-router.get('/', authMiddleware.isAuthorized, listQuizzes)
+router.get('/', authMiddleware.isAuthorized,authMiddleware.isAdminOrClient, getQuizzesByMovieAndQuizType)
 router.delete('/:id', authMiddleware.isAuthorized, authMiddleware.isAdmin, deleteQuiz)
+router.delete('/:movieId/:quizType', authMiddleware.isAuthorized, authMiddleware.isAdmin, deleteQuizzesByMovieAndTypeQuiz)
 router.put('/:id', authMiddleware.isAuthorized, authMiddleware.isAdmin, updateQuiz)
 
 // Tạo quiz bằng AI

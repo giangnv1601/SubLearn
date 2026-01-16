@@ -12,7 +12,7 @@ const PageLoading = () => (
   </div>
 )
 
-// Layout - không lazy load vì dùng chung
+// Taskbar layout component
 import AuthLayout from "@/components/TaskBars/AuthLayout"
 
 // Lazy load Auth pages
@@ -24,15 +24,15 @@ const NotFound = lazy(() => import("@/pages/NotFound"))
 const ManagerMoviePage = lazy(() => import("@/pages/Admin/ManageMoviePage/ManagerMoviePage"))
 const ManagerExercisePage = lazy(() => import("@/pages/Admin/ManageExercisePage/ManagerExercisePage"))
 const ManageUserPage = lazy(() => import("@/pages/Admin/ManageUserPage/ManageUsersPage"))
-const QuizEditorPage = lazy(() => import("@/pages/Admin/QuizEditorPage/QuizEditorPage"))
-const CreateQuizPage = lazy(() => import("@/pages/Admin/CreateQuizPage/CreateQuizPage"))
+const AddQuizPage = lazy(() => import("@/pages/Admin/AddQuizPage/AddQuizPage"))
+const EditQuizPage = lazy(() => import("@/pages/Admin/EditQuizPage/EditQuizPage"))
 
 // Lazy load User pages
 const HomePage = lazy(() => import("@/pages/User/HomePage/HomePage"))
 const ExercisePage = lazy(() => import("@/pages/User/ExercisePage/ExercisePage"))
-const ExamPage = lazy(() => import("@/pages/User/ExamPage/ExamPage"))
 const ResultPage = lazy(() => import("@/pages/User/ResultPage/ResultPage"))
 const VideoPlayerPage = lazy(() => import("@/pages/User/VideoPlayerPage/VideoPlayerPage"))
+const PracticePage = lazy(() => import("@/pages/User/PracticePage/PracticePage"))
 
 // Lazy load Shared pages
 const ProfilePage = lazy(() => import("@/pages/Shared/ProfilePage"))
@@ -111,10 +111,10 @@ function App() {
             {/* ----CLIENT---- */}
             <Route path="/" element={<HomePage />} />
             <Route path="/client/exercises" element={<ExercisePage />} />
-            <Route path="/client/exam" element={<ExamPage />} />
             <Route path="/client/results" element={<ResultPage />} />
             <Route path="/client/video/:id" element={<VideoPlayerPage />} />
-          </Route>  
+            <Route path="/client/practice/:movieId/:quizType" element={<PracticePage />} />
+          </Route>
         </Route>
 
         {/* Admin Routes (Requires admin role) */}
@@ -123,8 +123,8 @@ function App() {
             <Route path="/admin/users" element={<ManageUserPage />} />
             <Route path="/admin/movie" element={<ManagerMoviePage />} />
             <Route path="/admin/exercise" element={<ManagerExercisePage />} />
-            <Route path="/admin/exercise/:movieId/:type/edit" element={<QuizEditorPage />} />
-            <Route path="/admin/exercise/create" element={<CreateQuizPage />} />
+            <Route path="/admin/exercise/add" element={<AddQuizPage />} />
+            <Route path="/admin/exercise/edit/:movieId/:quizType" element={<EditQuizPage />} />
           </Route>
         </Route>
 
