@@ -3,10 +3,10 @@ import Result from '../models/resultModel.js'
 export const createResult = async (req, res) => {
   try {
     const userId = req.jwtDecoded.id
-    const { movieId, quizType, totalQuestions, correctCount } = req.body
+    const { quizId, totalQuestions, correctCount } = req.body
 
     // Validate required fields
-    if (!movieId || !quizType || totalQuestions == null || correctCount == null) {
+    if (!quizId || totalQuestions == null || correctCount == null) {
       return res.status(400).json({ message: 'Thiếu dữ liệu bắt buộc.' })
     }
 
@@ -17,7 +17,7 @@ export const createResult = async (req, res) => {
 
     // Tính lần làm thứ mấy (attempt)
     const lastResult = await Result
-      .findOne({ userId, movieId, quizType })
+      .findOne({ userId, quizId })
       .sort({ attempt: -1 })
 
     const attempt = (lastResult?.attempt || 0) + 1
@@ -25,8 +25,7 @@ export const createResult = async (req, res) => {
     // Tạo kết quả mới
     const result = await Result.create({
       userId,
-      movieId,
-      quizType,
+      quizId,
       attempt,
       totalQuestions,
       correctCount,
@@ -48,7 +47,14 @@ export const getResultsByUser = async (req, res) => {
     const userId = req.jwtDecoded.id
     const results = await Result
       .find({ userId })
-      .populate('movieId', 'title')
+      .populate({
+        path: 'quizId',
+        select: 'movieId quizType',
+        populate: {
+          path: 'movieId',
+          select: 'title'
+        }
+      })
       .sort({ createdAt: -1 })
     return res.status(200).json({ data: results })
   } catch (err) {
