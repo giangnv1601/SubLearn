@@ -64,9 +64,15 @@ const PracticePage = () => {
     try {
       setSubmitting(true)
       
+      // Lấy quizId từ quiz đầu tiên
+      const quizId = quizzes[0]?._id
+      if (!quizId) {
+        toast.error('Không tìm thấy quiz')
+        return
+      }
+
       const response = await submitPracticeResultApi({
-        movieId,
-        quizType,
+        quizId,
         totalQuestions: total,
         correctCount: correct,
       })

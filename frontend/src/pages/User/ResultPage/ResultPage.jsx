@@ -87,9 +87,10 @@ const StatCard = ({ icon: Icon, label, value, color = 'text-[#E4D161]' }) => (
 )
 
 const ResultRow = ({ result, onRetry }) => {
-  const config = QUIZ_TYPE_CONFIG[result.quizType] || QUIZ_TYPE_CONFIG.reading
+  const quizType = result.quizId?.quizType || 'reading'
+  const config = QUIZ_TYPE_CONFIG[quizType] || QUIZ_TYPE_CONFIG.reading
   const Icon = config.icon
-  const movieTitle = result.movieId?.title || 'Không rõ phim'
+  const movieTitle = result.quizId?.movieId?.title || 'Không rõ phim'
 
   return (
     <div className="flex items-center gap-4 p-3 bg-[#1B2A36] rounded-lg border border-white/10 hover:border-white/20 transition-all">
@@ -176,8 +177,8 @@ const PracticeResultPage = () => {
   const movieList = useMemo(() => {
     const movies = new Map()
     results.forEach(r => {
-      const movieId = r.movieId?._id
-      const movieTitle = r.movieId?.title
+      const movieId = r.quizId?.movieId?._id
+      const movieTitle = r.quizId?.movieId?.title
       if (movieId && movieTitle && !movies.has(movieId)) {
         movies.set(movieId, movieTitle)
       }
@@ -187,8 +188,8 @@ const PracticeResultPage = () => {
 
   const filteredResults = useMemo(() => {
     return results.filter(r => {
-      const matchQuizType = quizTypeFilter === 'all' || r.quizType === quizTypeFilter
-      const matchMovie = movieFilter === 'all' || r.movieId?._id === movieFilter
+      const matchQuizType = quizTypeFilter === 'all' || r.quizId?.quizType === quizTypeFilter
+      const matchMovie = movieFilter === 'all' || r.quizId?.movieId?._id === movieFilter
       return matchQuizType && matchMovie
     })
   }, [results, quizTypeFilter, movieFilter])
@@ -209,7 +210,7 @@ const PracticeResultPage = () => {
 
     // Thống kê theo loại quiz
     const byQuizType = Object.keys(QUIZ_TYPE_CONFIG).map(type => {
-      const typeResults = results.filter(r => r.quizType === type)
+      const typeResults = results.filter(r => r.quizId?.quizType === type)
       if (typeResults.length === 0) return null
       return {
         type,
@@ -223,8 +224,11 @@ const PracticeResultPage = () => {
   }, [results])
 
   const handleRetry = (result) => {
-    const movieId = result.movieId?._id || result.movieId
-    navigate(`/client/practice/${movieId}/${result.quizType}`)
+    const movieId = result.quizId?.movieId?._id || result.quizId?.movieId
+    const quizType = result.quizId?.quizType
+    if (movieId && quizType) {
+      navigate(`/client/practice/${movieId}/${quizType}`)
+    }
   }
 
   if (loading) {
