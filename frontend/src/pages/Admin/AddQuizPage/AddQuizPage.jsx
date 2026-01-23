@@ -6,7 +6,7 @@ import { toast } from 'sonner'
 const QUIZ_TYPES = [
   { value: 'reading', label: 'Đọc hiểu' },
   { value: 'dialogue_reordering', label: 'Sắp xếp hội thoại' },
-  { value: 'translation', label: 'Dịch thuật' },
+  { value: 'translation', label: 'Dịch câu' },
   { value: 'equivalent', label: 'Câu tương đương' },
 ]
 
@@ -179,7 +179,7 @@ const AddQuizPage = () => {
       }))
     }))
 
-    // console.log('Payload to save:', payload)
+    //console.log('Payload to save:', payload)
     
     try {
       const res = await addQuizApi(payload)
@@ -197,7 +197,6 @@ const AddQuizPage = () => {
       }
     } catch (err) {
       console.error('Error saving quizzes:', err)
-      toast.error('Lỗi khi lưu: ' + (err?.response?.data?.message || err.message))
     }
   }
 

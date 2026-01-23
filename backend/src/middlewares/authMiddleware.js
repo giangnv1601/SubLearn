@@ -3,6 +3,13 @@ import { env } from "../config/environment.js"
 
 // Xác thực người dùng qua JWT
 const isAuthorized = async (req, res, next) => {
+  // Set no-cache headers cho protected routes để tránh browser cache auth errors
+  res.set({
+    'Cache-Control': 'no-cache, no-store, must-revalidate',
+    'Pragma': 'no-cache',
+    'Expires': '0'
+  })
+
   // Lấy accessToken từ header Authorization lưu ở LocalStorage bên FE
   const accessTokenFromHeader = req.headers.authorization
   if (!accessTokenFromHeader) {
