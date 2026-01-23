@@ -1,7 +1,8 @@
 import axios from "axios"
 import { toast } from "sonner"
-import { refreshTokenApi } from "@/api"
 import { triggerSessionExpired } from "@/contexts/AuthContext"
+
+const API_ROOT = import.meta.env.VITE_API_ROOT || 'http://localhost:5001'
 
 // Khởi tạo axios instance
 let authorizedAxiosInstance = axios.create()
@@ -14,16 +15,29 @@ const setAccessToken = (token) => {
 }
 
 let refreshPromise = null
-// Hàm refresh accessToken (single-flight)
+// Hàm refresh accessToken (single-flight pattern)
+// Đảm bảo chỉ có 1 request refresh token tại một thời điểm
 const refreshAccessTokenSingleFlight = () => {
   if (!refreshPromise) {
     const refreshToken = localStorage.getItem("refreshToken")
 
-    refreshPromise = refreshTokenApi(refreshToken)
-      .then((data) => {
-        // data = { accessToken }
-        setAccessToken(data.accessToken)
-        return data.accessToken
+    // Nếu không có refreshToken thì reject ngay, không gọi API
+    if (!refreshToken) {
+      return Promise.reject(new Error("No refresh token available"))
+    }
+
+    // Gọi trực tiếp axios thay vì import refreshTokenApi để tránh circular dependency
+    refreshPromise = axios.put(`${API_ROOT}/api/users/refresh-token`, { refreshToken })
+      .then((res) => {
+        const { accessToken } = res.data
+        setAccessToken(accessToken)
+        return accessToken
+      })
+      .catch((error) => {
+        // Clear tokens nếu refresh thất bại (token invalid/expired)
+        localStorage.removeItem("accessToken")
+        localStorage.removeItem("refreshToken")
+        throw error
       })
       .finally(() => {
         refreshPromise = null

@@ -54,6 +54,20 @@ export const AuthProvider = ({ children }) => {
     }
   }, [clearAuthData])
 
+  // Sync logout giữa các browser tabs
+  // Khi user logout ở tab khác, tab này cũng sẽ logout
+  useEffect(() => {
+    const handleStorageChange = (e) => {
+      if (e.key === "accessToken" && e.newValue === null && isAuthenticated) {
+        clearAuthData()
+        window.location.href = "/login"
+      }
+    }
+
+    window.addEventListener("storage", handleStorageChange)
+    return () => window.removeEventListener("storage", handleStorageChange)
+  }, [clearAuthData, isAuthenticated])
+
   // Lưu dữ liệu xác thực
   const saveAuthData = useCallback((userData, accessToken, refreshToken) => {
     localStorage.setItem("userInfo", JSON.stringify(userData))
