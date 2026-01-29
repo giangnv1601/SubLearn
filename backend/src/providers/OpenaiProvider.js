@@ -49,7 +49,7 @@ const getPromptFromSubtitle = (subtitle, quizType, count = 2) => {
       - Đoạn văn phải súc tích, mạch lạc, văn phong học thuật
       - Câu hỏi phải đa dạng về độ khó (dễ - trung bình - khó)
       - Tất cả câu hỏi phải có thể trả lời DỰA TRÊN ĐOẠN VĂN
-      - **QUAN TRỌNG: Trường "explanation" và "quote" BẮT BUỘC phải viết bằng TIẾNG VIỆT**
+      - **QUAN TRỌNG: Trường "explanation" BẮT BUỘC phải viết bằng TIẾNG VIỆT**
       - Giải thích phải rõ ràng, trích dẫn cụ thể từ đoạn văn
 
       ===> Output format:
