@@ -1,4 +1,5 @@
 import Quiz from '../models/quizModel.js'
+import Result from '../models/resultModel.js'
 import { OpenaiProvider } from '../providers/OpenaiProvider.js'
 
 export const addQuiz = async (req, res) => {
@@ -295,6 +296,17 @@ export const deleteQuiz = async (req, res) => {
 export const deleteQuizzesByMovieAndTypeQuiz = async (req, res) => {
   try {
     const { movieId, quizType } = req.params;
+    
+    // Lấy danh sách quizId trước khi xóa
+    const quizzes = await Quiz.find({ movieId, quizType }).select('_id');
+    const quizIds = quizzes.map(q => q._id);
+    
+    // Xóa tất cả result liên quan đến các quiz này
+    if (quizIds.length > 0) {
+      await Result.deleteMany({ quizId: { $in: quizIds } });
+    }
+    
+    // Xóa các quiz
     const result = await Quiz.deleteMany({ movieId, quizType });
     return res.status(200).json({ 
       ok: true, 

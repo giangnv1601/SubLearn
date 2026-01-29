@@ -83,7 +83,8 @@ const getPromptFromSubtitle = (subtitle, quizType, count = 2) => {
               "quote": "Trích dẫn câu tiếng Anh chứng minh"
             }
           ]
-        }
+        },
+        ... (tổng ${count} objects)
       ]
 
       ===> LƯU Ý CỰC KỲ QUAN TRỌNG:
@@ -195,7 +196,7 @@ const getPromptFromSubtitle = (subtitle, quizType, count = 2) => {
 
       [START OF MOVIE SUBTITLES]
       ${subtitle}
-      [END OF MOVIE SUBTITLES}
+      [END OF MOVIE SUBTITLES]
 
       ===> Nhiệm vụ:
       Tạo ĐÚNG ${count} bài tập chọn câu tương đương (PHẢI TRẢ VỀ ${count} OBJECTS):

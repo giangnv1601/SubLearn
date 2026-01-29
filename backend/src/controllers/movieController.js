@@ -1,4 +1,5 @@
 import Movie from "../models/movieModel.js";
+import Subtitle from "../models/subtitleModel.js";
 import { CloudinaryProvider } from '../providers/CloudinaryProvider.js'
 
 const getAllMovies = async (req, res) => {
@@ -104,6 +105,10 @@ const deleteMovie = async (req, res) => {
     if (!deletedMovie) {
       return res.status(404).json({ message: 'Movie not found' });
     }
+    
+    // Xóa tất cả phụ đề liên quan đến phim
+    await Subtitle.deleteMany({ movieId: req.params.id });
+    
     res.status(200).json(deletedMovie);
   } catch (error) {
     console.error('Error deleting movie:', error);
