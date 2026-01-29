@@ -1,5 +1,6 @@
 import bcrypt from 'bcrypt'
 import User from '../models/userModel.js'
+import Result from '../models/resultModel.js'
 import { JwtProvider } from '../providers/JwtProvider.js'
 import { CloudinaryProvider } from '../providers/CloudinaryProvider.js'
 import { env } from '../config/environment.js'
@@ -215,6 +216,10 @@ export const deleteUser = async (req, res) => {
     if (!user) {
       return res.status(404).json({ message: 'User not found' })
     }
+
+    // Xóa tất cả kết quả của người dùng
+    await Result.deleteMany({ userId })
+
     res.status(200).json({ message: 'User deleted successfully' })
   } catch (error) {
     console.error('Delete user error:', error)
