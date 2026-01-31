@@ -36,7 +36,7 @@ const getPromptFromSubtitle = (subtitle, quizType, count = 2) => {
       - Đoạn văn phải có cấu trúc rõ ràng với 3-4 đoạn
       - Mỗi bài có ĐÚNG 5 câu hỏi trắc nghiệm bằng tiếng Anh
       - Trong 5 câu hỏi, BẮT BUỘC phải có ít nhất 1 câu về từ đồng nghĩa (synonym):
-        * Format câu hỏi: "The word '[từ]' in line [số], paragraph [số] is closest in meaning to"
+        * Format câu hỏi: "The word '[từ]' in the passage is closest in meaning to"
         * [từ] phải là từ vựng quan trọng có trong đoạn văn (danh từ, động từ, tính từ)
         * 4 lựa chọn phải là các từ/cụm từ tiếng Anh ở cùng loại từ
         * Các lựa chọn sai phải hợp lý nhưng khác nghĩa rõ ràng
@@ -53,9 +53,11 @@ const getPromptFromSubtitle = (subtitle, quizType, count = 2) => {
       - Giải thích phải rõ ràng, trích dẫn cụ thể từ đoạn văn
 
       ===> Output format:
-      CHỈ TRẢ VỀ MỘT MẢNG JSON THUẦN TUẦN, KHÔNG CÓ BẤT KỲ KÝ TỰ ĐẶC BIỆT NÀO.
+      CHỈ TRẢ VỀ MỘT MẢNG JSON THUẦN TUÝ, KHÔNG CÓ BẤT KỲ KÝ TỰ ĐẶC BIỆT NÀO.
       KHÔNG THÊM \`\`\`json, \`\`\` HOẶC BẤT KỲ MARKDOWN NÀO.
-      KHÔNG THÊM CHÚ THÍCH.
+      KHÔNG THÊM CHÚ THÍCH HOẶC GIẢI THÍCH BÊN NGOÀI JSON.
+      KHÔNG ĐƯỢC DÙNG CHUỖI "..." HOẶC CÁC PLACEHOLDER TƯƠNG TỰ TRONG JSON.
+      MẢNG JSON PHẢI CÓ CHÍNH XÁC ${count} PHẦN TỬ, MỖI PHẦN TỬ LÀ 1 BÀI ĐỌC HIỂU VỚI ĐÚNG 5 CÂU HỎI.
 
       [
         {
@@ -83,8 +85,7 @@ const getPromptFromSubtitle = (subtitle, quizType, count = 2) => {
               "quote": "Trích dẫn câu tiếng Anh chứng minh"
             }
           ]
-        },
-        ... (tổng ${count} objects)
+        }
       ]
 
       ===> LƯU Ý CỰC KỲ QUAN TRỌNG:
@@ -116,6 +117,8 @@ const getPromptFromSubtitle = (subtitle, quizType, count = 2) => {
 
       ===> Output format:
       CHỈ TRẢ VỀ MẢNG JSON GỒM ĐÚNG ${count} OBJECTS.
+      KHÔNG THÊM CHÚ THÍCH, GIẢI THÍCH BÊN NGOÀI JSON.
+      KHÔNG ĐƯỢC DÙNG CHUỖI "..." HOẶC CÁC PLACEHOLDER TƯƠNG TỰ TRONG JSON.
 
       [
         {
@@ -129,8 +132,7 @@ const getPromptFromSubtitle = (subtitle, quizType, count = 2) => {
               "quote": "Từ hội thoại phim"
             }
           ]
-        },
-        ... (tổng ${count} objects)
+        }
       ]
     `,
     [QUIZ_TYPES.TRANSLATION]: `
@@ -152,6 +154,8 @@ const getPromptFromSubtitle = (subtitle, quizType, count = 2) => {
 
       ===> Output format:
       CHỈ TRẢ VỀ MẢNG JSON GỒM ĐÚNG ${count} OBJECTS (MỖI OBJECT = 1 CÂU HỎI).
+      KHÔNG THÊM CHÚ THÍCH, GIẢI THÍCH BÊN NGOÀI JSON.
+      KHÔNG ĐƯỢC DÙNG CHUỖI "..." HOẶC CÁC PLACEHOLDER TƯƠNG TỰ TRONG JSON.
 
       [
         {
@@ -187,8 +191,7 @@ const getPromptFromSubtitle = (subtitle, quizType, count = 2) => {
               "quote": "She would go if she had time."
             }
           ]
-        },
-        ... (tổng ${count} objects)
+        }
       ]
     `,
     [QUIZ_TYPES.EQUIVALENT]: `
@@ -209,6 +212,8 @@ const getPromptFromSubtitle = (subtitle, quizType, count = 2) => {
 
       ===> Output format:
       CHỈ TRẢ VỀ MẢNG JSON GỒM ĐÚNG ${count} OBJECTS (MỖI OBJECT = 1 CÂU HỎI).
+      KHÔNG THÊM CHÚ THÍCH, GIẢI THÍCH BÊN NGOÀI JSON.
+      KHÔNG ĐƯỢC DÙNG CHUỖI "..." HOẶC CÁC PLACEHOLDER TƯƠNG TỰ TRONG JSON.
 
       [
         {
@@ -244,8 +249,7 @@ const getPromptFromSubtitle = (subtitle, quizType, count = 2) => {
               "quote": "Cô ấy sẽ đi nếu có thời gian."
             }
           ]
-        },
-        ... (tổng ${count} objects)
+        }
       ]
     `,
   };
@@ -340,6 +344,7 @@ CHỈ TRẢ VỀ JSON THUẦN
 - KHÔNG có giải thích, chỉ có JSON
 - KHÔNG có text ngoài JSON
 - PHẢI đảm bảo JSON hợp lệ, có thể parse được
+ - KHÔNG được dùng chuỗi "..." hoặc bất kỳ placeholder/comment nào bên trong JSON
 
 Cấu trúc JSON bắt buộc:
 
@@ -384,8 +389,8 @@ LƯU Ý QUAN TRỌNG:
 // Hàm tạo quiz bằng OpenAI
 const generateQuiz = async (subtitle, quizType, count, {
   model = MODEL,
-  temperature = 0.7,
-  top_p = 0.95,
+  temperature = 0.5,
+  top_p = 0.9,
   max_tokens = 8000,
 } = {}) => {
   // Validation đầu vào
