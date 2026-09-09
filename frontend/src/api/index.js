@@ -1,7 +1,7 @@
 import axios from "axios";
 import authorizedAxiosInstance from "../utils/authorizeAxios";
 
-const API_ROOT = import.meta.env.VITE_API_ROOT || 'http://localhost:5001';
+const API_ROOT = (import.meta.env.VITE_API_ROOT || '').replace(/\/$/, '');
 
 /** API User */
 export const loginUserApi = async (data) => {

@@ -2,7 +2,7 @@ import axios from "axios"
 import { toast } from "sonner"
 import { triggerSessionExpired } from "@/contexts/AuthContext"
 
-const API_ROOT = import.meta.env.VITE_API_ROOT || 'http://localhost:5001'
+const API_ROOT = (import.meta.env.VITE_API_ROOT || '').replace(/\/$/, '')
 
 // Khởi tạo axios instance
 let authorizedAxiosInstance = axios.create()
