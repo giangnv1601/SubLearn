@@ -21,7 +21,7 @@ app.use(express.json());
 // CORS configuration
 const corsOptions = {
   origin: process.env.CORS_ALLOWED_ORIGINS 
-    ? process.env.CORS_ALLOWED_ORIGINS.split(',') 
+    ? process.env.CORS_ALLOWED_ORIGINS.split(',').map(origin => origin.trim()).filter(Boolean)
     : ['http://localhost:5173'],
   credentials: true
 };
